@@ -1,7 +1,7 @@
 from typing import Iterable, List
-from providers.playlist import Playlist
+from providers import Playlist
 from tracks.local_track import LocalTrack
-from tracks.track import Track
+from tracks import Track
 
 
 class LocalPlaylist(Playlist):

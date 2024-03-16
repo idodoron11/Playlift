@@ -2,7 +2,7 @@ from typing import List
 
 import music_tag
 
-from tracks.track import Track
+from tracks import Track
 
 
 class LocalTrack(Track):
