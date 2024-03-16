@@ -27,3 +27,11 @@ class Track(ABC):
     @property
     def display_artist(self) -> str:
         return ", ".join(self.artists)
+
+    @abstractmethod
+    def __eq__(self, other):
+        pass
+
+    @abstractmethod
+    def __hash__(self):
+        pass

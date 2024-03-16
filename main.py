@@ -1,6 +1,6 @@
 import config
 from api.spotify import SpotifyAPI
-from providers.local_playlist import LocalPlaylist
+from playlists.local_playlist import LocalPlaylist
 from tracks.spotify_track import SpotifyTrack
 
 playlist = LocalPlaylist("/Users/idodoron/Downloads/Seasons_of_change.m3u")

@@ -27,6 +27,10 @@ class SpotifyTrack(Track):
         duration_ms = self._track['duration_ms']
         return duration_ms / 1000
 
+    @property
+    def track_id(self) -> str:
+        return self._track['id']
+
     @staticmethod
     def search(artist: str, album: str, title: str) -> List[SpotifyTrack]:
         explicit_search_string = f'artist:"{artist}" album:"{album}" title:"{title}"'
@@ -37,3 +41,10 @@ class SpotifyTrack(Track):
         if not response['tracks'] or response['tracks']['total'] == 0:
             return []
         return [SpotifyTrack(track['id']) for track in response['tracks']['items']]
+
+    def __eq__(self, other):
+        if self is other:
+            return True
+        if not isinstance(other, self.__class__):
+            return False
+        return self.track_id == other.track_id
