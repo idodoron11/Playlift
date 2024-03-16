@@ -1,18 +1,5 @@
-import config
-from api.spotify import SpotifyAPI
-from playlists.local_playlist import LocalPlaylist
-from tracks.spotify_track import SpotifyTrack
+from playlists.spotify_playlist import SpotifyPlaylist
 
-playlist = LocalPlaylist("/Users/idodoron/Downloads/Seasons_of_change.m3u")
-for track in playlist.tracks:
-    print(track.title)
-    print(track.display_artist)
-    print(track.album)
-    print(track.duration)
-spotify_api = SpotifyAPI().api
-
-spotify_tracks = SpotifyTrack.search("Asaf Avidan", "Different Pulses", "Different Pulses")
-for track in spotify_tracks:
-    print(track.title)
-    print(track.display_artist)
-    print(track.album)
+playlist = SpotifyPlaylist("https://open.spotify.com/playlist/7D3hTu62FCcQCscv6xzjRB")
+for index, track in enumerate(playlist.tracks):
+    print(f"{index} {track.display_artist} - {track.title} ({track.album})")
