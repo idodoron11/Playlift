@@ -15,7 +15,12 @@ class SpotifyPlaylist(Playlist):
 
     def _load_data(self):
         self._data = SpotifyAPI().api.playlist(self._url)
-        self._tracks = [SpotifyTrack(api_track['track']['id']) for api_track in self._data['tracks']['items']]
+        self._tracks = []
+        api_tracks = self._data['tracks']
+        while api_tracks:
+            for api_track in api_tracks['items']:
+                self._tracks.append(SpotifyTrack(api_track['track']['id']))
+            api_tracks = SpotifyAPI().api.next(api_tracks)
 
     @classmethod
     def create(cls, playlist_name: str):
