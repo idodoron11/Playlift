@@ -1,6 +1,6 @@
 from typing import Iterable, List
 from providers.playlist import Playlist
-from tracks.mutagen_track import MutagenTrack
+from tracks.local_track import LocalTrack
 from tracks.track import Track
 
 
@@ -9,11 +9,13 @@ class LocalPlaylist(Playlist):
         self._source_filepath = playlist_file_path
         self._tracks: List[Track] = []
         with open(self._source_filepath, "r", encoding="utf-8") as f:
-            self._load_tracks(f.readlines())
+            files = filter(lambda x: x, f.readlines())  # skip empty lines
+            files = map(lambda x: x.strip(), files)  # remove redundant spaces
+            self._load_tracks(files)
 
-    def _load_tracks(self, files: List[str]) -> None:
+    def _load_tracks(self, files: Iterable[str]) -> None:
         for file_path in files:
-            self._tracks.append(MutagenTrack(file_path))
+            self._tracks.append(LocalTrack(file_path))
 
     @property
     def tracks(self) -> Iterable[Track]:
