@@ -11,7 +11,8 @@ for track in playlist.tracks:
     print(track.duration)
 spotify_api = SpotifyAPI().api
 
-spotify_track = SpotifyTrack("http://open.spotify.com/track/6rqhFgbbKwnb9MLmUQDhG6")
-print(spotify_track.title)
-print(spotify_track.display_artist)
-print(spotify_track.album)
+spotify_tracks = SpotifyTrack.search("Asaf Avidan", "Different Pulses", "Different Pulses")
+for track in spotify_tracks:
+    print(track.title)
+    print(track.display_artist)
+    print(track.album)
