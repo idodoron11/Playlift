@@ -22,3 +22,7 @@ class Track(ABC):
     @abstractmethod
     def duration(self) -> int:
         pass
+
+    @property
+    def display_artist(self) -> str:
+        return ", ".join(self.artists)

@@ -14,6 +14,10 @@ class LocalTrack(Track):
         return self._get_tag("artist").values
 
     @property
+    def display_artist(self) -> str:
+        return self._get_tag("artist").value
+
+    @property
     def title(self) -> str:
         return self._get_tag("title").first
 
