@@ -1,6 +1,7 @@
 import config
 from api.spotify import SpotifyAPI
 from providers.local_playlist import LocalPlaylist
+from tracks.spotify_track import SpotifyTrack
 
 playlist = LocalPlaylist("/Users/idodoron/Downloads/Seasons_of_change.m3u")
 for track in playlist.tracks:
@@ -10,7 +11,7 @@ for track in playlist.tracks:
     print(track.duration)
 spotify_api = SpotifyAPI().api
 
-results = spotify_api.current_user_saved_tracks()
-for idx, item in enumerate(results['items']):
-    track = item['track']
-    print(idx, track['artists'][0]['name'], " – ", track['name'])
+spotify_track = SpotifyTrack("http://open.spotify.com/track/6rqhFgbbKwnb9MLmUQDhG6")
+print(spotify_track.title)
+print(spotify_track.display_artist)
+print(spotify_track.album)

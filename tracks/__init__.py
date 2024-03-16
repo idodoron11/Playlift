@@ -21,7 +21,7 @@ class Track(ABC):
 
     @property
     @abstractmethod
-    def duration(self) -> int:
+    def duration(self) -> float:
         pass
 
     @property
