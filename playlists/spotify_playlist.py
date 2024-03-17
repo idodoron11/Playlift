@@ -14,13 +14,13 @@ class SpotifyPlaylist(Playlist):
         self._load_data()
 
     def _load_data(self):
-        self._data = SpotifyAPI().api.playlist(self._url)
+        self._data = SpotifyAPI.get_instance().playlist(self._url)
         self._tracks = []
         api_tracks = self._data['tracks']
         while api_tracks:
             for api_track in api_tracks['items']:
                 self._tracks.append(SpotifyTrack(api_track['track']['id']))
-            api_tracks = SpotifyAPI().api.next(api_tracks)
+            api_tracks = SpotifyAPI.get_instance().next(api_tracks)
 
     @classmethod
     def create(cls, playlist_name: str):

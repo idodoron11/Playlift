@@ -1,4 +1,3 @@
-from singleton import Singleton
 from config import CONFIG
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
@@ -6,12 +5,20 @@ from spotipy.oauth2 import SpotifyOAuth
 scope = "user-library-read"
 
 
-class SpotifyAPI(metaclass=Singleton):
+class SpotifyAPI:
+    __instance = None
+
+    @classmethod
+    def get_instance(cls) -> spotipy.Spotify:
+        if cls.__instance is None:
+            auth_manager = SpotifyOAuth(
+                scope=scope,
+                client_id=CONFIG.spotify_client_id,
+                client_secret=CONFIG.spotify_client_secret,
+                redirect_uri=CONFIG.spotify_redirect_url
+            )
+            cls.__instance = spotipy.Spotify(auth_manager=auth_manager)
+        return cls.__instance
+
     def __init__(self):
-        auth_manager = SpotifyOAuth(
-            scope=scope,
-            client_id=CONFIG.spotify_client_id,
-            client_secret=CONFIG.spotify_client_secret,
-            redirect_uri=CONFIG.spotify_redirect_url
-        )
-        self.api = spotipy.Spotify(auth_manager=auth_manager)
+        raise TypeError("Use get_instance() instead")
