@@ -1,6 +1,6 @@
 """Playlist Providers"""
 from abc import ABC, abstractmethod
-from typing import Iterable
+from typing import Iterable, List
 
 from tracks import Track
 
@@ -12,9 +12,9 @@ class Playlist(ABC):
         pass
 
     @abstractmethod
-    def remove_track(self, track: Track) -> None:
+    def remove_track(self, tracks: List[Track]) -> None:
         pass
 
     @abstractmethod
-    def add_track(self, track: Track) -> None:
+    def add_tracks(self, track: Track) -> None:
         pass

@@ -1,4 +1,4 @@
-from typing import Iterable
+from typing import Iterable, List
 
 from api.spotify import SpotifyAPI
 from playlists import Playlist
@@ -23,9 +23,11 @@ class SpotifyPlaylist(Playlist):
             api_tracks = SpotifyAPI.get_instance().next(api_tracks)
 
     @classmethod
-    def create(cls, playlist_name: str):
-        playlist_url = f"Create a new playlist named {playlist_name} and retrieve its url"
-        return cls(playlist_url)
+    def create(cls, playlist_name: str, public: bool = False):
+        user_id = SpotifyAPI.get_instance().current_user()["id"]
+        playlist_resp = SpotifyAPI.get_instance().user_playlist_create(user_id, playlist_name, public=public)
+        playlist_id = playlist_resp["id"]
+        return cls(playlist_id)
 
     @property
     def tracks(self) -> Iterable[Track]:
@@ -39,8 +41,8 @@ class SpotifyPlaylist(Playlist):
     def name(self) -> str:
         return self._data['name']
 
-    def remove_track(self, track: Track) -> None:
+    def remove_track(self, track: SpotifyTrack) -> None:
         raise NotImplementedError
 
-    def add_track(self, track: Track) -> None:
-        raise NotImplementedError
+    def add_tracks(self, tracks: List[SpotifyTrack]) -> None:
+        SpotifyAPI.get_instance().playlist_add_items(self.playlist_id, map(lambda track: track.track_id, tracks))

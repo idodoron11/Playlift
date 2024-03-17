@@ -24,8 +24,8 @@ class LocalPlaylist(Playlist):
     def remove_track(self, track: LocalTrack) -> None:
         self._tracks.remove(track)
 
-    def add_track(self, track: LocalTrack) -> None:
-        self._tracks.append(track)
+    def add_tracks(self, tracks: List[LocalTrack]) -> None:
+        self._tracks += tracks
 
     def save_playlist(self):
         files = [track.file_path for track in self._tracks]

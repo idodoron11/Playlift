@@ -2,7 +2,11 @@ from config import CONFIG
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 
-scope = "user-library-read"
+scopes = [
+    "user-library-read",
+    "playlist-modify-public",
+    "playlist-modify-private"
+]
 
 
 class SpotifyAPI:
@@ -12,7 +16,7 @@ class SpotifyAPI:
     def get_instance(cls) -> spotipy.Spotify:
         if cls.__instance is None:
             auth_manager = SpotifyOAuth(
-                scope=scope,
+                scope=scopes,
                 client_id=CONFIG.spotify_client_id,
                 client_secret=CONFIG.spotify_client_secret,
                 redirect_uri=CONFIG.spotify_redirect_url
