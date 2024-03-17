@@ -52,6 +52,7 @@ class SpotifyPlaylist(Playlist):
         raise NotImplementedError
 
     def add_tracks(self, tracks: List[SpotifyTrack]) -> None:
+        # TODO: what if len(tracks) > 100 ?
         SpotifyAPI.get_instance().playlist_add_items(self.playlist_id, map(lambda track: track.track_id, tracks))
 
     def __eq__(self, other):
