@@ -25,4 +25,4 @@ class SpotifyAPI:
         return cls.__instance
 
     def __init__(self):
-        raise TypeError("Use get_instance() instead")
+        raise TypeError("An instance of this class already exists")

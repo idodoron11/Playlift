@@ -2,8 +2,11 @@ import configparser
 import os
 import shutil
 
-if not os.path.exists('config/config.ini'):
-    shutil.copyfile("config/config_template.ini", "config/config.ini")
+CONFIG_PATH = os.path.join("config", "config.ini")
+CONFIG_TEMPLATE_PATH = os.path.join("config", "config_template.ini")
+
+if not os.path.exists(CONFIG_PATH):
+    shutil.copyfile(CONFIG_TEMPLATE_PATH, CONFIG_PATH)
 
 
 class Config:
