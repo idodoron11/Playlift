@@ -37,17 +37,6 @@ class SpotifyTrack(Track):
     def track_id(self) -> str:
         return self._id
 
-    @staticmethod
-    def search(artist: str, album: str, title: str) -> List[SpotifyTrack]:
-        explicit_search_string = f'artist:{artist} album:{album} track:{title}'
-        free_text_search_string = f'{artist} {title}'
-        response = SpotifyAPI.get_instance().search(explicit_search_string)
-        if not response['tracks'] or response['tracks']['total'] == 0:
-            response = SpotifyAPI.get_instance().search(free_text_search_string)
-            if not response['tracks'] or response['tracks']['total'] == 0:
-                return []
-        return [SpotifyTrack(track['id']) for track in response['tracks']['items']]
-
     def __eq__(self, other):
         if self is other:
             return True

@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
-from typing import Iterable, Optional
+from difflib import SequenceMatcher
+from typing import Iterable, Optional, Tuple
 
 from tracks import Track
 
@@ -32,3 +33,12 @@ class Matcher(ABC):
         :return: a collection of tracks, of type B, that may match the input track
         """
         pass
+
+    @staticmethod
+    def track_distance(track1: Track, track2: Track) -> Tuple[float, float, float, float]:
+        return (
+            1 - SequenceMatcher(None, track1.title, track2.title).ratio(),
+            1 - SequenceMatcher(None, track1.display_artist, track2.display_artist).ratio(),
+            1 - SequenceMatcher(None, track1.album, track2.album).ratio(),
+            abs(track1.duration - track2.duration)
+        )

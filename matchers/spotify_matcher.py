@@ -22,17 +22,8 @@ class SpotifyMatcher(Matcher):
             search_string = f'{artist} {track.title}'
             results_set.update(SpotifyMatcher._search(search_string))
         results: List[SpotifyTrack] = list(results_set)
-        results.sort(key=lambda result: SpotifyMatcher._track_distance_keys(track, result))
+        results.sort(key=lambda result: SpotifyMatcher.track_distance(track, result))
         return results
-
-    @staticmethod
-    def _track_distance_keys(source: Track, target: Track):
-        return (
-            1 - SequenceMatcher(None, source.title, target.title).ratio(),
-            1 - SequenceMatcher(None, source.display_artist, target.display_artist).ratio(),
-            1 - SequenceMatcher(None, source.album, target.album).ratio(),
-            abs(source.duration - target.duration)
-        )
 
     @staticmethod
     def _search(query: str) -> List[SpotifyTrack]:
