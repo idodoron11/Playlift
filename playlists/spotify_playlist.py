@@ -1,4 +1,4 @@
-from typing import Iterable, List
+from typing import Iterable, List, Optional
 
 from api.spotify import SpotifyAPI
 from playlists import Playlist
@@ -9,7 +9,7 @@ from tracks.spotify_track import SpotifyTrack
 class SpotifyPlaylist(Playlist):
     def __init__(self, playlist_url: str = None):
         self._id = SpotifyAPI.get_instance()._get_id('playlist', playlist_url)
-        self._data: dict
+        self._data: Optional[dict] = None
         self._tracks: Iterable[SpotifyTrack]
 
     def _load_data(self):
