@@ -21,7 +21,10 @@ class SpotifyAPI:
                 client_secret=CONFIG.spotify_client_secret,
                 redirect_uri=CONFIG.spotify_redirect_url
             )
-            cls.__instance = spotipy.Spotify(auth_manager=auth_manager)
+            cls.__instance = spotipy.Spotify(
+                auth_manager=auth_manager,
+                retries=0  # See https://github.com/spotipy-dev/spotipy/issues/913#issuecomment-1899143238
+            )
         return cls.__instance
 
     def __init__(self):
