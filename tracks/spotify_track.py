@@ -1,14 +1,16 @@
 from __future__ import annotations
 
-from typing import List, Optional
+from typing import List
 from api.spotify import SpotifyAPI
 from tracks import Track
 
 
 class SpotifyTrack(Track):
-    def __init__(self, track_url: str):
+    def __init__(self, track_url: str, data: dict = None):
         self._id = SpotifyAPI.get_instance()._get_id('track', track_url)
-        self._data: Optional[dict] = None
+        self._data: dict = data
+        if self._data and self._data['id'] != self._id:
+            raise ValueError("The data object does not match the track id")
 
     @property
     def data(self) -> dict:

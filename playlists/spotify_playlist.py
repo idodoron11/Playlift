@@ -9,9 +9,11 @@ from tqdm import tqdm
 
 
 class SpotifyPlaylist(Playlist):
-    def __init__(self, playlist_url: str = None):
+    def __init__(self, playlist_url: str = None, data: dict = None):
         self._id = SpotifyAPI.get_instance()._get_id('playlist', playlist_url)
-        self._data: Optional[dict] = None
+        self._data: dict = data
+        if self._data and self._data['id'] != self._id:
+            raise ValueError("The data object does not match the track id")
         self._tracks: Iterable[SpotifyTrack]
 
     def _load_data(self):
@@ -20,7 +22,7 @@ class SpotifyPlaylist(Playlist):
         api_tracks = self._data
         while api_tracks:
             for api_track in api_tracks['items']:
-                self._tracks.append(SpotifyTrack(api_track['track']['id']))
+                self._tracks.append(SpotifyTrack(api_track['track']['id'], data=api_track['track']))
             api_tracks = SpotifyAPI.get_instance().next(api_tracks)
 
     @classmethod
