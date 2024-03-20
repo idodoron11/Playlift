@@ -1,11 +1,10 @@
-from typing import Iterable, List, Optional
+from typing import Iterable, List
 
 from api.spotify import SpotifyAPI
 from matchers.spotify_matcher import SpotifyMatcher
 from playlists import Playlist
 from tracks import Track
 from tracks.spotify_track import SpotifyTrack
-from tqdm import tqdm
 
 
 class SpotifyPlaylist(Playlist):
@@ -34,23 +33,7 @@ class SpotifyPlaylist(Playlist):
 
     @classmethod
     def create_from_another_playlist(cls, playlist_name: str, source_playlist: Playlist, public: bool = False):
-        sp_tracks = []
-        guessed_tracks_positions = []
-        for index, track in enumerate(tqdm(source_playlist.tracks)):
-            match = cls.track_matcher().match(track)
-            if match:
-                sp_tracks.append(match)
-                continue
-            suggestions = cls.track_matcher().suggest_match(track)
-            if suggestions:
-                sp_tracks.append(next(suggestions.__iter__()))
-                guessed_tracks_positions.append(index)
-        print("The following tracks were guessed:\n")
-        for index in guessed_tracks_positions:
-            source: Track = source_playlist.tracks[index]
-            target: SpotifyTrack = sp_tracks[index]
-            print(
-                f"{index+1} {source.display_artist} - {source.title}, {source.album}    --->    {target.display_artist} - {target.title}, {target.album}")
+        sp_tracks = SpotifyPlaylist.track_matcher().match_list(source_playlist.tracks)
         new_playlist = cls.create(playlist_name, public=public)
         new_playlist.add_tracks(sp_tracks)
         return new_playlist

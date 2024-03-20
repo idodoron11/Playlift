@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from difflib import SequenceMatcher
-from typing import Iterable, Optional, Tuple
+from typing import Iterable, Optional, Tuple, List
 
 from tracks import Track
 
@@ -42,3 +42,7 @@ class Matcher(ABC):
             1 - SequenceMatcher(None, track1.album, track2.album).ratio(),
             abs(track1.duration - track2.duration)
         )
+
+    @abstractmethod
+    def match_list(self, tracks: List[Track]) -> Iterable[Track]:
+        pass
