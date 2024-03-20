@@ -50,7 +50,7 @@ class SpotifyPlaylist(Playlist):
             source: Track = source_playlist.tracks[index]
             target: SpotifyTrack = sp_tracks[index]
             print(
-                f"{index} {source.display_artist} - {source.title}, {source.album}    --->    {target.display_artist} - {target.title}, {target.album}")
+                f"{index+1} {source.display_artist} - {source.title}, {source.album}    --->    {target.display_artist} - {target.title}, {target.album}")
         new_playlist = cls.create(playlist_name, public=public)
         new_playlist.add_tracks(sp_tracks)
         return new_playlist
