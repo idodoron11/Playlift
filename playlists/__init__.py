@@ -2,6 +2,7 @@
 from abc import ABC, abstractmethod
 from typing import Iterable, List
 
+from matchers import Matcher
 from tracks import Track
 
 
@@ -9,6 +10,11 @@ class Playlist(ABC):
     @property
     @abstractmethod
     def tracks(self) -> Iterable[Track]:
+        pass
+
+    @staticmethod
+    @abstractmethod
+    def track_matcher() -> Matcher:
         pass
 
     @abstractmethod

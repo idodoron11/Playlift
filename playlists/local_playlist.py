@@ -1,7 +1,8 @@
 from typing import Iterable, List
+
+from matchers import Matcher
 from playlists import Playlist
 from tracks.local_track import LocalTrack
-from tracks import Track
 
 
 class LocalPlaylist(Playlist):
@@ -31,3 +32,7 @@ class LocalPlaylist(Playlist):
         files = [track.file_path for track in self._tracks]
         with open(self._source_filepath, "w", encoding='utf-8') as f:
             f.write("\n".join(files))
+
+    @staticmethod
+    def track_matcher() -> Matcher:
+        raise TypeError("Local playlists don't have a track matcher")

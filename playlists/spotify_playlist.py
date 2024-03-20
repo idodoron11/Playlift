@@ -1,9 +1,11 @@
 from typing import Iterable, List, Optional
 
 from api.spotify import SpotifyAPI
+from matchers.spotify_matcher import SpotifyMatcher
 from playlists import Playlist
 from tracks import Track
 from tracks.spotify_track import SpotifyTrack
+from tqdm import tqdm
 
 
 class SpotifyPlaylist(Playlist):
@@ -27,6 +29,29 @@ class SpotifyPlaylist(Playlist):
         playlist_resp = SpotifyAPI.get_instance().user_playlist_create(user_id, playlist_name, public=public)
         playlist_id = playlist_resp["id"]
         return cls(playlist_id)
+
+    @classmethod
+    def create_from_another_playlist(cls, playlist_name: str, source_playlist: Playlist, public: bool = False):
+        sp_tracks = []
+        guessed_tracks_positions = []
+        for index, track in enumerate(tqdm(source_playlist.tracks)):
+            match = cls.track_matcher().match(track)
+            if match:
+                sp_tracks.append(match)
+                continue
+            suggestions = cls.track_matcher().suggest_match(track)
+            if suggestions:
+                sp_tracks.append(next(suggestions.__iter__()))
+                guessed_tracks_positions.append(index)
+        print("The following tracks were guessed:\n")
+        for index in guessed_tracks_positions:
+            source: Track = source_playlist.tracks[index]
+            target: SpotifyTrack = sp_tracks[index]
+            print(
+                f"{index} {source.display_artist} - {source.title}, {source.album}    --->    {target.display_artist} - {target.title}, {target.album}")
+        new_playlist = cls.create(playlist_name, public=public)
+        new_playlist.add_tracks(sp_tracks)
+        return new_playlist
 
     @property
     def tracks(self) -> Iterable[Track]:
@@ -56,6 +81,10 @@ class SpotifyPlaylist(Playlist):
             end = min(len(tracks), start + 100)
             chunk = map(lambda track: track.track_id, tracks[start:end])
             SpotifyAPI.get_instance().playlist_add_items(self.playlist_id, chunk)
+
+    @staticmethod
+    def track_matcher() -> SpotifyMatcher:
+        return SpotifyMatcher.get_instance()
 
     def __eq__(self, other):
         if self is other:

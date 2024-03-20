@@ -10,7 +10,7 @@ from tracks.spotify_track import SpotifyTrack
 class SpotifyMatcher(Matcher):
     def match(self, track: Track) -> Optional[SpotifyTrack]:
         for artist in track.artists:
-            explicit_search_string = f'artist:{artist} album:{track.album} track:{track.title}'
+            explicit_search_string = f'artist:"{artist}" album:"{track.album}" track:"{track.title}"'
             results = SpotifyMatcher._search(explicit_search_string)
             if results:
                 return results[0]
