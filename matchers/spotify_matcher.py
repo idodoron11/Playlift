@@ -30,5 +30,5 @@ class SpotifyMatcher(Matcher):
         response = SpotifyAPI.get_instance().search(query)
         if not response['tracks'] or response['tracks']['total'] == 0:
             return []
-        return [SpotifyTrack(track['id']) for track in response['tracks']['items']]
+        return [SpotifyTrack(track['id'], data=track) for track in response['tracks']['items']]
 
