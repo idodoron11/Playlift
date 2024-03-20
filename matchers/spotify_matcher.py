@@ -48,13 +48,17 @@ class SpotifyMatcher(Matcher):
             if suggestions:
                 sp_tracks.append(next(suggestions.__iter__()))
 
-        print("The following tracks were guessed:\n")
-        for index, _ in guessed_tracks_positions:
-            source: Track = tracks[index]
-            target: SpotifyTrack = sp_tracks[index]
-            print(
-                f"{index + 1} {source.display_artist} - {source.title}, {source.album}    --->    {target.display_artist} - {target.title}, {target.album}")
-        print("\nIf any of the tracks above were not mapped correctly, you have an opportunity to remove them")
-        indices_str = click.prompt("Enter all the indices of tracks you wish to remove, separated by comma", default="")
-        indices = set(map(lambda index_str: int(index_str.strip()) - 1, indices_str.split(",")))
-        return [track for index, track in enumerate(sp_tracks) if index not in indices]
+        if len(guessed_tracks_positions) > 0:
+            print("The following tracks were guessed:\n")
+            for index, _ in guessed_tracks_positions:
+                source: Track = tracks[index]
+                target: SpotifyTrack = sp_tracks[index]
+                print(
+                    f"{index + 1} {source.display_artist} - {source.title}, {source.album}    --->    {target.display_artist} - {target.title}, {target.album}")
+            print("\nIf any of the tracks above were not mapped correctly, you have an opportunity to remove them")
+            indices_str = click.prompt("Enter all the indices of tracks you wish to remove, separated by comma", default="")
+            if len(indices_str.strip()) > 0:
+                indices = set(map(lambda index_str: int(index_str.strip()) - 1, indices_str.split(",")))
+                return [track for index, track in enumerate(sp_tracks) if index not in indices]
+
+        return sp_tracks
