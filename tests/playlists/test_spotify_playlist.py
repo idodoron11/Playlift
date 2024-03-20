@@ -35,3 +35,16 @@ class TestSpotifyPlaylist(TestCase):
         self.assertEqual(target_playlist.tracks[0].title, source_playlist.tracks[0].title)
         self.assertEqual(target_playlist.tracks[0].display_artist, source_playlist.tracks[0].display_artist)
         self.assertEqual(target_playlist.tracks[0].album, source_playlist.tracks[0].album)
+
+    def test_init(self):
+        playlist = SpotifyPlaylist("https://open.spotify.com/playlist/3cEYpjA9oz9GiPac4AsH4n")
+        tracks = playlist.tracks
+        expected_songs_names = [
+            "Api",
+            "Is",
+            "All I Want",
+            "Endpoints",
+            "You Are So Beautiful"
+        ]
+        actual_songs_names = [track.title for track in tracks]
+        self.assertEqual(expected_songs_names, actual_songs_names)

@@ -15,9 +15,9 @@ class SpotifyPlaylist(Playlist):
         self._tracks: Iterable[SpotifyTrack]
 
     def _load_data(self):
-        self._data = SpotifyAPI.get_instance().playlist(self._id)
+        self._data = SpotifyAPI.get_instance().playlist_items(self.playlist_id)
         self._tracks = []
-        api_tracks = self._data['tracks']
+        api_tracks = self._data
         while api_tracks:
             for api_track in api_tracks['items']:
                 self._tracks.append(SpotifyTrack(api_track['track']['id']))
