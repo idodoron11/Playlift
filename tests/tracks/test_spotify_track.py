@@ -28,3 +28,7 @@ class TestSpotifyTrack(TestCase):
     def test_duration(self):
         track = SpotifyTrack("6kyxQuFD38mo4S3urD2Wkw")
         self.assertLessEqual((abs(track.duration - (3 * 60 + 57))), 1)
+
+    def test_duration(self):
+        track = SpotifyTrack("6kyxQuFD38mo4S3urD2Wkw")
+        self.assertLessEqual(track.track_number, 7)

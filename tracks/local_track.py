@@ -34,6 +34,10 @@ class LocalTrack(Track):
     def duration(self) -> float:
         return self._get_tag("#length").first
 
+    @property
+    def track_number(self) -> int:
+        return self._get_tag("tracknumber")
+
     def _get_tag(self, tag_name, assert_not_empty=True):
         result = self._audio[tag_name]
         if assert_not_empty and not result:

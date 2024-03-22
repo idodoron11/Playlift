@@ -38,3 +38,7 @@ class SpotifyTrack(Track):
     @property
     def track_id(self) -> str:
         return self._id
+
+    @property
+    def track_number(self) -> int:
+        return self.data['track_number']

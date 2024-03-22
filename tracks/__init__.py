@@ -34,6 +34,11 @@ class Track(ABC):
     def track_id(self) -> str:
         pass
 
+    @property
+    @abstractmethod
+    def track_number(self) -> int:
+        pass
+
     def __eq__(self, other):
         if other is None:
             return False
