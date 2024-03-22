@@ -56,6 +56,7 @@ class Track(ABC):
             'title': self.title,
             'artist': self.display_artist,
             'album': self.album,
+            'track number': self.track_number,
             'duration': self.duration
         }
         return json.dumps(json_object, indent=2)

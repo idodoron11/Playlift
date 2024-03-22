@@ -36,7 +36,7 @@ class LocalTrack(Track):
 
     @property
     def track_number(self) -> int:
-        return self._get_tag("tracknumber")
+        return self._get_tag("tracknumber").value
 
     def _get_tag(self, tag_name, assert_not_empty=True):
         result = self._audio[tag_name]

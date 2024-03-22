@@ -45,6 +45,8 @@ class SpotifyPlaylist(Playlist):
                     sp_tracks.append(suggestions[choice])
             elif len(suggestions) >= 1:
                 sp_tracks.append(suggestions[0])
+            else:
+                print(f"Could not match\n{source_playlist.tracks[index]}")
         new_playlist = cls.create(playlist_name, public=public)
         new_playlist.add_tracks(sp_tracks)
         return new_playlist
@@ -53,8 +55,8 @@ class SpotifyPlaylist(Playlist):
     def choose_suggestion(track: Track, suggestions: List[SpotifyTrack]) -> int:
         print(f'Please choose the best match for\n{track}')
         print("If none match, type -1")
-        headers = ["#", "Artist", "Album", "Track Title", "Duration"]
-        data = [(pos, track.display_artist, track.album, track.title, track.duration)
+        headers = ["#", "Artist", "Track Title", "Album", "Track Position", "Duration"]
+        data = [(pos, track.display_artist, track.title,  track.album, track.track_number, track.duration)
                 for pos, track in enumerate(suggestions)]
         results_tbl_visual = tabulate(data, headers=headers)
         print(results_tbl_visual)
