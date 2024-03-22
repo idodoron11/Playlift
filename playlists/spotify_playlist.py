@@ -1,10 +1,13 @@
 from typing import Iterable, List
 
+import click
+
 from api.spotify import SpotifyAPI
 from matchers.spotify_matcher import SpotifyMatcher
 from playlists import Playlist
 from tracks import Track
 from tracks.spotify_track import SpotifyTrack
+from tabulate import tabulate
 
 
 class SpotifyPlaylist(Playlist):
@@ -32,11 +35,30 @@ class SpotifyPlaylist(Playlist):
         return cls(playlist_id)
 
     @classmethod
-    def create_from_another_playlist(cls, playlist_name: str, source_playlist: Playlist, public: bool = False):
-        sp_tracks = SpotifyPlaylist.track_matcher().match_list(source_playlist.tracks)
+    def create_from_another_playlist(cls, playlist_name: str, source_playlist: Playlist, public: bool = False, autopilot: bool = False):
+        suggestions_list = SpotifyPlaylist.track_matcher().match_list(source_playlist.tracks)
+        sp_tracks: List[SpotifyTrack] = []
+        for index, suggestions in enumerate(map(lambda x: list(x), suggestions_list)):
+            if len(suggestions) > 1 and not autopilot:
+                choice = SpotifyPlaylist.choose_suggestion(source_playlist.tracks[index], suggestions)
+                if choice >= 0:
+                    sp_tracks.append(suggestions[choice])
+            elif len(suggestions) >= 1:
+                sp_tracks.append(suggestions[0])
         new_playlist = cls.create(playlist_name, public=public)
         new_playlist.add_tracks(sp_tracks)
         return new_playlist
+
+    @staticmethod
+    def choose_suggestion(track: Track, suggestions: List[SpotifyTrack]) -> int:
+        print(f'Please choose the best match for\n{track}')
+        print("If none match, type -1")
+        headers = ["#", "Artist", "Album", "Track Title", "Duration"]
+        data = [(pos, track.display_artist, track.album, track.title, track.duration)
+                for pos, track in enumerate(suggestions)]
+        results_tbl_visual = tabulate(data, headers=headers)
+        print(results_tbl_visual)
+        return click.prompt("Enter best match index (#):", default=0, type=click.IntRange(-1, len(suggestions)))
 
     @property
     def tracks(self) -> Iterable[Track]:

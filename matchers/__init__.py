@@ -44,5 +44,5 @@ class Matcher(ABC):
         )
 
     @abstractmethod
-    def match_list(self, tracks: List[Track]) -> Iterable[Track]:
+    def match_list(self, tracks: List[Track]) -> Iterable[Iterable[Track]]:
         pass

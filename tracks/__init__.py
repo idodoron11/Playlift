@@ -1,4 +1,5 @@
 """Tracks"""
+import json
 from abc import ABC, abstractmethod
 from typing import List
 
@@ -33,7 +34,6 @@ class Track(ABC):
     def track_id(self) -> str:
         pass
 
-    @abstractmethod
     def __eq__(self, other):
         if other is None:
             return False
@@ -43,6 +43,14 @@ class Track(ABC):
             return False
         return self.track_id == other.track_id
 
-    @abstractmethod
     def __hash__(self):
         return hash(self.track_id)
+
+    def __repr__(self):
+        json_object = {
+            'title': self.title,
+            'artist': self.display_artist,
+            'album': self.album,
+            'duration': self.duration
+        }
+        return json.dumps(json_object, indent=2)
