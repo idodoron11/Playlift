@@ -28,10 +28,21 @@ class Track(ABC):
     def display_artist(self) -> str:
         return ", ".join(self.artists)
 
+    @property
     @abstractmethod
-    def __eq__(self, other):
+    def track_id(self) -> str:
         pass
 
     @abstractmethod
+    def __eq__(self, other):
+        if other is None:
+            return False
+        if self is other:
+            return True
+        if not isinstance(other, self.__class__):
+            return False
+        return self.track_id == other.track_id
+
+    @abstractmethod
     def __hash__(self):
-        pass
+        return hash(self.track_id)

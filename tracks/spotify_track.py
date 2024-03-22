@@ -38,13 +38,3 @@ class SpotifyTrack(Track):
     @property
     def track_id(self) -> str:
         return self._id
-
-    def __eq__(self, other):
-        if self is other:
-            return True
-        if not isinstance(other, self.__class__):
-            return False
-        return self.track_id == other.track_id
-
-    def __hash__(self):
-        return hash(self.track_id)

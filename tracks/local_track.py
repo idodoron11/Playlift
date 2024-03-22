@@ -40,12 +40,6 @@ class LocalTrack(Track):
             raise AttributeError(f"No {tag_name} found")
         return result
 
-    def __eq__(self, other):
-        if self is other:
-            return True
-        if not isinstance(other, self.__class__):
-            return False
-        return self.file_path == other.file_path
-
-    def __hash__(self):
-        hash(self.file_path)
+    @property
+    def track_id(self) -> str:
+        return self.file_path
