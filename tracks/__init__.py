@@ -53,6 +53,7 @@ class Track(ABC):
 
     def __repr__(self):
         json_object = {
+            'track id': self.track_id,
             'title': self.title,
             'artist': self.display_artist,
             'album': self.album,
