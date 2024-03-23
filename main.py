@@ -15,12 +15,16 @@ def cli_spotify():
 
 
 @cli_spotify.command("import")
-@click.argument("source")
-@click.argument("destination")
+@click.option("--source", "-s", required=True, multiple=True, help="Source playlist path")
+@click.option("--destination", "-d", required=True, multiple=True, help="Destination playlist name")
 @click.option("--autopilot", is_flag=True, help="When multiple matches are found, choose the first one")
 def cli_spotify_import(source, destination, autopilot: bool = False):
-    playlist = LocalPlaylist(source)
-    SpotifyPlaylist.create_from_another_playlist(destination, playlist, autopilot=autopilot)
+    if len(source) != len(destination):
+        raise click.BadParameter("Number of sources must match the number of destinations")
+    inputs = zip(source, destination)
+    for source, destination in inputs:
+        playlist = LocalPlaylist(source)
+        SpotifyPlaylist.create_from_another_playlist(destination, playlist, autopilot=autopilot)
 
 
 if __name__ == "__main__":
