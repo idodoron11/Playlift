@@ -11,8 +11,13 @@ from tracks.spotify_track import SpotifyTrack
 
 class SpotifyMatcher(Matcher):
     def match(self, track: Track) -> Optional[SpotifyTrack]:
-        for artist in track.artists:
-            explicit_search_string = f'artist:"{artist}" album:"{track.album}" track:"{track.title}"'
+        artist_components = [f'artist:"{artist}"' for artist in track.artists] if track.artists else [""]
+        album_component = f'album:"{track.album}"' if track.album else ""
+        title_component = f'track:"{track.title}"' if track.title else ""
+        for artist_component in artist_components:
+            explicit_search_string = " ".join((artist_component, album_component, title_component))
+            if not explicit_search_string.strip():
+                return None
             results = SpotifyMatcher._search(explicit_search_string)
             if results:
                 return results[0]

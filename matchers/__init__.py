@@ -36,10 +36,13 @@ class Matcher(ABC):
 
     @staticmethod
     def track_distance(track1: Track, track2: Track) -> Tuple[float, float, float, float]:
+        title_d = SequenceMatcher(None, track1.title, track2.title).ratio() if track1.title and track2.title else 0
+        artist_d = SequenceMatcher(None, track1.display_artist, track2.display_artist).ratio() if track1.display_artist and track2.display_artist else 0
+        album_d = SequenceMatcher(None, track1.album, track2.album).ratio() if track1.album and track2.album else 0
         return (
-            1 - SequenceMatcher(None, track1.title, track2.title).ratio(),
-            1 - SequenceMatcher(None, track1.display_artist, track2.display_artist).ratio(),
-            1 - SequenceMatcher(None, track1.album, track2.album).ratio(),
+            1 - title_d,
+            1 - artist_d,
+            1 - album_d,
             abs(track1.duration - track2.duration)
         )
 
