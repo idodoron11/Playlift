@@ -25,7 +25,13 @@ class SpotifyMatcher(Matcher):
         artist_d = 1 - artist_d
         album_d = 1 - album_d
 
-        return title_d >= 0.5 and artist_d >= 0.5 and album_d >= 0.5 and duration_d <= 5
+        def is_latin(text: str) -> bool:
+            return all(not char.isalpha() or ord('a') <= ord(char.lower()) <= ord('z') for char in text)
+
+        return (title_d >= 0.5 and
+                (not is_latin(source_track.display_artist) or artist_d >= 0.5)
+                and album_d >= 0.5
+                and duration_d <= 5)
 
     def suggest_match(self, track: Track) -> Iterable[SpotifyTrack]:
         results_set = set()
