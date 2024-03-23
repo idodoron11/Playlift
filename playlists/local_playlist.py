@@ -10,8 +10,8 @@ class LocalPlaylist(Playlist):
         self._source_filepath = playlist_file_path
         self._tracks: List[LocalTrack] = []
         with open(self._source_filepath, "r", encoding="utf-8") as f:
-            files = filter(lambda x: x, f.readlines())  # skip empty lines
-            files = map(lambda x: x.strip(), files)  # remove redundant spaces
+            files = map(lambda x: x.strip(), f.readlines())  # remove redundant spaces
+            files = filter(lambda x: len(x) > 0 and not x.startswith("#"), files)  # skip empty lines
             self._load_tracks(files)
 
     def _load_tracks(self, files: Iterable[str]) -> None:
