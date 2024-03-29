@@ -3,6 +3,7 @@ from typing import Iterable, List
 from matchers import Matcher
 from playlists import Playlist
 from tracks.local_track import LocalTrack
+from tqdm import tqdm
 
 
 class LocalPlaylist(Playlist):
@@ -15,7 +16,8 @@ class LocalPlaylist(Playlist):
             self._load_tracks(files)
 
     def _load_tracks(self, files: Iterable[str]) -> None:
-        for file_path in files:
+        print("Reading playlist tracks metadata")
+        for file_path in tqdm(list(files)):
             self._tracks.append(LocalTrack(file_path))
 
     @property

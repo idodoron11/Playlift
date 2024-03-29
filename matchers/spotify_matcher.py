@@ -65,6 +65,7 @@ class SpotifyMatcher(Matcher):
     def match_list(self, tracks: Iterable[Track]) -> List[Iterable[SpotifyTrack]]:
         tracks = list(tracks)
         sp_tracks: List[Iterable[SpotifyTrack]] = []
+        print("Matching source tracks to Spotify tracks")
         for index, track in enumerate(tqdm(tracks)):
             match = self.match(track)
             if match:
