@@ -33,8 +33,17 @@ class SpotifyMatcher(Matcher):
         def is_latin(text: str) -> bool:
             return all(not char.isalpha() or ord('a') <= ord(char.lower()) <= ord('z') for char in text)
 
-        return (title_d >= 0.5 and
-                (not is_latin(source_track.display_artist) or artist_d >= 0.5)
+        if not is_latin(source_track.display_artist):
+            artist_d = 1  # Spotify may not list the artist in the original language
+
+        avg_d = (title_d + artist_d + album_d) / 3
+        if avg_d > 0.6 and duration_d < 3:
+            return True
+        if artist_d >= 0.75 and album_d >= 0.75 and source_track.track_number == suggestion.track_number and duration_d <= 3:
+            return True
+
+        return (title_d >= 0.5
+                and artist_d >= 0.5
                 and album_d >= 0.5
                 and duration_d <= 5)
 

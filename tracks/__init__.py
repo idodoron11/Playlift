@@ -60,4 +60,4 @@ class Track(ABC):
             'track number': self.track_number,
             'duration': self.duration
         }
-        return json.dumps(json_object, indent=2)
+        return json.dumps(json_object, indent=2, ensure_ascii=False)
