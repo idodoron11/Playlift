@@ -35,8 +35,8 @@ class SpotifyPlaylist(Playlist):
         return cls(playlist_id)
 
     @classmethod
-    def create_from_another_playlist(cls, playlist_name: str, source_playlist: Playlist, public: bool = False, autopilot: bool = False):
-        sp_tracks: List[SpotifyTrack] = SpotifyPlaylist.track_matcher().match_list(source_playlist.tracks, autopilot=autopilot)
+    def create_from_another_playlist(cls, playlist_name: str, source_playlist: Playlist, public: bool = False, autopilot: bool = False, embed_matches: bool = False):
+        sp_tracks: List[SpotifyTrack] = SpotifyPlaylist.track_matcher().match_list(source_playlist.tracks, autopilot=autopilot, embed_matches=embed_matches)
         new_playlist = cls.create(playlist_name, public=public)
         new_playlist.add_tracks(sp_tracks)
         return new_playlist

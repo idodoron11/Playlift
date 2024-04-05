@@ -51,7 +51,7 @@ class Matcher(ABC):
         )
 
     @abstractmethod
-    def match_list(self, tracks: Iterable[Track], autopilot: bool = False) -> List[Track]:
+    def match_list(self, tracks: Iterable[Track], autopilot: bool = False, embed_matches: bool = False) -> List[Track]:
         pass
 
     @staticmethod

@@ -88,6 +88,7 @@ class LocalTrack(Track):
     def _set_custom_tag(self, tag_name: str, value: str):
         tag_name = tag_name.upper()
         if isinstance(self._mutagen_file, MP4):
+            tag_name = f"----:com.apple.iTunes:{tag_name}"
             self._mutagen_file.tags[tag_name] = value.encode('utf-8')
         elif isinstance(self._mutagen_file, MP3):
             frame = TXXX(encoding=3, desc=tag_name, text=value)

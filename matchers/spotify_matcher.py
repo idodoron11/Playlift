@@ -17,6 +17,10 @@ class SpotifyMatcher(Matcher):
             return track.spotify_ref
         return None
 
+    def _update_spotify_match_in_source_track(self, source_track: Track, match: SpotifyTrack):
+        if isinstance(source_track, LocalTrack):
+            source_track.spotify_ref = match.track_url
+
     def match(self, track: Track) -> Optional[SpotifyTrack]:
         ref = self._find_spotify_match_in_source_track(track)
         if ref:
@@ -95,19 +99,21 @@ class SpotifyMatcher(Matcher):
             sp_tracks.append(suggestions)
         return sp_tracks
 
-    def match_list(self, tracks: Iterable[Track], autopilot: bool = False) -> List[SpotifyTrack]:
+    def match_list(self, tracks: Iterable[Track], autopilot: bool = False, embed_matches: bool = False) -> List[SpotifyTrack]:
         suggestions_list = self._match_list(tracks)
         suggestions_list = map(lambda x: list(x), suggestions_list)
         sp_tracks: List[SpotifyTrack] = []
 
         for index, (track, suggestions) in enumerate(zip(tracks, suggestions_list)):
+            if len(suggestions) == 0:
+                print(f"Could not match\n{track}")
+                continue
+            choice = 0
             if len(suggestions) > 1 and not autopilot:
                 choice = Matcher.choose_suggestion(track, suggestions)
-                if choice >= 0:
-                    sp_tracks.append(suggestions[choice])
-            elif len(suggestions) >= 1:
-                sp_tracks.append(suggestions[0])
-            else:
-                print(f"Could not match\n{track}")
+            if choice >= 0:
+                sp_tracks.append(suggestions[choice])
+                if embed_matches:
+                    self._update_spotify_match_in_source_track(track, suggestions[choice])
 
         return sp_tracks

@@ -40,5 +40,9 @@ class SpotifyTrack(Track):
         return self._id
 
     @property
+    def track_url(self) -> str:
+        return f"https://open.spotify.com/track/{self.track_id}"
+
+    @property
     def track_number(self) -> int:
         return self.data['track_number']
