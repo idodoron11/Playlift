@@ -104,7 +104,8 @@ class SpotifyMatcher(Matcher):
         suggestions_list = map(lambda x: list(x), suggestions_list)
         sp_tracks: List[SpotifyTrack] = []
 
-        for index, (track, suggestions) in enumerate(zip(tracks, suggestions_list)):
+        print("Reviewing matches")
+        for index, (track, suggestions) in tqdm(list(enumerate(zip(tracks, suggestions_list)))):
             if len(suggestions) == 0:
                 print(f"Could not match\n{track}")
                 continue

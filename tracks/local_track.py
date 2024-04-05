@@ -95,7 +95,10 @@ class LocalTrack(Track):
             self._mutagen_file.tags.add(frame)
         else:
             self._mutagen_file.tags[tag_name] = value
-        self._mutagen_file.save()
+        try:
+            self._mutagen_file.save()
+        except (mutagen.MutagenError, OSError) as e:
+            print(f"Could not save tags for {self.track_id} due to {e}")
         self.reload_metadata()
 
     @property

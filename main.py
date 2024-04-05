@@ -25,7 +25,17 @@ def cli_spotify_import(source, destination, autopilot: bool = False, embed_match
     inputs = zip(source, destination)
     for source, destination in inputs:
         playlist = LocalPlaylist(source)
-        SpotifyPlaylist.create_from_another_playlist(destination, playlist, autopilot=autopilot, embed_matches=embed_matches)
+        SpotifyPlaylist.create_from_another_playlist(destination, playlist, autopilot=autopilot,
+                                                     embed_matches=embed_matches)
+
+
+@cli_spotify.command("match")
+@click.option("--source", "-s", required=True, multiple=True, help="Source playlist path")
+@click.option("--autopilot", is_flag=True, help="When multiple matches are found, choose the first one")
+def cli_spotify_match(source, autopilot: bool = False):
+    for source in source:
+        playlist = LocalPlaylist(source)
+        SpotifyPlaylist.track_matcher().match_list(playlist.tracks, autopilot=autopilot, embed_matches=True)
 
 
 if __name__ == "__main__":
