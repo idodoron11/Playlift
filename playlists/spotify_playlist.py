@@ -36,31 +36,10 @@ class SpotifyPlaylist(Playlist):
 
     @classmethod
     def create_from_another_playlist(cls, playlist_name: str, source_playlist: Playlist, public: bool = False, autopilot: bool = False):
-        suggestions_list = SpotifyPlaylist.track_matcher().match_list(source_playlist.tracks)
-        sp_tracks: List[SpotifyTrack] = []
-        for index, suggestions in enumerate(map(lambda x: list(x), suggestions_list)):
-            if len(suggestions) > 1 and not autopilot:
-                choice = SpotifyPlaylist.choose_suggestion(source_playlist.tracks[index], suggestions)
-                if choice >= 0:
-                    sp_tracks.append(suggestions[choice])
-            elif len(suggestions) >= 1:
-                sp_tracks.append(suggestions[0])
-            else:
-                print(f"Could not match\n{source_playlist.tracks[index]}")
+        sp_tracks: List[SpotifyTrack] = SpotifyPlaylist.track_matcher().match_list(source_playlist.tracks, autopilot=autopilot)
         new_playlist = cls.create(playlist_name, public=public)
         new_playlist.add_tracks(sp_tracks)
         return new_playlist
-
-    @staticmethod
-    def choose_suggestion(track: Track, suggestions: List[SpotifyTrack]) -> int:
-        print(f'Please choose the best match for\n{track}')
-        print("If none match, type -1")
-        headers = ["#", "Artist", "Track Title", "Album", "Track Position", "Duration"]
-        data = [(pos, track.display_artist, track.title,  track.album, track.track_number, track.duration)
-                for pos, track in enumerate(suggestions)]
-        results_tbl_visual = tabulate(data, headers=headers)
-        print(results_tbl_visual)
-        return click.prompt("Enter best match index (#):", default=0, type=click.IntRange(-1, len(suggestions)))
 
     @property
     def tracks(self) -> Iterable[Track]:

@@ -1,16 +1,26 @@
 from typing import Iterable, Optional, List
 
 import click
+from tabulate import tabulate
 
 from api.spotify import SpotifyAPI
 from matchers import Matcher
 from tqdm import tqdm
 from tracks import Track
+from tracks.local_track import LocalTrack
 from tracks.spotify_track import SpotifyTrack
 
 
 class SpotifyMatcher(Matcher):
+    def _find_spotify_match_in_source_track(self, track: Track):
+        if isinstance(track, LocalTrack):
+            return track.spotify_ref
+        return None
+
     def match(self, track: Track) -> Optional[SpotifyTrack]:
+        ref = self._find_spotify_match_in_source_track(track)
+        if ref:
+            return SpotifyTrack(ref)
         artist_components = [f'artist:"{artist}"' for artist in track.artists] if track.artists else [""]
         album_component = f'album:"{track.album}"' if track.album else ""
         title_component = f'track:"{track.title}"' if track.title else ""
@@ -59,7 +69,8 @@ class SpotifyMatcher(Matcher):
         results.sort(key=lambda result: SpotifyMatcher.track_distance(track, result))
 
         for result in results:
-            if set(result.artists) == set(track.artists) and result.album == track.album and result.track_number == track.track_number:
+            if set(result.artists) == set(
+                    track.artists) and result.album == track.album and result.track_number == track.track_number:
                 return [result]
 
         return results
@@ -71,7 +82,7 @@ class SpotifyMatcher(Matcher):
             return []
         return [SpotifyTrack(track['id'], data=track) for track in response['tracks']['items']]
 
-    def match_list(self, tracks: Iterable[Track]) -> List[Iterable[SpotifyTrack]]:
+    def _match_list(self, tracks: Iterable[Track]) -> List[Iterable[SpotifyTrack]]:
         tracks = list(tracks)
         sp_tracks: List[Iterable[SpotifyTrack]] = []
         print("Matching source tracks to Spotify tracks")
@@ -82,4 +93,21 @@ class SpotifyMatcher(Matcher):
                 continue
             suggestions = self.suggest_match(track)
             sp_tracks.append(suggestions)
+        return sp_tracks
+
+    def match_list(self, tracks: Iterable[Track], autopilot: bool = False) -> List[SpotifyTrack]:
+        suggestions_list = self._match_list(tracks)
+        suggestions_list = map(lambda x: list(x), suggestions_list)
+        sp_tracks: List[SpotifyTrack] = []
+
+        for index, (track, suggestions) in enumerate(zip(tracks, suggestions_list)):
+            if len(suggestions) > 1 and not autopilot:
+                choice = Matcher.choose_suggestion(track, suggestions)
+                if choice >= 0:
+                    sp_tracks.append(suggestions[choice])
+            elif len(suggestions) >= 1:
+                sp_tracks.append(suggestions[0])
+            else:
+                print(f"Could not match\n{track}")
+
         return sp_tracks
