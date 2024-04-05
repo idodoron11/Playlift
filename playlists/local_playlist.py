@@ -1,5 +1,7 @@
 from typing import Iterable, List
 
+import mutagen
+
 from matchers import Matcher
 from playlists import Playlist
 from tracks.local_track import LocalTrack
@@ -18,7 +20,10 @@ class LocalPlaylist(Playlist):
     def _load_tracks(self, files: Iterable[str]) -> None:
         print("Reading playlist tracks metadata")
         for file_path in tqdm(list(files)):
-            self._tracks.append(LocalTrack(file_path))
+            try:
+                self._tracks.append(LocalTrack(file_path))
+            except mutagen.MutagenError as e:
+                print(f"Error: {e}")
 
     @property
     def tracks(self) -> Iterable[LocalTrack]:
