@@ -19,7 +19,8 @@ class SpotifyMatcher(Matcher):
 
     def _update_spotify_match_in_source_track(self, source_track: Track, match: SpotifyTrack):
         if isinstance(source_track, LocalTrack):
-            source_track.spotify_ref = match.track_url
+            if source_track.spotify_ref != match.track_url:
+                source_track.spotify_ref = match.track_url
 
     def match(self, track: Track) -> Optional[SpotifyTrack]:
         ref = self._find_spotify_match_in_source_track(track)
