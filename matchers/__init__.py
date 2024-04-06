@@ -63,4 +63,4 @@ class Matcher(ABC):
                 for pos, track in enumerate(suggestions)]
         results_tbl_visual = tabulate(data, headers=headers)
         print(results_tbl_visual)
-        return click.prompt("Enter best match index (#):", default=0, type=click.IntRange(-1, len(suggestions)))
+        return click.prompt("Enter best match index (#):", default=0, type=click.IntRange(-1, len(suggestions)-1))
