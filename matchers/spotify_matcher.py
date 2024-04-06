@@ -4,6 +4,7 @@ import click
 from tabulate import tabulate
 
 from api.spotify import SpotifyAPI
+from exceptions import SkipTrackException
 from matchers import Matcher
 from tqdm import tqdm
 from tracks import Track
@@ -24,7 +25,9 @@ class SpotifyMatcher(Matcher):
 
     def match(self, track: Track) -> Optional[SpotifyTrack]:
         ref = self._find_spotify_match_in_source_track(track)
-        if ref:
+        if ref == "SKIP":
+            raise SkipTrackException
+        elif ref:
             return SpotifyTrack(ref)
         artist_components = [f'artist:"{artist}"' for artist in track.artists] if track.artists else [""]
         album_component = f'album:"{track.album}"' if track.album else ""
@@ -92,12 +95,15 @@ class SpotifyMatcher(Matcher):
         sp_tracks: List[Iterable[SpotifyTrack]] = []
         print("Matching source tracks to Spotify tracks")
         for index, track in enumerate(tqdm(tracks)):
-            match = self.match(track)
-            if match:
-                sp_tracks.append([match])
+            try:
+                match = self.match(track)
+                if match:
+                    sp_tracks.append([match])
+                    continue
+                suggestions = self.suggest_match(track)
+                sp_tracks.append(suggestions)
+            except SkipTrackException:
                 continue
-            suggestions = self.suggest_match(track)
-            sp_tracks.append(suggestions)
         return sp_tracks
 
     def match_list(self, tracks: Iterable[Track], autopilot: bool = False, embed_matches: bool = False) -> List[SpotifyTrack]:
