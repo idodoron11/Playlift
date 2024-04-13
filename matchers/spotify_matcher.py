@@ -102,7 +102,12 @@ class SpotifyMatcher(Matcher):
                     continue
                 suggestions = self.suggest_match(track)
                 sp_tracks.append(suggestions)
+                if not suggestions:
+                    print(f"Could not match\n{track}")
+                    continue
             except SkipTrackException:
+                print(f"Skip track\n{track}")
+                sp_tracks.append([])
                 continue
         return sp_tracks
 
@@ -114,7 +119,6 @@ class SpotifyMatcher(Matcher):
         print("Reviewing matches")
         for index, (track, suggestions) in tqdm(list(enumerate(zip(tracks, suggestions_list)))):
             if len(suggestions) == 0:
-                print(f"Could not match\n{track}")
                 continue
             choice = 0
             if len(suggestions) > 1 and not autopilot:
