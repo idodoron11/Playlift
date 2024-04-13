@@ -1,7 +1,11 @@
+from typing import Union
+
 import click
 
+from playlists.local_library import LocalLibrary
 from playlists.local_playlist import LocalPlaylist
 from playlists.spotify_playlist import SpotifyPlaylist
+import os
 
 
 @click.group()
@@ -24,7 +28,7 @@ def cli_spotify_import(source, destination, autopilot: bool = False, embed_match
         raise click.BadParameter("Number of sources must match the number of destinations")
     inputs = zip(source, destination)
     for source, destination in inputs:
-        playlist = LocalPlaylist(source)
+        playlist = get_playlist(source)
         SpotifyPlaylist.create_from_another_playlist(destination, playlist, autopilot=autopilot,
                                                      embed_matches=embed_matches)
 
@@ -34,8 +38,16 @@ def cli_spotify_import(source, destination, autopilot: bool = False, embed_match
 @click.option("--autopilot", is_flag=True, help="When multiple matches are found, choose the first one")
 def cli_spotify_match(source, autopilot: bool = False):
     for source in source:
-        playlist = LocalPlaylist(source)
+        playlist = get_playlist(source)
         SpotifyPlaylist.track_matcher().match_list(playlist.tracks, autopilot=autopilot, embed_matches=True)
+
+
+def get_playlist(source: str) -> Union[LocalPlaylist, LocalLibrary]:
+    if os.path.isdir(source):
+        return LocalLibrary(source)
+    if os.path.isfile(source):
+        return LocalPlaylist(source)
+    raise ValueError("Invalid source path")
 
 
 if __name__ == "__main__":
