@@ -6,11 +6,14 @@ from matchers import Matcher
 from tracks import Track
 
 
-class Playlist(ABC):
+class TrackCollection(ABC):
     @property
     @abstractmethod
     def tracks(self) -> Iterable[Track]:
         pass
+
+
+class Playlist(TrackCollection, ABC):
 
     @staticmethod
     @abstractmethod
