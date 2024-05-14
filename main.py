@@ -23,14 +23,15 @@ def cli_spotify():
 @click.option("--destination", "-d", required=True, multiple=True, help="Destination playlist name")
 @click.option("--autopilot", is_flag=True, help="When multiple matches are found, choose the first one")
 @click.option("--embed-matches", is_flag=True, help="Embed a reference to the matched track in the source track")
-def cli_spotify_import(source, destination, autopilot: bool = False, embed_matches: bool = False):
+@click.option("--public", is_flag=True, help="Create a public playlist (default is private)")
+def cli_spotify_import(source, destination, autopilot: bool = False, embed_matches: bool = False, public: bool = False):
     if len(source) != len(destination):
         raise click.BadParameter("Number of sources must match the number of destinations")
     inputs = zip(source, destination)
     for source, destination in inputs:
         playlist = get_playlist(source)
         SpotifyPlaylist.create_from_another_playlist(destination, playlist, autopilot=autopilot,
-                                                     embed_matches=embed_matches)
+                                                     embed_matches=embed_matches, public=public)
 
 
 @cli_spotify.command("match")
