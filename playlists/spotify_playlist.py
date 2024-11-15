@@ -39,7 +39,7 @@ class SpotifyPlaylist(Playlist):
         return new_playlist
 
     @property
-    def tracks(self) -> Iterable[Track]:
+    def tracks(self) -> Iterable[SpotifyTrack]:
         if not self._data:
             self._load_data()
         return self._tracks
@@ -58,14 +58,26 @@ class SpotifyPlaylist(Playlist):
             self._load_data()
         return self._data
 
-    def remove_track(self, track: SpotifyTrack) -> None:
-        raise NotImplementedError
+    def clear(self):
+        self.remove_track(list(self.tracks))
+
+    def remove_track(self, tracks: List[SpotifyTrack]) -> None:
+        try:
+            for start in range(0, len(tracks), 100):
+                end = min(len(tracks), start + 100)
+                chunk = map(lambda track: track.track_id, tracks[start:end])
+                SpotifyAPI.get_instance().playlist_remove_all_occurrences_of_items(self.playlist_id, chunk)
+        finally:
+            self._data = None
 
     def add_tracks(self, tracks: List[SpotifyTrack]) -> None:
-        for start in range(0, len(tracks), 100):
-            end = min(len(tracks), start + 100)
-            chunk = map(lambda track: track.track_id, tracks[start:end])
-            SpotifyAPI.get_instance().playlist_add_items(self.playlist_id, chunk)
+        try:
+            for start in range(0, len(tracks), 100):
+                end = min(len(tracks), start + 100)
+                chunk = map(lambda track: track.track_id, tracks[start:end])
+                SpotifyAPI.get_instance().playlist_add_items(self.playlist_id, chunk)
+        finally:
+            self._data = None
 
     @staticmethod
     def track_matcher() -> SpotifyMatcher:
