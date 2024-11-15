@@ -33,6 +33,17 @@ def cli_spotify_import(source, destination, autopilot: bool = False, embed_match
         SpotifyPlaylist.create_from_another_playlist(destination, playlist, autopilot=autopilot,
                                                      embed_matches=embed_matches, public=public)
 
+@cli_spotify.command("sync")
+@click.option("--source", "-s", required=True, help="Source playlist path")
+@click.option("--destination", "-d", required=True, help="Destination playlist ID")
+@click.option("--autopilot", is_flag=True, help="When multiple matches are found, choose the first one")
+@click.option("--embed-matches", is_flag=True, help="Embed a reference to the matched track in the source track")
+def cli_spotify_sync(destination, source, autopilot: bool = False, embed_matches: bool = False):
+    source_playlist = get_playlist(source)
+    destination_playlist = SpotifyPlaylist(destination)
+    destination_playlist.clear()
+    destination_playlist.import_tracks(source_playlist.tracks, autopilot=autopilot, embed_matches=embed_matches)
+
 
 @cli_spotify.command("match")
 @click.option("--source", "-s", required=True, multiple=True, help="Source playlist path")

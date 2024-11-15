@@ -38,6 +38,10 @@ class SpotifyPlaylist(Playlist):
         new_playlist.add_tracks(sp_tracks)
         return new_playlist
 
+    def import_tracks(self, tracks: Iterable[Track], autopilot: bool = False, embed_matches: bool = False):
+        sp_tracks: List[SpotifyTrack] = SpotifyPlaylist.track_matcher().match_list(tracks, autopilot=autopilot, embed_matches=embed_matches)
+        self.add_tracks(sp_tracks)
+
     @property
     def tracks(self) -> Iterable[SpotifyTrack]:
         if not self._data:
