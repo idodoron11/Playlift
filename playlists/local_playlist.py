@@ -23,7 +23,8 @@ class LocalPlaylist(Playlist):
             try:
                 self._tracks.append(LocalTrack(file_path))
             except mutagen.MutagenError as e:
-                print(f"Error: {e}")
+                print(f"Error during file scan: {e}"
+                      f"\nFile: {file_path}")
 
     @property
     def tracks(self) -> Iterable[LocalTrack]:
