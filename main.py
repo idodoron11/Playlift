@@ -38,11 +38,33 @@ def cli_spotify_import(source, destination, autopilot: bool = False, embed_match
 @click.option("--destination", "-d", required=True, help="Destination playlist ID")
 @click.option("--autopilot", is_flag=True, help="When multiple matches are found, choose the first one")
 @click.option("--embed-matches", is_flag=True, help="Embed a reference to the matched track in the source track")
-def cli_spotify_sync(destination, source, autopilot: bool = False, embed_matches: bool = False):
+@click.option("--sort-tracks", is_flag=True, help="Sort tracks alphabetically")
+def cli_spotify_sync(destination, source, autopilot: bool = False, embed_matches: bool = False, sort_tracks: bool = False):
     source_playlist = get_playlist(source)
     destination_playlist = SpotifyPlaylist(destination)
     destination_playlist.clear()
-    destination_playlist.import_tracks(source_playlist.tracks, autopilot=autopilot, embed_matches=embed_matches)
+    if sort_tracks:
+        tracks = sorted(source_playlist.tracks, key=lambda track: track.track_id)
+    else:
+        tracks = source_playlist.tracks
+    destination_playlist.import_tracks(tracks, autopilot=autopilot, embed_matches=embed_matches)
+
+@cli_spotify.command("duplicates")
+@click.option("--source", "-s", required=True, help="Source playlist path")
+def cli_spotify_duplicates(source):
+    source_playlist = get_playlist(source)
+    tracks = dict()
+    for track in source_playlist.tracks:
+        track_id = track.spotify_ref
+        if track_id not in tracks:
+            tracks[track_id] = []
+        tracks[track_id].append(track)
+    for track_id, tracks in tracks.items():
+        if len(tracks) == 1:
+            continue
+        print(f"{track_id}: {len(tracks)}")
+        for track in tracks:
+            print(track.track_id)
 
 
 @cli_spotify.command("match")
