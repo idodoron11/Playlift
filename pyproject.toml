@@ -25,5 +25,3 @@ build-backend = "setuptools.build_meta"
 include = ["api*", "config*", "tracks*", "matchers*", "playlists*"]
 
 [tool.uv]
-
-# uv will still read dependencies from [project]. Run `uv install` to create a lockfile and install dependencies.
