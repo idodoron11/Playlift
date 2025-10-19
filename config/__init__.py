@@ -27,5 +27,23 @@ class Config:
     def spotify_redirect_url(self):
         return self.config.get("SPOTIFY", "REDIRECT_URL")
 
+    # Deezer configuration accessors
+    @property
+    def deezer_access_token(self):
+        # Returns None if not set
+        return self.config.get("DEEZER", "ACCESS_TOKEN", fallback=None)
+
+    @property
+    def deezer_app_id(self):
+        return self.config.get("DEEZER", "APP_ID", fallback=None)
+
+    @property
+    def deezer_app_secret(self):
+        return self.config.get("DEEZER", "APP_SECRET", fallback=None)
+
+    @property
+    def deezer_redirect_url(self):
+        return self.config.get("DEEZER", "REDIRECT_URL", fallback=None)
+
 
 CONFIG = Config()
