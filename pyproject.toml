@@ -1,0 +1,29 @@
+[project]
+name = "playlist-sync"
+version = "0.1.0"
+description = "Sync local playlists to Spotify"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [ { name = "Your Name", email = "you@example.com" } ]
+license = "MIT"
+
+dependencies = [
+    "music-tag==0.4.3",
+    "spotipy==2.23.0",
+    "jsonpickle==3.0.3",
+    "click==8.1.7",
+    "tqdm==4.66.2",
+    "tabulate==0.9.0",
+]
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+# Explicitly include only the top-level packages that are meant to be distributed
+include = ["api*", "config*", "tracks*", "matchers*", "playlists*"]
+
+[tool.uv]
+
+# uv will still read dependencies from [project]. Run `uv install` to create a lockfile and install dependencies.
