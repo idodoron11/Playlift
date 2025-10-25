@@ -70,15 +70,17 @@ class DeezerPlaylist:
         if not track_ids:
             return True
 
-        client = self._client_instance()
-        playlist = client._playlists.get(str(self.playlist_id))
-        if not playlist:
+        try:
+            client = self._client_instance()
+            playlist = client.get_playlist(self.playlist_id)
+            # When using the real Deezer API, add_tracks is a method on the playlist object
+            success = playlist.add_tracks(track_ids)
+            if success:
+                self._ensure_data(force=True)
+            return success
+        except Exception as e:
+            # Log or handle the error appropriately
             return False
-
-        success = playlist.add_tracks(track_ids)
-        if success:
-            self._ensure_data(force=True)
-        return success
 
     def __str__(self) -> str:
         return f"Deezer Playlist: {self.name} ({self.playlist_id})"
