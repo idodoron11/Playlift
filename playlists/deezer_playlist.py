@@ -2,7 +2,6 @@ from typing import Optional, Any, Iterator
 import re
 import deezer
 from tracks.deezer_track import DeezerTrack
-from config import CONFIG
 
 class DeezerPlaylist:
     PLAYLIST_URL_PATTERN = r'https://www\.deezer\.com(?:/[a-z]{2})?/playlist/(\d+)'
@@ -59,11 +58,10 @@ class DeezerPlaylist:
         client = deezer.Client()
         # Get the current user and create a playlist
         user = client.get_user()
-        playlist = user.create_playlist(name)
+        playlist_id = user.create_playlist(name)
         # Create and initialize the playlist
-        result = DeezerPlaylist(playlist.id)
+        result = DeezerPlaylist(playlist_id)
         result._client = client  # Keep the same client instance
-        result._data = playlist  # Set initial data to avoid an extra API call
         return result
 
     def add_tracks(self, tracks: list[DeezerTrack]) -> bool:
