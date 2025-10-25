@@ -24,6 +24,7 @@ dev = [
     "pytest-cov>=4.1.0",
     "black>=24.3.9",
     "types-requests>=2.31.12",
+    "mypy>=1.7.0",
 ]
 
 [build-system]
