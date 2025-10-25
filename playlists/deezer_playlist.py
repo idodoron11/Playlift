@@ -42,49 +42,28 @@ class DeezerPlaylist:
             client = self._client_instance()
             self._data = client.get_playlist(self.playlist_id)
 
-    def _get_attribute(self, obj, *attrs):
-        """Safely get attribute from either a dict or an object, trying multiple attribute names."""
-        if isinstance(obj, dict):
-            for attr in attrs:
-                if attr in obj:
-                    return obj[attr]
-            return None
-
-        for attr in attrs:
-            if hasattr(obj, attr):
-                return getattr(obj, attr)
-        return None
-
     @property
     def name(self):
         self._ensure_data()
-        return self._get_attribute(self._data, 'title')
+        return self._data.title
 
     @property
     def tracks(self):
         self._ensure_data()
-        tracks_data = self._get_attribute(self._data, 'tracks')
-        if isinstance(tracks_data, dict):
-            tracks_data = tracks_data.get('data', [])
-        elif not tracks_data:
-            tracks_data = []
-
-        for track in tracks_data:
-            track_id = self._get_attribute(track, 'id')
-            if track_id:
-                yield DeezerTrack(track_id)
+        for track in self._data.tracks:
+            yield DeezerTrack(track.id)
 
     @staticmethod
     def create(name):
         client = deezer.Client()
         # Get the current user and create a playlist
         user = client.get_user()
-        playlist_data = user.create_playlist(name)
+        playlist = user.create_playlist(name)
         # Create and initialize the playlist
-        playlist = DeezerPlaylist(str(playlist_data['id']))  # Ensure ID is string
-        playlist._client = client  # Keep the same client instance
-        playlist._data = playlist_data  # Set initial data to avoid an extra API call
-        return playlist
+        result = DeezerPlaylist(playlist.id)
+        result._client = client  # Keep the same client instance
+        result._data = playlist  # Set initial data to avoid an extra API call
+        return result
 
     def add_tracks(self, tracks):
         """Add tracks to the playlist."""
@@ -93,16 +72,12 @@ class DeezerPlaylist:
             return True
 
         client = self._client_instance()
-        # Access the playlist object directly from the client's internal state
-        # Convert playlist_id to string since that's how FakeClient stores them
         playlist = client._playlists.get(str(self.playlist_id))
         if not playlist:
             return False
 
-        # Add tracks using the test's FakePlaylist interface
         success = playlist.add_tracks(track_ids)
         if success:
-            # Force refresh playlist data
             self._ensure_data(force=True)
         return success
 
