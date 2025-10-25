@@ -4,7 +4,7 @@ from tracks.deezer_track import DeezerTrack
 from config import CONFIG
 
 class DeezerPlaylist:
-    PLAYLIST_URL_PATTERN = r'https://www\.deezer\.com/playlist/(\d+)'
+    PLAYLIST_URL_PATTERN = r'https://www\.deezer\.com(?:/[a-z]{2})?/playlist/(\d+)'
 
     def __init__(self, playlist_id_or_url):
         self._client = None
@@ -45,14 +45,14 @@ class DeezerPlaylist:
     @property
     def name(self):
         self._ensure_data()
-        return self._data.get('title')
+        return self._data.title
 
     @property
     def tracks(self):
         self._ensure_data()
-        tracks_data = self._data.get('tracks', {}).get('data', [])
-        for track_data in tracks_data:
-            yield DeezerTrack(track_data['id'])
+        # The tracks are returned directly as a list in the tracks attribute
+        for track in self._data.tracks:
+            yield DeezerTrack(track.id)
 
     @staticmethod
     def create(name):
