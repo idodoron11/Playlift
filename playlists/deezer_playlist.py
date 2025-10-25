@@ -42,17 +42,37 @@ class DeezerPlaylist:
             client = self._client_instance()
             self._data = client.get_playlist(self.playlist_id)
 
+    def _get_attribute(self, obj, *attrs):
+        """Safely get attribute from either a dict or an object, trying multiple attribute names."""
+        if isinstance(obj, dict):
+            for attr in attrs:
+                if attr in obj:
+                    return obj[attr]
+            return None
+
+        for attr in attrs:
+            if hasattr(obj, attr):
+                return getattr(obj, attr)
+        return None
+
     @property
     def name(self):
         self._ensure_data()
-        return self._data.title
+        return self._get_attribute(self._data, 'title')
 
     @property
     def tracks(self):
         self._ensure_data()
-        # The tracks are returned directly as a list in the tracks attribute
-        for track in self._data.tracks:
-            yield DeezerTrack(track.id)
+        tracks_data = self._get_attribute(self._data, 'tracks')
+        if isinstance(tracks_data, dict):
+            tracks_data = tracks_data.get('data', [])
+        elif not tracks_data:
+            tracks_data = []
+
+        for track in tracks_data:
+            track_id = self._get_attribute(track, 'id')
+            if track_id:
+                yield DeezerTrack(track_id)
 
     @staticmethod
     def create(name):
