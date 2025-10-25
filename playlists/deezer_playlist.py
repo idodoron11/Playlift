@@ -60,7 +60,7 @@ class DeezerPlaylist:
         # Get the current user and create a playlist
         user = client.get_user()
         playlist_id = user.create_playlist(name)
-        # Create and initialize the playlist
+        # Create and initialize the playlist with just the ID
         result = DeezerPlaylist(playlist_id)
         result._client = client  # Keep the same client instance
         return result

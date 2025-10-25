@@ -82,7 +82,8 @@ class FakeClient:
                 client._next_playlist_id += 1
                 playlist = FakePlaylist(playlist_id, title)
                 client._playlists[str(playlist_id)] = playlist
-                return playlist
+                # Return just the ID to match real API behavior
+                return playlist_id
         return User()
 
     def search(self, query):
