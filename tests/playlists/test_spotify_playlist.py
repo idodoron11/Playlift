@@ -32,7 +32,8 @@ class TestSpotifyPlaylist(TestCase):
                 ["Led Zeppelin"],
                 "Led Zeppelin IV (Remaster)",
                 "Black Dog - Remaster",
-                4 * 60 + 55
+                4 * 60 + 55,
+                1
             )
         ]
         source_playlist = PlaylistMock(source_tracks)
