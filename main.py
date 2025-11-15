@@ -6,6 +6,7 @@ from playlists.local_library import LocalLibrary
 from playlists.local_playlist import LocalPlaylist
 from playlists.spotify_playlist import SpotifyPlaylist
 import os
+from playlists.compare import compare_playlists
 
 
 @click.group()
@@ -74,6 +75,28 @@ def cli_spotify_match(source, autopilot: bool = False):
     for source in source:
         playlist = get_playlist(source)
         SpotifyPlaylist.track_matcher().match_list(playlist.tracks, autopilot=autopilot, embed_matches=True)
+
+
+@cli_spotify.command("compare")
+@click.option("--source", "-s", required=True, help="Source local playlist path (m3u)")
+@click.option("--destination", "-d", required=True, help="Destination Spotify playlist id or URL")
+def cli_spotify_compare(source, destination):
+    """Compare a local m3u playlist with a Spotify playlist and print differences."""
+    local_only, spotify_only = compare_playlists(source, destination)
+
+    print(f"Local-only tracks: {len(local_only)}")
+    if len(local_only) > 0:
+        for idx, track in enumerate(local_only, start=1):
+            spotify_ref = track.spotify_ref if track.spotify_ref is not None else "(none)"
+            print(f"{idx}. {track.file_path}  | spotify_ref: {spotify_ref}")
+
+    print("")
+    print(f"Spotify-only tracks: {len(spotify_only)}")
+    if len(spotify_only) > 0:
+        for idx, track in enumerate(spotify_only, start=1):
+            artists = ", ".join(track.artists) if track.artists else ""
+            title = track.title or "(unknown title)"
+            print(f"{idx}. {track.track_url}  | {title} — {artists}")
 
 
 def get_playlist(source: str) -> Union[LocalPlaylist, LocalLibrary]:

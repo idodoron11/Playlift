@@ -8,6 +8,7 @@ from mutagen.mp3 import MP3
 from mutagen.mp4 import MP4
 
 from tracks import Track
+from api.spotify_utils import parse_spotify_id
 
 
 class LocalTrack(Track):
@@ -109,3 +110,12 @@ class LocalTrack(Track):
     def spotify_ref(self, spotify_ref):
         self._set_custom_tag("spotify", spotify_ref)
 
+    @property
+    def spotify_id(self) -> Optional[str]:
+        """Return a normalized Spotify track id derived from `spotify_ref`.
+
+        This leaves the behavior of `spotify_ref` unchanged (it still returns
+        the raw tag), and provides a convenience property for comparisons.
+        The special tag value "SKIP" (case-insensitive) is treated as None.
+        """
+        return parse_spotify_id(self.spotify_ref)
