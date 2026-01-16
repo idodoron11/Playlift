@@ -1,16 +1,18 @@
-from typing import Iterable, List
+from typing import Iterable, List, Optional
 
 import mutagen
 
 from matchers import Matcher
 from playlists import Playlist
+from playlists.path_mapper import PathMapper
 from tracks.local_track import LocalTrack
 from tqdm import tqdm
 
 
 class LocalPlaylist(Playlist):
-    def __init__(self, playlist_file_path: str):
+    def __init__(self, playlist_file_path: str, path_mapper: Optional[PathMapper] = None):
         self._source_filepath = playlist_file_path
+        self._path_mapper = path_mapper
         self._tracks: List[LocalTrack] = []
         with open(self._source_filepath, "r", encoding="utf-8") as f:
             files = map(lambda x: x.strip(), f.readlines())  # remove redundant spaces
@@ -19,6 +21,9 @@ class LocalPlaylist(Playlist):
 
     def _load_tracks(self, files: Iterable[str]) -> None:
         print("Reading playlist tracks metadata")
+        # Apply path mapping if mapper is provided
+        if self._path_mapper:
+            files = map(self._path_mapper.map, files)
         for file_path in tqdm(list(files)):
             try:
                 self._tracks.append(LocalTrack(file_path))

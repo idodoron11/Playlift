@@ -44,7 +44,7 @@ def test_compare_simple(monkeypatch):
     local_tracks = [FakeLocalTrack("/tmp/a.mp3", "S1"), FakeLocalTrack("/tmp/b.mp3", "SKIP")]
 
     class FakeLocalPlaylist:
-        def __init__(self, path):
+        def __init__(self, path, path_mapper=None):
             self._tracks = local_tracks
 
         @property

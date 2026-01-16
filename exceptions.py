@@ -4,3 +4,7 @@ class PlaylistSyncException(Exception):
 
 class SkipTrackException(PlaylistSyncException):
     pass
+
+
+class InvalidPathMappingException(PlaylistSyncException):
+    pass
