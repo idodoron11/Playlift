@@ -1,12 +1,13 @@
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
 from playlists.local_playlist import LocalPlaylist
+from playlists.path_mapper import PathMapper
 from playlists.spotify_playlist import SpotifyPlaylist
 from tracks.local_track import LocalTrack
 from tracks.spotify_track import SpotifyTrack
 
 
-def compare_playlists(local_playlist_path: str, spotify_playlist_id_or_url: str) -> Tuple[List[LocalTrack], List[SpotifyTrack]]:
+def compare_playlists(local_playlist_path: str, spotify_playlist_id_or_url: str, path_mapper: Optional[PathMapper] = None) -> Tuple[List[LocalTrack], List[SpotifyTrack]]:
     """Compare a local m3u playlist with a Spotify playlist.
 
     Returns a tuple (local_only, spotify_only) where:
@@ -22,7 +23,7 @@ def compare_playlists(local_playlist_path: str, spotify_playlist_id_or_url: str)
         into a spotify id (property `LocalTrack.spotify_id`) and comparing that
         id to `SpotifyTrack.track_id`.
     """
-    local_playlist = LocalPlaylist(local_playlist_path)
+    local_playlist = LocalPlaylist(local_playlist_path, path_mapper=path_mapper)
     spotify_playlist = SpotifyPlaylist(spotify_playlist_id_or_url)
 
     # Build a set/map of spotify ids referenced by local tracks
