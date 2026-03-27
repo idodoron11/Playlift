@@ -1,0 +1,114 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Spotify: Import",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/main.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "args": [
+                "spotify", "import",
+                "--source", "${input:importSource}",
+                "--destination", "${input:importDestination}",
+                "--embed-matches"
+            ]
+        },
+        {
+            "name": "Spotify: Sync",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/main.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "args": [
+                "spotify", "sync",
+                "--source", "${input:syncSource}",
+                "--destination", "${input:syncDestination}",
+                "--embed-matches",
+                "--sort-tracks"
+            ]
+        },
+        {
+            "name": "Spotify: Duplicates",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/main.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "args": [
+                "spotify", "duplicates",
+                "--source", "${input:duplicatesSource}"
+            ]
+        },
+        {
+            "name": "Spotify: Match",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/main.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "args": [
+                "spotify", "match",
+                "--source", "${input:matchSource}",
+                "--embed-matches"
+            ]
+        },
+        {
+            "name": "Spotify: Compare",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/main.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "args": [
+                "spotify", "compare",
+                "--source", "${input:compareSource}",
+                "--destination", "${input:compareDestination}"
+            ]
+        }
+    ],
+    "inputs": [
+        {
+            "id": "importSource",
+            "type": "promptString",
+            "description": "Source playlist path (m3u file or directory)"
+        },
+        {
+            "id": "importDestination",
+            "type": "promptString",
+            "description": "Destination Spotify playlist name"
+        },
+        {
+            "id": "syncSource",
+            "type": "promptString",
+            "description": "Source playlist path (m3u file or directory)"
+        },
+        {
+            "id": "syncDestination",
+            "type": "promptString",
+            "description": "Destination Spotify playlist ID"
+        },
+        {
+            "id": "duplicatesSource",
+            "type": "promptString",
+            "description": "Source playlist path (m3u file)"
+        },
+        {
+            "id": "matchSource",
+            "type": "promptString",
+            "description": "Source playlist path (m3u file or directory)"
+        },
+        {
+            "id": "compareSource",
+            "type": "promptString",
+            "description": "Source local playlist path (m3u file)"
+        },
+        {
+            "id": "compareDestination",
+            "type": "promptString",
+            "description": "Destination Spotify playlist ID or URL"
+        }
+    ]
+}
