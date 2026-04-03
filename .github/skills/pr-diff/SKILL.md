@@ -58,6 +58,14 @@ After digesting the output, the agent should:
 
 The agent now has full context to proceed with whatever the user needs next (code review, summary, changelog, impact analysis, etc.).
 
+### Step 4 — Read the Full Diff File
+
+Read the temp diff file directly using `read_file` on the path printed by the script. This is a **mandatory step** — do not skip it.
+
+Because the file lives outside the VS Code workspace, VS Code will automatically prompt the user to approve the read operation. Wait for approval and then proceed.
+
+**Important**: Do not fall back to terminal commands (`cat`, `grep`, etc.) to work around the permission prompt. The file must be read via `read_file` so that VS Code can surface the consent dialog to the user.
+
 ## Notes
 
 - The `...` (three-dot) syntax in `git diff` compares from the **merge base**, not the tip of the target branch — this is the correct PR semantics
