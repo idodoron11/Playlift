@@ -35,7 +35,7 @@ Choose the script based on the current OS:
   ```
 - **macOS / Linux** → use [pr-diff.sh](./scripts/pr-diff.sh):
   ```
-  .github/skills/pr-diff/scripts/pr-diff.sh <target>
+  bash .github/skills/pr-diff/scripts/pr-diff.sh <target>
   ```
 
 The script produces four pieces of output; use each as follows:
