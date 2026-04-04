@@ -36,3 +36,6 @@ jobs:
 
       - name: Bump patch version
         run: uv run bump-my-version bump patch
+
+      - name: Push commit and tag
+        run: git push --follow-tags
