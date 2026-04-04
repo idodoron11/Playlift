@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch:
 
 jobs:
   bump:
@@ -49,12 +48,6 @@ jobs:
 
       - name: Push commit and tag
         run: git push --follow-tags
-
-      - name: [DEBUG] Show git diff
-        if: failure()
-        run: |
-          git status
-          git diff
       
       - name: Clean up working directory
         if: always()
