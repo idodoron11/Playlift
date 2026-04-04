@@ -19,13 +19,15 @@ Produces a structured diff between the current branch and a target branch, givin
 
 ### Step 1 — Ask for the Target Branch
 
-**Always ask the user for the target branch first.** Do not assume.
+**You MUST ask the user for the target branch first.** Do not assume.
 
 Use the ask-questions tool with pre-filled options `origin/main` and `origin/master` (mark `origin/main` as recommended), but allow freeform input for other branches (e.g., `develop`, `release/1.0`).
 
 > "What is the target branch to compare against?"
 
 ### Step 2 — Run the Diff Script
+
+You MUST run the appropriate script to get the diff output. This is a **mandatory step** — do not skip it.
 
 Choose the script based on the current OS:
 
@@ -49,22 +51,21 @@ The script produces four pieces of output; use each as follows:
 
 ### Step 3 — Digest the Output
 
-After digesting the output, the agent should:
+After digesting the output, the agent MUST:
 
 1. Report the **current branch** and **target branch**
 2. List the **modified files** grouped by status (Added / Modified / Deleted / Renamed)
 3. State the **diff size** (line count) as a signal of PR scope
-4. If the diff is large (>1000 lines), offer to read the temp file in sections or summarize per-file
 
 The agent now has full context to proceed with whatever the user needs next (code review, summary, changelog, impact analysis, etc.).
 
 ### Step 4 — Read the Full Diff File
 
-Read the temp diff file directly using `read_file` on the path printed by the script. This is a **mandatory step** — do not skip it.
+Once the diff file is ready, the agent MUST read the temp diff file directly using `read_file` on the path printed by the script. This is a **mandatory step** — do not skip it.
 
 Because the file lives outside the VS Code workspace, VS Code will automatically prompt the user to approve the read operation. Wait for approval and then proceed.
 
-**Important**: Do not fall back to terminal commands (`cat`, `grep`, etc.) to work around the permission prompt. The file must be read via `read_file` so that VS Code can surface the consent dialog to the user.
+**Important**: DO NOT fall back to terminal commands (`cat`, `grep`, etc.) to work around the permission prompt. The file must be read via `read_file` so that VS Code can surface the consent dialog to the user.
 
 ## Notes
 
