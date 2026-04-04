@@ -29,7 +29,7 @@
 - [ ] T003 Add module-level constant `ISRC_PATTERN = re.compile(r"^[A-Z]{2}[A-Z0-9]{3}[0-9]{7}$")` to `matchers/spotify_matcher.py`
 - [ ] T004 [P] Add `isrc: str | None` optional parameter to `TrackMock.__init__` and an `isrc` read-only property in `tests/tracks/track_mock.py`
 - [ ] T005 [P] Add read-only `isrc` property to `SpotifyTrack` reading `self.data.get("external_ids", {}).get("isrc")` in `tracks/spotify_track.py`
-- [ ] T006 [P] Add `isrc` read property to `LocalTrack` in `tracks/local_track.py`: MP3 reads `TSRC` frame via mutagen, FLAC reads `"isrc"` key via music_tag, M4A uses `_get_custom_tag("ISRC")`; normalize to uppercase and strip hyphens; return `None` if absent
+- [ ] T006 [P] Add `isrc` read property to `LocalTrack` in `tracks/local_track.py`: MP3 reads `TSRC` frame via mutagen, FLAC reads `"isrc"` key via music_tag, M4A reads `----:com.apple.iTunes:ISRC` freeform atom (verify `_get_custom_tag("ISRC")` maps to this atom); normalize to uppercase and strip hyphens; return `None` if absent
 - [ ] T007 Add `isrc` write property (setter) to `LocalTrack` in `tracks/local_track.py`: MP3 writes `mutagen.id3.TSRC` frame, FLAC writes via music_tag `"isrc"` key, M4A uses `_set_custom_tag("ISRC")`; only writes if current `isrc` is `None`
 
 **Checkpoint**: Foundation ready — ISRC constant, track properties, and test infrastructure are all in place. User story phases can now begin.
@@ -47,9 +47,12 @@
 - [ ] T008 [P] [US1] Add test `test_match_uses_isrc_lookup_when_valid_isrc_present` to `tests/matchers/test_spotify_matcher.py`: mock `_search` to capture calls; assert it is called with `"isrc:XXXXXXXXXXXX"` and fuzzy search is never called
 - [ ] T009 [P] [US1] Add test `test_match_returns_isrc_result_directly` to `tests/matchers/test_spotify_matcher.py`: stub `_search("isrc:...")` returning one `SpotifyTrack`; assert `match()` returns that track
 - [ ] T010 [P] [US1] Add test `test_match_skips_isrc_lookup_for_malformed_isrc` to `tests/matchers/test_spotify_matcher.py`: track with `isrc="NOTVALID"`; assert `_search` is never called with `"isrc:"` prefix
-- [ ] T011 [P] [US1] Add test `test_match_skips_isrc_lookup_when_no_isrc_tag` to `tests/matchers/test_spotify_matcher.py`: track with `isrc=None`; assert `_search` is not called with `"isrc:"` prefix
+- [ ] T011 [P] [US1] Add test `test_match_skips_isrc_lookup_when_no_isrc_tag` to `tests/matchers/test_spotify_matcher.py`: track with `isrc=None`; assert `_search` is not called with `"isrc:"` prefix (focuses on ISRC path being skipped; see T019 for verifying fuzzy path is invoked instead)
 - [ ] T012 [P] [US1] Add tests for `LocalTrack.isrc` getter: mp3 with `TSRC` frame, FLAC with Vorbis `ISRC` comment, M4A with iTunes freeform tag, absent tag, mixed-case normalization, hyphenated form in `tests/tracks/test_local_track.py`
 - [ ] T013 [P] [US1] Add test for `SpotifyTrack.isrc`: data with `external_ids.isrc`, data without `external_ids`, `external_ids` present but no `isrc` key in `tests/tracks/test_spotify_track.py`
+- [ ] T031 [P] [US1] Add test `test_match_via_isrc_for_non_latin_track` to `tests/matchers/test_spotify_matcher.py`: track with Cyrillic/CJK artist/title metadata and a valid ISRC; assert ISRC lookup is used and match succeeds without fuzzy search (SC-002, constitution §V non-Latin mandate)
+- [ ] T032 [P] [US1] Add test `test_match_logs_isrc_method_when_matched_via_isrc` to `tests/matchers/test_spotify_matcher.py`: valid ISRC match succeeds; assert log output contains indication that match was via ISRC (FR-008)
+- [ ] T033 [P] [US2] Add test `test_match_logs_fuzzy_method_when_fallback_used` to `tests/matchers/test_spotify_matcher.py`: ISRC absent or lookup empty, fuzzy match succeeds; assert log output contains indication that match was via fuzzy search (FR-008)
 
 ### Implementation for User Story 1
 
@@ -69,9 +72,9 @@
 
 ### Tests for User Story 2 (REQUIRED — write first, confirm fail, then implement)
 
-- [ ] T017 [P] [US2] Add test `test_match_falls_back_to_fuzzy_when_isrc_lookup_returns_empty` to `tests/matchers/test_spotify_matcher.py`: valid ISRC, `_search("isrc:...")` returns `[]`; assert fuzzy search is then invoked
+- [ ] T017 [P] [US2] Add test `test_match_falls_back_to_fuzzy_when_isrc_lookup_returns_empty` to `tests/matchers/test_spotify_matcher.py`: valid ISRC, `_search("isrc:...")` returns `[]`; assert fuzzy search is then invoked (also covers the regional-market-unavailable edge case from spec)
 - [ ] T018 [P] [US2] Add test `test_match_falls_back_to_fuzzy_on_api_error_during_isrc_lookup` to `tests/matchers/test_spotify_matcher.py`: valid ISRC, `_search("isrc:...")` raises exception; assert fallback to fuzzy and warning is logged
-- [ ] T019 [P] [US2] Add test `test_match_without_isrc_invokes_only_fuzzy_search` to `tests/matchers/test_spotify_matcher.py`: track with `isrc=None`; assert only fuzzy `_search` is called (no `"isrc:"` prefix at all)
+- [ ] T019 [P] [US2] Add test `test_match_without_isrc_invokes_only_fuzzy_search` to `tests/matchers/test_spotify_matcher.py`: track with `isrc=None`; assert fuzzy `_search` **is** invoked with title/artist/album query and no `"isrc:"` prefix appears in any call (complements T011 which only asserts the ISRC path is skipped)
 - [ ] T020 [P] [US2] Confirm all pre-existing `test_spotify_matcher.py` tests still pass unchanged after Phase 3 changes (regression check task — no new code, just run + verify)
 
 ### Implementation for User Story 2
@@ -138,9 +141,9 @@ Phase 1 (Setup)
 
 **Phase 2** (after T003): T004, T005, T006 can run in parallel (different files).
 
-**Phase 3 tests** (T008–T013): All 6 test tasks are parallelizable (different test scenarios).
+**Phase 3 tests** (T008–T013, T031–T032): All 8 test tasks are parallelizable (different test scenarios). T033 is a Phase 4 test but also parallelizable with the US2 tests.
 
-**Phase 3 implementation** (T014–T016): Sequential — T074 validator needed before T015 lookup, T016 follows T015.
+**Phase 3 implementation** (T014–T016): Sequential — T014 validator needed before T015 lookup, T016 follows T015.
 
 **Phase 5 tests** (T021–T026): All 6 test tasks are parallelizable.
 

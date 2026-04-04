@@ -75,7 +75,7 @@ After a local track is successfully matched to a Spotify track — whether via I
 - **FR-005**: After a successful match (via either ISRC lookup or fuzzy search), the system MUST write the matched Spotify track's ISRC into the local file's tags, provided the local file does not already have an ISRC tag, under these conditions: (a) always, when the command is `spotify match`; (b) only when `--embed-matches` is active, for `spotify import` and `spotify sync`. If the embedding condition is not met, no ISRC is written.
 - **FR-006**: The system MUST NOT overwrite an existing ISRC tag on a local file.
 - **FR-007**: If writing the ISRC tag to a local file fails for any reason, the system MUST log a warning and continue the sync without treating the write failure as a blocking error.
-- **FR-008**: The system MUST indicate (via logging or output) whether each track was matched via ISRC lookup or fuzzy search.
+- **FR-008**: The system MUST indicate via `INFO`-level logging whether each track was matched via ISRC lookup or fuzzy search.
 
 ### Key Entities
 

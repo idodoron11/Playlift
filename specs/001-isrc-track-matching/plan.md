@@ -10,7 +10,7 @@ Add ISRC-based track matching as a deterministic first-pass before fuzzy search.
 ## Technical Context
 
 **Language/Version**: Python ≥ 3.11  
-**Primary Dependencies**: `spotipy==2.23.0` (Spotify API), `music-tag==0.4.3` (tag read/write), `mutagen` (low-level tag access), `click==8.1.7` (CLI)  
+**Primary Dependencies**: `spotipy==2.23.0` (Spotify API), `music-tag==0.4.3` (tag read/write), `mutagen` (low-level tag access, already used directly in `local_track.py`), `click==8.1.7` (CLI)  
 **Storage**: Local audio files (mp3, flac, m4a) with embedded ID3/Vorbis/MP4 tags  
 **Testing**: `pytest` with fakes (`FakeLocalTrack`, `TrackMock`) and spies (`SpotifyPlaylistSpy`)  
 **Target Platform**: macOS/Linux CLI  
