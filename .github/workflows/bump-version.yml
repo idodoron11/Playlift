@@ -50,18 +50,6 @@ jobs:
       - name: Bump patch version
         run: uv run --frozen bump-my-version bump patch
 
-      - name: DEBUG after bump
-        if: always()
-        run: |
-          echo "=== git log ==="
-          git log --oneline -5
-          echo "=== local tags ==="
-          git tag -l
-          echo "=== tag details ==="
-          git for-each-ref --format='%(refname:short) -> %(objectname:short) (%(objecttype))' refs/tags
-          echo "=== HEAD ==="
-          git rev-parse HEAD
-
       - name: Sync uv.lock and amend bump commit
         run: |
           uv sync
@@ -71,26 +59,8 @@ jobs:
           git commit --amend --no-edit
           git tag -f -a "$TAG" -m "$TAG_MSG" HEAD
 
-      - name: DEBUG after amend
-        if: always()
-        run: |
-          echo "=== git log ==="
-          git log --oneline -5
-          echo "=== local tags ==="
-          git tag -l
-          echo "=== tag details ==="
-          git for-each-ref --format='%(refname:short) -> %(objectname:short) (%(objecttype))' refs/tags
-          echo "=== HEAD ==="
-          git rev-parse HEAD
-
       - name: Push commit and tag
         run: git push --follow-tags
-
-      - name: DEBUG after push
-        if: always()
-        run: |
-          echo "=== remote tags ==="
-          git ls-remote --tags origin
       
       - name: Clean up working directory
         if: always()
