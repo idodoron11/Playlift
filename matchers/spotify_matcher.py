@@ -1,12 +1,10 @@
 from typing import Iterable, Optional
 
-import click
-from tabulate import tabulate  # type: ignore[import-untyped]
+from tqdm import tqdm
 
 from api.spotify import SpotifyAPI
 from exceptions import SkipTrackException
 from matchers import Matcher
-from tqdm import tqdm
 from tracks import Track
 from tracks.local_track import LocalTrack
 from tracks.spotify_track import SpotifyTrack

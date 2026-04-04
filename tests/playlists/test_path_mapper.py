@@ -1,7 +1,8 @@
 """Unit tests for PathMapper class."""
-import pytest
 import sys
 from pathlib import Path
+
+import pytest
 
 from exceptions import InvalidPathMappingException
 from playlists.path_mapper import PathMapper

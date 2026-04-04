@@ -3,13 +3,13 @@ from typing import Any, Optional
 import music_tag
 import mutagen
 from music_tag import AudioFile
+from mutagen._file import FileType as MutagenFileType
 from mutagen.id3 import TXXX  # type: ignore[attr-defined]  # mutagen stubs don't re-export TXXX
 from mutagen.mp3 import MP3
 from mutagen.mp4 import MP4
-from mutagen._file import FileType as MutagenFileType
 
-from tracks import Track
 from api.spotify_utils import parse_spotify_id
+from tracks import Track
 
 
 class LocalTrack(Track):

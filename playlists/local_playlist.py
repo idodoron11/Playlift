@@ -1,12 +1,12 @@
 from typing import Iterable, List, Optional
 
 import mutagen
+from tqdm import tqdm
 
 from matchers import Matcher
 from playlists import Playlist
 from playlists.path_mapper import PathMapper
 from tracks.local_track import LocalTrack
-from tqdm import tqdm
 
 
 class LocalPlaylist(Playlist):

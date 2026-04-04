@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 
-import click
-import sys
 import subprocess
+import sys
 from pathlib import Path
+
+import click
+
 
 @click.command()
 @click.argument('path', type=click.Path(exists=True, file_okay=True, dir_okay=True, path_type=Path))

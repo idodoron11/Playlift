@@ -1,6 +1,7 @@
-from config import CONFIG
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
+
+from config import CONFIG
 
 scopes = [
     "user-library-read",

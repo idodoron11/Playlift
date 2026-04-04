@@ -1,10 +1,8 @@
-from typing import List, Iterable
+from pathlib import Path
+from typing import Iterable, List
 
-from matchers import Matcher
 from playlists import TrackCollection
 from tracks import Track
-from pathlib import Path
-
 from tracks.local_track import LocalTrack
 
 

@@ -1,13 +1,13 @@
-from typing import Union, Optional
+import os
+from typing import Optional, Union
 
 import click
 
+from playlists.compare import compare_playlists
 from playlists.local_library import LocalLibrary
 from playlists.local_playlist import LocalPlaylist
 from playlists.path_mapper import PathMapper
 from playlists.spotify_playlist import SpotifyPlaylist
-import os
-from playlists.compare import compare_playlists
 from tracks.local_track import LocalTrack
 
 

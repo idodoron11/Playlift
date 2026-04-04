@@ -1,4 +1,4 @@
-from typing import List, Tuple, Optional
+from typing import List, Optional, Tuple
 
 from playlists.local_playlist import LocalPlaylist
 from playlists.path_mapper import PathMapper
