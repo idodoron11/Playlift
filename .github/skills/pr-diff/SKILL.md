@@ -50,6 +50,8 @@ The script produces four pieces of output; use each as follows:
 | **Modified files list** | `git diff --name-status origin/main...HEAD` | Group by status (`A` Added / `M` Modified / `D` Deleted / `R` Renamed) and present a structured scope summary |
 | **Temp diff file path** | `$TMPDIR/pr-diff-<branch>.diff` | Call `read_file` on this path to access the full diff for deep analysis |
 | **Diff line count** | PowerShell `Measure-Object -Line` | Use as a scope signal: ≤1000 lines → read full diff at once; >1000 lines → offer per-file sections or summaries |
+| **Remote origin URL** | `git remote get-url origin` | Extract the `owner` and `repo` to pass to `mcp_io_github_git_create_pull_request` |
+| **All remotes** | `git remote -v` | Confirm remote names and URLs before creating a PR |
 
 ### Step 3 — Digest the Output
 

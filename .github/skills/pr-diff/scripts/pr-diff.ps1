@@ -21,3 +21,9 @@ Write-Host "`nFull diff saved to: $tempFile"
 # 4. Print number of rows in the diff
 $lineCount = (Get-Content $tempFile | Measure-Object -Line).Lines
 Write-Host "Diff size: $lineCount lines"
+
+# 5. Print remote info
+Write-Host "`nRemote origin URL:"
+git remote get-url origin
+Write-Host "`nAll remotes:"
+git remote -v

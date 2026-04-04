@@ -28,3 +28,11 @@ echo "Full diff saved to: $TEMP_FILE"
 # 4. Print number of lines in the diff
 LINE_COUNT=$(wc -l < "$TEMP_FILE")
 echo "Diff size: $LINE_COUNT lines"
+
+# 5. Print remote info
+echo ""
+echo "Remote origin URL:"
+git remote get-url origin
+echo ""
+echo "All remotes:"
+git remote -v
