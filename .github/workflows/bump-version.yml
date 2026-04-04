@@ -38,6 +38,11 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
+      - name: Sync tags with remote
+        run: |
+          git tag -l | xargs git tag -d
+          git fetch --tags
+
       - name: Bump patch version
         run: uv run bump-my-version bump patch
 
