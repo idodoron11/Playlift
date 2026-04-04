@@ -5,4 +5,11 @@
 .DS_Store
 *.egg-info
 /.venv/
+/.mypy_cache/
+/.pytest_cache/
+/.ruff_cache/
+/dist/
+/build/
+*.egg
+*.log
 

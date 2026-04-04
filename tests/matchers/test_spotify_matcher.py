@@ -1,9 +1,12 @@
 from unittest import TestCase
 
+import pytest
+
 from matchers.spotify_matcher import SpotifyMatcher
 from tests.tracks.track_mock import TrackMock
 
 
+@pytest.mark.integration
 class TestSpotifyMatcher(TestCase):
     UNINTENDED_TRACK = TrackMock("1", ["Muse"], "Showbiz", "Unintended", 3 * 60 + 55, 7)
     HERE_WITHOUT_YOU_TRACK = TrackMock("2", ["3 doors down"], "away from the sun", "here without you", 3 * 60 + 57, 6)

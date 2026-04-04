@@ -1,5 +1,7 @@
 from unittest import TestCase
 
+import pytest
+
 from playlists.spotify_playlist import SpotifyPlaylist
 from tests.playlists.playlist_mock import PlaylistMock
 from tests.playlists.spotify_playlist_spy import SpotifyPlaylistSpy
@@ -7,51 +9,84 @@ from tests.tracks.track_mock import TrackMock
 from tracks import Track
 from tracks.spotify_track import SpotifyTrack
 
+# Playlist IDs / URIs used across tests
+DEEP_PURPLE_HITS_PLAYLIST_ID = "4X7RPexaMm2XwDb6g1fRmQ"
+DEEP_PURPLE_HITS_PLAYLIST_NAME = "Deep Purple - Greatest Hits"
+DEEP_PURPLE_HITS_TRACK_COUNT = 59
 
+CHILL_VIBES_PLAYLIST_ID = "31uSi3T52m00gqt4MwuZNM"
+CHILL_VIBES_MIN_TRACK_COUNT = 100
+
+CHILL_MIX_PLAYLIST_ID = "37i9dQZF1EQqkOPvHGajmW"
+
+ENDPOINTS_PLAYLIST_URL = "https://open.spotify.com/playlist/3cEYpjA9oz9GiPac4AsH4n"
+ENDPOINTS_PLAYLIST_TRACK_TITLES = ["Api", "Is", "All I Want", "Endpoints", "You Are So Beautiful"]
+
+# Track data for create_from_another_playlist test
+SOURCE_TRACK_ID = "1"
+SOURCE_TRACK_ARTISTS = ["Led Zeppelin"]
+SOURCE_TRACK_ALBUM = "Led Zeppelin IV (Remaster)"
+SOURCE_TRACK_TITLE = "Black Dog - Remaster"
+SOURCE_TRACK_DURATION_SECONDS = 4 * 60 + 55
+SOURCE_TRACK_NUMBER = 1
+SOURCE_PLAYLIST_NAME = "playlist name"
+
+# E2E test data
+E2E_PLAYLIST_NAME = "Test Playlist"
+E2E_TRACK_IDS = ["4OSBTYWVwsQhGLF9NHvIbR", "5mFMb5OHI3cN0UjITVztCj", "1CRtJS94Hq3PbBZT9LuF90"]
+E2E_TRACKS_AFTER_REMOVE = 2
+
+
+@pytest.mark.integration
 class TestSpotifyPlaylist(TestCase):
     def test_tracks(self) -> None:
-        indie_mix_playlist = SpotifyPlaylist("37i9dQZF1EQqkOPvHGajmW")
-        self.assertEqual(len(list(indie_mix_playlist.tracks)), 50)
+        deep_purple_hits_playlist = SpotifyPlaylist(DEEP_PURPLE_HITS_PLAYLIST_ID)
+        self.assertEqual(len(list(deep_purple_hits_playlist.tracks)), DEEP_PURPLE_HITS_TRACK_COUNT)
 
     def test_tracks_with_more_than_100_tracks(self) -> None:
-        chill_vibes_playlist = SpotifyPlaylist("37i9dQZF1DX889U0CL85jj")
+        chill_vibes_playlist = SpotifyPlaylist(CHILL_VIBES_PLAYLIST_ID)
         tracks = list(chill_vibes_playlist.tracks)
-        self.assertGreater(len(tracks), 100)
+        self.assertGreater(len(tracks), CHILL_VIBES_MIN_TRACK_COUNT)
 
     def test_playlist_id(self) -> None:
-        indie_mix_playlist = SpotifyPlaylist("37i9dQZF1EQqkOPvHGajmW")
-        self.assertEqual(indie_mix_playlist.playlist_id, "37i9dQZF1EQqkOPvHGajmW")
+        chill_mix_playlist = SpotifyPlaylist(CHILL_MIX_PLAYLIST_ID)
+        self.assertEqual(chill_mix_playlist.playlist_id, CHILL_MIX_PLAYLIST_ID)
 
     def test_name(self) -> None:
-        indie_mix_playlist = SpotifyPlaylist("37i9dQZF1EQqkOPvHGajmW")
-        self.assertEqual(indie_mix_playlist.name, "Indie Mix")
+        deep_purple_hits_playlist = SpotifyPlaylist(DEEP_PURPLE_HITS_PLAYLIST_ID)
+        self.assertEqual(deep_purple_hits_playlist.name, DEEP_PURPLE_HITS_PLAYLIST_NAME)
 
     def test_create_from_another_playlist(self) -> None:
         source_tracks: list[Track] = [
-            TrackMock("1", ["Led Zeppelin"], "Led Zeppelin IV (Remaster)", "Black Dog - Remaster", 4 * 60 + 55, 1)
+            TrackMock(
+                SOURCE_TRACK_ID,
+                SOURCE_TRACK_ARTISTS,
+                SOURCE_TRACK_ALBUM,
+                SOURCE_TRACK_TITLE,
+                SOURCE_TRACK_DURATION_SECONDS,
+                SOURCE_TRACK_NUMBER,
+            )
         ]
         source_playlist = PlaylistMock(source_tracks)
-        target_playlist = SpotifyPlaylistSpy.create_from_another_playlist("playlist name", source_playlist)
+        target_playlist = SpotifyPlaylistSpy.create_from_another_playlist(SOURCE_PLAYLIST_NAME, source_playlist)
         self.assertEqual(len(target_playlist.tracks), 1)
         self.assertEqual(target_playlist.tracks[0].title, source_playlist.tracks[0].title)
         self.assertEqual(target_playlist.tracks[0].display_artist, source_playlist.tracks[0].display_artist)
         self.assertEqual(target_playlist.tracks[0].album, source_playlist.tracks[0].album)
 
     def test_init(self) -> None:
-        playlist = SpotifyPlaylist("https://open.spotify.com/playlist/3cEYpjA9oz9GiPac4AsH4n")
+        playlist = SpotifyPlaylist(ENDPOINTS_PLAYLIST_URL)
         tracks = playlist.tracks
-        expected_songs_names = ["Api", "Is", "All I Want", "Endpoints", "You Are So Beautiful"]
         actual_songs_names = [track.title for track in tracks]
-        self.assertEqual(expected_songs_names, actual_songs_names)
+        self.assertEqual(ENDPOINTS_PLAYLIST_TRACK_TITLES, actual_songs_names)
 
     def test_e2e_spotify_playlist(self) -> None:
-        playlist = SpotifyPlaylist.create("Test Playlist")
+        playlist = SpotifyPlaylist.create(E2E_PLAYLIST_NAME)
         self.assertEqual(len(playlist.tracks), 0)
-        track_ids = ["4OSBTYWVwsQhGLF9NHvIbR", "5mFMb5OHI3cN0UjITVztCj", "1CRtJS94Hq3PbBZT9LuF90"]
-        tracks = list(map(SpotifyTrack, track_ids))
+        tracks = list(map(SpotifyTrack, E2E_TRACK_IDS))
         playlist.add_tracks(tracks)
         self.assertEqual(playlist.tracks, tracks)
         playlist.remove_track([playlist.tracks[0]])
-        self.assertEqual(len(playlist.tracks), 2)
+        self.assertEqual(len(playlist.tracks), E2E_TRACKS_AFTER_REMOVE)
         playlist.clear()
         self.assertEqual(len(playlist.tracks), 0)

@@ -40,6 +40,12 @@ line-length = 120
 [tool.ruff.lint]
 select = ["E", "F", "I"]  # pycodestyle errors, pyflakes, isort
 
+[tool.pytest.ini_options]
+addopts = "-m 'not integration'"
+markers = [
+    "integration: marks tests that require a live Spotify API connection (deselect with '-m not integration')",
+]
+
 [tool.mypy]
 python_version = "3.11"
 strict = true
