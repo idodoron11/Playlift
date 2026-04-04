@@ -16,6 +16,13 @@ dependencies = [
     "tabulate==0.9.0",
 ]
 
+[dependency-groups]
+dev = [
+    "mypy>=1.20.0",
+    "pytest>=9.0.2",
+    "ruff>=0.15.9",
+]
+
 [build-system]
 requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
@@ -25,3 +32,15 @@ build-backend = "setuptools.build_meta"
 include = ["api*", "config*", "tracks*", "matchers*", "playlists*"]
 
 [tool.uv]
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]  # pycodestyle errors, pyflakes, isort
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+ignore_missing_imports = true
+
