@@ -108,7 +108,7 @@ After a local track is successfully matched to a Spotify track — whether via I
 
 - Local audio files are writable in the common case; read-only files are treated as an exceptional case handled gracefully with a warning.
 - The Spotify catalog API supports lookup of tracks by ISRC (confirmed: Spotify's Search API supports `isrc:` query syntax).
-- An ISRC stored in a local track's tags is assumed to be correct and trusted. No validation against the track's actual audio content is performed.
+- An ISRC stored in a local track's tags is validated for structural format (`^[A-Z]{2}[A-Z0-9]{3}[0-9]{7}$`) but is otherwise trusted as correct. No validation against the track's actual audio content is performed.
 - ISRC embedding uses the same tag-writing mechanism already in place for writing `SPOTIFY_REF` tags (`music-tag` library); no new I/O library is required.
 - The feature applies to all three supported audio formats (mp3, flac, m4a); format-specific ISRC tag field names are handled transparently by the existing tag library.
 - Matching behavior for tracks explicitly marked as `SKIP` is unchanged — no ISRC lookup or embedding is performed for those tracks.
