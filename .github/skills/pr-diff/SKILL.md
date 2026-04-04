@@ -42,14 +42,15 @@ Choose the script based on the current OS:
   bash .github/skills/pr-diff/scripts/pr-diff.sh <target>
   ```
 
-The script produces four pieces of output; use each as follows:
+The script produces metadata only (no diff content); use each piece as follows:
 
 | Output | Source | How the agent uses it |
 |--------|--------|-----------------------|
 | **Current branch name** | `git rev-parse --abbrev-ref HEAD` | Report which feature branch is under review |
 | **Modified files list** | `git diff --name-status origin/main...HEAD` | Group by status (`A` Added / `M` Modified / `D` Deleted / `R` Renamed) and present a structured scope summary |
-| **Temp diff file path** | `$TMPDIR/pr-diff-<branch>.diff` | Call `read_file` on this path to access the full diff for deep analysis |
-| **Diff line count** | PowerShell `Measure-Object -Line` | Use as a scope signal: ≤1000 lines → read full diff at once; >1000 lines → offer per-file sections or summaries |
+| **Diff line count** | `git diff ... \| wc -l` | Use as a scope signal: ≤1000 lines → read full diff at once; >1000 lines → offer per-file sections or summaries |
+| **Remote origin URL** | `git remote get-url origin` | Extract the `owner` and `repo` to pass to `mcp_io_github_git_create_pull_request` |
+| **All remotes** | `git remote -v` | Confirm remote names and URLs before creating a PR |
 
 ### Step 3 — Digest the Output
 
@@ -61,13 +62,17 @@ After digesting the output, the agent MUST:
 
 The agent now has full context to proceed with Step 4 and then the appropriate follow-up action in Step 5.
 
-### Step 4 — Read the Full Diff File
+### Step 4 — Read the Full Diff
 
-Once the diff file is ready, the agent MUST read the temp diff file directly using `read_file` on the path printed by the script. This is a **mandatory step** — do not skip it.
+**This is a mandatory step — do not skip it.**
 
-Because the file lives outside the VS Code workspace, VS Code will automatically prompt the user to approve the read operation. Wait for approval and then proceed.
+You MUST run the following command to retrieve the full diff content:
 
-**Important**: DO NOT fall back to terminal commands (`cat`, `grep`, etc.) to work around the permission prompt. The file must be read via `read_file` so that VS Code can surface the consent dialog to the user.
+```
+git diff <target-branch>...HEAD
+```
+
+The agent MUST read the diff from the terminal output. 
 
 ### Step 5 — Perform the Requested Action
 
@@ -90,4 +95,4 @@ After drafting the title and description (see Summarization above), use the `mcp
 
 - The `...` (three-dot) syntax in `git diff` compares from the **merge base**, not the tip of the target branch — this is the correct PR semantics
 - If the branch has no commits ahead of the target, the diff will be empty — inform the user
-- The temp diff file path is printed by the script; use `read_file` on it for deep analysis
+- The scripts output metadata only; the agent retrieves the actual diff by running `git diff <target>...HEAD` directly in the terminal

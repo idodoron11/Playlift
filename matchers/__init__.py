@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
+from collections.abc import Iterable, Sequence
 from difflib import SequenceMatcher
-from typing import Iterable
 
 import click
 from tabulate import tabulate
@@ -53,7 +53,7 @@ class Matcher(ABC):
         pass
 
     @staticmethod
-    def choose_suggestion(track: Track, suggestions: list[Track]) -> int:
+    def choose_suggestion(track: Track, suggestions: Sequence[Track]) -> int:
         print(f"Please choose the best match for\n{track}")
         print("If none match, type -1")
         headers = ["#", "Artist", "Track Title", "Album", "Track Position", "Duration"]

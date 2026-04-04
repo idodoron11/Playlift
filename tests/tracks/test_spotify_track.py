@@ -9,35 +9,35 @@ from tracks.spotify_track import SpotifyTrack
 class TestSpotifyTrack(TestCase):
     def test_track_id(self) -> None:
         track = SpotifyTrack("6kyxQuFD38mo4S3urD2Wkw")
-        self.assertEqual(track.track_id, "6kyxQuFD38mo4S3urD2Wkw")
+        assert track.track_id == "6kyxQuFD38mo4S3urD2Wkw"
 
     def test_artists(self) -> None:
         track = SpotifyTrack("6kyxQuFD38mo4S3urD2Wkw")
-        self.assertEqual(track.artists, ["Muse"])
+        assert track.artists == ["Muse"]
 
     def test_display_artist(self) -> None:
         track = SpotifyTrack("6kyxQuFD38mo4S3urD2Wkw")
-        self.assertEqual(track.display_artist, "Muse")
+        assert track.display_artist == "Muse"
 
     def test_title(self) -> None:
         track = SpotifyTrack("6kyxQuFD38mo4S3urD2Wkw")
-        self.assertEqual(track.title, "Unintended")
+        assert track.title == "Unintended"
 
     def test_album(self) -> None:
         track = SpotifyTrack("6kyxQuFD38mo4S3urD2Wkw")
-        self.assertEqual(track.album, "Showbiz")
+        assert track.album == "Showbiz"
 
     def test_duration(self) -> None:
         track = SpotifyTrack("6kyxQuFD38mo4S3urD2Wkw")
-        self.assertLessEqual((abs(track.duration - (3 * 60 + 57))), 1)
+        assert (abs(track.duration - (3 * 60 + 57))) <= 1
 
     def test_track_number(self) -> None:
         track = SpotifyTrack("6kyxQuFD38mo4S3urD2Wkw")
-        self.assertLessEqual(track.track_number, 7)
+        assert track.track_number <= 7
 
     def test_isrc_returns_valid_isrc(self) -> None:
         track = SpotifyTrack("0IFfrFeXFt0sO36KaFtL3b")
-        self.assertEqual(track.isrc, "USSM19701400")
+        assert track.isrc == "USSM19701400"
 
 
 # ---------------------------------------------------------------------------

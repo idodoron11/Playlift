@@ -12,12 +12,12 @@ Write-Host "Comparing against: $TargetBranch"
 Write-Host "`nModified files:"
 git diff --name-status "$TargetBranch...HEAD"
 
-# 3. Produce full diff as a temporary file
-$tmpDir = if ($env:TEMP) { $env:TEMP } elseif ($env:TMPDIR) { $env:TMPDIR } else { "/tmp" }
-$tempFile = Join-Path $tmpDir "pr-diff-$currentBranch.diff"
-git diff "$TargetBranch...HEAD" | Out-File -FilePath $tempFile -Encoding utf8
-Write-Host "`nFull diff saved to: $tempFile"
+# 3. Print number of rows in the diff
+$lineCount = (git diff "$TargetBranch...HEAD" | Measure-Object -Line).Lines
+Write-Host "`nDiff size: $lineCount lines"
 
-# 4. Print number of rows in the diff
-$lineCount = (Get-Content $tempFile | Measure-Object -Line).Lines
-Write-Host "Diff size: $lineCount lines"
+# 4. Print remote info
+Write-Host "`nRemote origin URL:"
+git remote get-url origin
+Write-Host "`nAll remotes:"
+git remote -v

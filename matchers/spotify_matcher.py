@@ -1,11 +1,11 @@
 import logging
 import re
-from typing import Iterable
+from collections.abc import Iterable
 
 from tqdm import tqdm
 
 from api.spotify import SpotifyAPI
-from exceptions import SkipTrackException
+from exceptions import SkipTrackError
 from matchers import Matcher
 from tracks import Track
 from tracks.local_track import LocalTrack
@@ -39,7 +39,7 @@ class SpotifyMatcher(Matcher):
     def match(self, track: Track) -> SpotifyTrack | None:
         ref = self._find_spotify_match_in_source_track(track)
         if ref == "SKIP":
-            raise SkipTrackException
+            raise SkipTrackError
         elif ref:
             return SpotifyTrack(ref)
 
@@ -136,7 +136,7 @@ class SpotifyMatcher(Matcher):
         tracks = list(tracks)
         sp_tracks: list[list[SpotifyTrack]] = []
         print("Matching source tracks to Spotify tracks")
-        for index, track in enumerate(tqdm(tracks)):
+        for _index, track in enumerate(tqdm(tracks)):
             try:
                 match = self.match(track)
                 if match:
@@ -147,7 +147,7 @@ class SpotifyMatcher(Matcher):
                 if not suggestions:
                     print(f"Could not match\n{track}")
                     continue
-            except SkipTrackException:
+            except SkipTrackError:
                 print(f"Skip track\n{track}")
                 sp_tracks.append([])
                 continue
@@ -159,7 +159,7 @@ class SpotifyMatcher(Matcher):
         sp_tracks: list[Track] = []
 
         print("Reviewing matches")
-        for index, (track, suggestions) in tqdm(list(enumerate(zip(tracks, processed)))):
+        for _index, (track, suggestions) in tqdm(list(enumerate(zip(tracks, processed, strict=True)))):
             if len(suggestions) == 0:
                 continue
             choice = 0

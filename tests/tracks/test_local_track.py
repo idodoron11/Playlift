@@ -221,9 +221,8 @@ class TestLocalTrackIsrcSetterMp3(_LocalTrackTestBase):
         mock_mp3.save.side_effect = OSError("disk full")
 
         track = self._make_local_track(mock_mp3)
-        with self._isrc_setter_patch():
-            with self.assertLogs("tracks.local_track", level="WARNING") as cm:
-                track.isrc = "USRC17607839"
+        with self._isrc_setter_patch(), self.assertLogs("tracks.local_track", level="WARNING") as cm:
+            track.isrc = "USRC17607839"
 
         assert any("ISRC" in msg or "isrc" in msg.lower() for msg in cm.output)
 
@@ -264,4 +263,4 @@ class TestLocalTrackIsrcSetterM4a(_LocalTrackTestBase):
             track.isrc = "USRC17607839"
 
         # _set_custom_tag for MP4 encodes to UTF-8
-        mock_mp4.tags.__setitem__.assert_called_once_with("----:com.apple.iTunes:ISRC", "USRC17607839".encode("utf-8"))
+        mock_mp4.tags.__setitem__.assert_called_once_with("----:com.apple.iTunes:ISRC", b"USRC17607839")

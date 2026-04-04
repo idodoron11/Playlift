@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from exceptions import InvalidPathMappingException
+from exceptions import InvalidPathMappingError
 
 
 class PathMapper:
@@ -20,20 +20,20 @@ class PathMapper:
             to_path: Destination path prefix to replace with (string or Path)
 
         Raises:
-            InvalidPathMappingException: If from_path is empty or invalid
+            InvalidPathMappingError: If from_path is empty or invalid
         """
         from_path_str = str(from_path).strip() if from_path else ""
         to_path_str = str(to_path).strip() if to_path else ""
 
         # Validate from_path
         if not from_path_str:
-            raise InvalidPathMappingException("from_path cannot be empty")
+            raise InvalidPathMappingError("from_path cannot be empty")
 
         try:
             self._from_path = Path(from_path_str)
             self._to_path = Path(to_path_str)
         except (TypeError, ValueError) as e:
-            raise InvalidPathMappingException(f"Invalid path format: {e}")
+            raise InvalidPathMappingError(f"Invalid path format: {e}") from e
 
     def map(self, path: str) -> str:
         """Map a file path using the configured prefix replacement.

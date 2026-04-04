@@ -1,10 +1,10 @@
-class PlaylistSyncException(Exception):
+class PlaylistSyncError(Exception):
     pass
 
 
-class SkipTrackException(PlaylistSyncException):
+class SkipTrackError(PlaylistSyncError):
     pass
 
 
-class InvalidPathMappingException(PlaylistSyncException):
+class InvalidPathMappingError(PlaylistSyncError):
     pass

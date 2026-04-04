@@ -18,13 +18,15 @@ echo ""
 echo "Modified files:"
 git diff --name-status "$TARGET_BRANCH...HEAD"
 
-# 3. Produce full diff as a temporary file
-TMP_DIR="${TMPDIR:-${TEMP:-/tmp}}"
-TEMP_FILE="$TMP_DIR/pr-diff-$CURRENT_BRANCH.diff"
-git diff "$TARGET_BRANCH...HEAD" > "$TEMP_FILE"
+# 3. Print number of lines in the diff
+LINE_COUNT=$(git diff "$TARGET_BRANCH...HEAD" | wc -l)
 echo ""
-echo "Full diff saved to: $TEMP_FILE"
-
-# 4. Print number of lines in the diff
-LINE_COUNT=$(wc -l < "$TEMP_FILE")
 echo "Diff size: $LINE_COUNT lines"
+
+# 4. Print remote info
+echo ""
+echo "Remote origin URL:"
+git remote get-url origin
+echo ""
+echo "All remotes:"
+git remote -v

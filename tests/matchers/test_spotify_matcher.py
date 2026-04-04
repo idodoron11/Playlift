@@ -1,3 +1,4 @@
+from typing import ClassVar
 from unittest import TestCase
 from unittest.mock import patch
 
@@ -16,7 +17,7 @@ class TestSpotifyMatcher(TestCase):
     WILD_TRACK = TrackMock("3", ["LP"], "Love Lines (Deluxe Version)", "Wild", 181, 2)
     ZE_RAK_HALEV = TrackMock("4", ["אביב גפן"], "עם הזמן", "זה רק הלב שכואב לך", 232, 4)
 
-    match_map = {
+    match_map: ClassVar[dict[TrackMock, str]] = {
         UNINTENDED_TRACK: "6kyxQuFD38mo4S3urD2Wkw",
         HERE_WITHOUT_YOU_TRACK: "3NLrRZoMF0Lx6zTlYqeIo4",
         WILD_TRACK: "3QdeMlhJH3fAMbMPVD5ZAu",
@@ -27,20 +28,20 @@ class TestSpotifyMatcher(TestCase):
         source = self.UNINTENDED_TRACK
         target = SpotifyMatcher.get_instance().match(source)
         assert target is not None
-        self.assertEqual(target.track_id, self.match_map[source])
+        assert target.track_id == self.match_map[source]
 
     def test_suggest_match(self) -> None:
         for source, expected_track_id in self.match_map.items():
             targets = list(SpotifyMatcher.get_instance().suggest_match(source))
-            self.assertGreater(len(targets), 0)
+            assert len(targets) > 0
             best_target = targets[0]
-            self.assertEqual(best_target.track_id, expected_track_id)
+            assert best_target.track_id == expected_track_id
 
     def test_match_by_isrc(self) -> None:
         source = TrackMock("5", ["ZZZZZ"], "ZZZZZ", "ZZZZZ", 1, 1, isrc="USSM19701400")
         target = SpotifyMatcher.get_instance().match(source)
         assert target is not None
-        self.assertEqual(target.isrc, "USSM19701400")
+        assert target.isrc == "USSM19701400"
 
 
 def _make_spotify_track_data(track_id: str = "abc123", isrc: str | None = "USRC17607839") -> dict:  # type: ignore[type-arg]

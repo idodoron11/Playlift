@@ -1,5 +1,4 @@
 import os
-from typing import Optional, Union
 
 import click
 
@@ -35,8 +34,8 @@ def cli_spotify_import(
     autopilot: bool = False,
     embed_matches: bool = False,
     public: bool = False,
-    from_path: Optional[str] = None,
-    to_path: Optional[str] = None,
+    from_path: str | None = None,
+    to_path: str | None = None,
 ) -> None:
     if len(source) != len(destination):
         raise click.BadParameter("Number of sources must match the number of destinations")
@@ -48,7 +47,7 @@ def cli_spotify_import(
     elif from_path or to_path:
         raise click.BadParameter("Both --from-path and --to-path must be provided together")
 
-    inputs = zip(source, destination)
+    inputs = zip(source, destination, strict=True)
     for src, dst in inputs:
         playlist = get_playlist(src, path_mapper=path_mapper)
         SpotifyPlaylist.create_from_another_playlist(
@@ -70,8 +69,8 @@ def cli_spotify_sync(
     autopilot: bool = False,
     embed_matches: bool = False,
     sort_tracks: bool = False,
-    from_path: Optional[str] = None,
-    to_path: Optional[str] = None,
+    from_path: str | None = None,
+    to_path: str | None = None,
 ) -> None:
     # Create path mapper if both from_path and to_path are provided
     path_mapper = None
@@ -118,8 +117,8 @@ def cli_spotify_duplicates(source: str) -> None:
 def cli_spotify_match(
     source: tuple[str, ...],
     autopilot: bool = False,
-    from_path: Optional[str] = None,
-    to_path: Optional[str] = None,
+    from_path: str | None = None,
+    to_path: str | None = None,
 ) -> None:
     # Create path mapper if both from_path and to_path are provided
     path_mapper = None
@@ -141,8 +140,8 @@ def cli_spotify_match(
 def cli_spotify_compare(
     source: str,
     destination: str,
-    from_path: Optional[str] = None,
-    to_path: Optional[str] = None,
+    from_path: str | None = None,
+    to_path: str | None = None,
 ) -> None:
     """Compare a local m3u playlist with a Spotify playlist and print differences."""
     # Create path mapper if both from_path and to_path are provided
@@ -169,7 +168,7 @@ def cli_spotify_compare(
             print(f"{idx}. {spotify_track.track_url}  | {title} — {artists}")
 
 
-def get_playlist(source: str, path_mapper: Optional[PathMapper] = None) -> Union[LocalPlaylist, LocalLibrary]:
+def get_playlist(source: str, path_mapper: PathMapper | None = None) -> LocalPlaylist | LocalLibrary:
     if os.path.isdir(source):
         return LocalLibrary(source)
     if os.path.isfile(source):

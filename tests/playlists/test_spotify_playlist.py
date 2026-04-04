@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 from unittest import TestCase
 
 import pytest
@@ -6,8 +9,10 @@ from playlists.spotify_playlist import SpotifyPlaylist
 from tests.playlists.playlist_mock import PlaylistMock
 from tests.playlists.spotify_playlist_spy import SpotifyPlaylistSpy
 from tests.tracks.track_mock import TrackMock
-from tracks import Track
 from tracks.spotify_track import SpotifyTrack
+
+if TYPE_CHECKING:
+    from tracks import Track
 
 # Playlist IDs / URIs used across tests
 DEEP_PURPLE_HITS_PLAYLIST_ID = "4X7RPexaMm2XwDb6g1fRmQ"
@@ -41,20 +46,20 @@ E2E_TRACKS_AFTER_REMOVE = 2
 class TestSpotifyPlaylist(TestCase):
     def test_tracks(self) -> None:
         deep_purple_hits_playlist = SpotifyPlaylist(DEEP_PURPLE_HITS_PLAYLIST_ID)
-        self.assertEqual(len(list(deep_purple_hits_playlist.tracks)), DEEP_PURPLE_HITS_TRACK_COUNT)
+        assert len(list(deep_purple_hits_playlist.tracks)) == DEEP_PURPLE_HITS_TRACK_COUNT
 
     def test_tracks_with_more_than_100_tracks(self) -> None:
         chill_vibes_playlist = SpotifyPlaylist(CHILL_VIBES_PLAYLIST_ID)
         tracks = list(chill_vibes_playlist.tracks)
-        self.assertGreater(len(tracks), CHILL_VIBES_MIN_TRACK_COUNT)
+        assert len(tracks) > CHILL_VIBES_MIN_TRACK_COUNT
 
     def test_playlist_id(self) -> None:
         chill_mix_playlist = SpotifyPlaylist(CHILL_MIX_PLAYLIST_ID)
-        self.assertEqual(chill_mix_playlist.playlist_id, CHILL_MIX_PLAYLIST_ID)
+        assert chill_mix_playlist.playlist_id == CHILL_MIX_PLAYLIST_ID
 
     def test_name(self) -> None:
         deep_purple_hits_playlist = SpotifyPlaylist(DEEP_PURPLE_HITS_PLAYLIST_ID)
-        self.assertEqual(deep_purple_hits_playlist.name, DEEP_PURPLE_HITS_PLAYLIST_NAME)
+        assert deep_purple_hits_playlist.name == DEEP_PURPLE_HITS_PLAYLIST_NAME
 
     def test_create_from_another_playlist(self) -> None:
         source_tracks: list[Track] = [
@@ -69,24 +74,24 @@ class TestSpotifyPlaylist(TestCase):
         ]
         source_playlist = PlaylistMock(source_tracks)
         target_playlist = SpotifyPlaylistSpy.create_from_another_playlist(SOURCE_PLAYLIST_NAME, source_playlist)
-        self.assertEqual(len(target_playlist.tracks), 1)
-        self.assertEqual(target_playlist.tracks[0].title, source_playlist.tracks[0].title)
-        self.assertEqual(target_playlist.tracks[0].display_artist, source_playlist.tracks[0].display_artist)
-        self.assertEqual(target_playlist.tracks[0].album, source_playlist.tracks[0].album)
+        assert len(target_playlist.tracks) == 1
+        assert target_playlist.tracks[0].title == source_playlist.tracks[0].title
+        assert target_playlist.tracks[0].display_artist == source_playlist.tracks[0].display_artist
+        assert target_playlist.tracks[0].album == source_playlist.tracks[0].album
 
     def test_init(self) -> None:
         playlist = SpotifyPlaylist(ENDPOINTS_PLAYLIST_URL)
         tracks = playlist.tracks
         actual_songs_names = [track.title for track in tracks]
-        self.assertEqual(ENDPOINTS_PLAYLIST_TRACK_TITLES, actual_songs_names)
+        assert actual_songs_names == ENDPOINTS_PLAYLIST_TRACK_TITLES
 
     def test_e2e_spotify_playlist(self) -> None:
         playlist = SpotifyPlaylist.create(E2E_PLAYLIST_NAME)
-        self.assertEqual(len(playlist.tracks), 0)
+        assert len(playlist.tracks) == 0
         tracks = list(map(SpotifyTrack, E2E_TRACK_IDS))
         playlist.add_tracks(tracks)
-        self.assertEqual(playlist.tracks, tracks)
+        assert playlist.tracks == tracks
         playlist.remove_track([playlist.tracks[0]])
-        self.assertEqual(len(playlist.tracks), E2E_TRACKS_AFTER_REMOVE)
+        assert len(playlist.tracks) == E2E_TRACKS_AFTER_REMOVE
         playlist.clear()
-        self.assertEqual(len(playlist.tracks), 0)
+        assert len(playlist.tracks) == 0
