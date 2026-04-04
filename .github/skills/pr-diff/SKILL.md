@@ -1,6 +1,6 @@
 ---
 name: pr-diff
-description: 'Produce a pull request diff between the current branch and a target branch. Use when: reviewing PR changes, understanding what a branch introduces, code review preparation, summarizing branch differences, comparing branches, getting diff output.'
+description: 'Produce a pull request diff between the current branch and a target branch. Use when: reviewing PR changes, performing code review, summarizing PR changes (title + description), creating a new PR with title and description, understanding what a branch introduces, comparing branches, getting diff output.'
 argument-hint: Target branch to compare against (e.g. main, master, develop)
 ---
 
@@ -10,7 +10,9 @@ Produces a structured diff between the current branch and a target branch, givin
 
 ## When to Use
 
-- User asks to review PR changes or summarize what a branch does
+- **PR review**: User asks to review or audit PR changes
+- **PR summarization**: User wants a PR title and description drafted from the diff
+- **Create PR**: User asks to open or create a new PR with a generated title and description
 - User wants to understand what files were modified before a code review
 - User asks to "show the diff", "what changed", or "compare to main/master"
 - Any workflow that requires full awareness of branch changes (code review, changelog, impact analysis)
@@ -57,7 +59,7 @@ After digesting the output, the agent MUST:
 2. List the **modified files** grouped by status (Added / Modified / Deleted / Renamed)
 3. State the **diff size** (line count) as a signal of PR scope
 
-The agent now has full context to proceed with whatever the user needs next (code review, summary, changelog, impact analysis, etc.).
+The agent now has full context to proceed with Step 4 and then the appropriate follow-up action in Step 5.
 
 ### Step 4 — Read the Full Diff File
 
@@ -66,6 +68,23 @@ Once the diff file is ready, the agent MUST read the temp diff file directly usi
 Because the file lives outside the VS Code workspace, VS Code will automatically prompt the user to approve the read operation. Wait for approval and then proceed.
 
 **Important**: DO NOT fall back to terminal commands (`cat`, `grep`, etc.) to work around the permission prompt. The file must be read via `read_file` so that VS Code can surface the consent dialog to the user.
+
+### Step 5 — Perform the Requested Action
+
+Based on the user's intent, proceed with one of these actions after reading the diff:
+
+#### PR Review
+Perform a thorough code review following the project's code review instructions. Address security, correctness, test coverage, and style — grouped by severity (Critical / Important / Suggestion).
+
+#### PR Summarization (title + description)
+Draft a concise PR title (conventional commit format: `type(scope): summary`) and a structured description covering:
+- **What**: What was changed and why
+- **How**: Key implementation decisions
+- **Testing**: How changes were or should be tested
+- **Breaking changes** (if any)
+
+#### Create PR
+After drafting the title and description (see Summarization above), use the `mcp_io_github_git_create_pull_request` tool to open the PR against the target branch. Confirm the title and description with the user before submitting.
 
 ## Notes
 
