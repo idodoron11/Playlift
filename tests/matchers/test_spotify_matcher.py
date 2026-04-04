@@ -20,11 +20,12 @@ class TestSpotifyMatcher(TestCase):
     def test_match(self) -> None:
         source = self.UNINTENDED_TRACK
         target = SpotifyMatcher.get_instance().match(source)
+        assert target is not None
         self.assertEqual(target.track_id, self.match_map[source])
 
     def test_suggest_match(self) -> None:
         for source, expected_track_id in self.match_map.items():
-            targets = SpotifyMatcher.get_instance().suggest_match(source)
+            targets = list(SpotifyMatcher.get_instance().suggest_match(source))
             self.assertGreater(len(targets), 0)
             best_target = targets[0]
             self.assertEqual(best_target.track_id, expected_track_id)

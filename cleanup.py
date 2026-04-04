@@ -40,7 +40,7 @@ def rematch(track: LocalTrack) -> None:
 
 
 playlist_path = click.prompt("Enter playlist path")
-matcher = SpotifyMatcher.get_instance()
+matcher: SpotifyMatcher = SpotifyMatcher.get_instance()  # type: ignore[assignment]
 
 playlist = LocalPlaylist(playlist_path)
 for index, track in enumerate(tqdm(playlist.tracks)):

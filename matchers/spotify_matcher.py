@@ -65,13 +65,13 @@ class SpotifyMatcher(Matcher):
                 and album_d >= 0.5
                 and duration_d <= 5)
 
-    def suggest_match(self, track: Track) -> Iterable[SpotifyTrack]:
-        results_set = set()
+    def suggest_match(self, track: Track) -> list[SpotifyTrack]:
+        results_set: set[SpotifyTrack] = set()
         for artist in track.artists:
             search_string = f'{artist} {track.title}'
             results_set.update(SpotifyMatcher._search(search_string))
 
-        results: List[SpotifyTrack] = list(
+        results: list[SpotifyTrack] = list(
             filter(lambda result: SpotifyMatcher._match_constraints(track, result), results_set)
         )
         results.sort(key=lambda result: SpotifyMatcher.track_distance(track, result))
@@ -84,7 +84,7 @@ class SpotifyMatcher(Matcher):
         return results
 
     @staticmethod
-    def _search(query: str) -> List[SpotifyTrack]:
+    def _search(query: str) -> list[SpotifyTrack]:
         response = SpotifyAPI.get_instance().search(query, limit=None)
         if not response['tracks'] or response['tracks']['total'] == 0:
             return []
@@ -111,10 +111,10 @@ class SpotifyMatcher(Matcher):
                 continue
         return sp_tracks
 
-    def match_list(self, tracks: Iterable[Track], autopilot: bool = False, embed_matches: bool = False) -> list[Track]:  # type: ignore[override]  # covariant return is safe: SpotifyTrack is-a Track
+    def match_list(self, tracks: Iterable[Track], autopilot: bool = False, embed_matches: bool = False) -> list[Track]:  # type: ignore[override]  # narrower return type is safe: SpotifyTrack is-a Track
         suggestions_list: list[list[SpotifyTrack]] = self._match_list(tracks)
         processed: list[list[SpotifyTrack]] = list(map(list, suggestions_list))
-        sp_tracks: list[SpotifyTrack] = []
+        sp_tracks: list[Track] = []
 
         print("Reviewing matches")
         for index, (track, suggestions) in tqdm(list(enumerate(zip(tracks, processed)))):

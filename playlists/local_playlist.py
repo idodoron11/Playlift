@@ -15,9 +15,9 @@ class LocalPlaylist(Playlist):
         self._path_mapper = path_mapper
         self._tracks: List[LocalTrack] = []
         with open(self._source_filepath, "r", encoding="utf-8") as f:
-            files = map(lambda x: x.strip(), f.readlines())  # remove redundant spaces
-            files = filter(lambda x: len(x) > 0 and not x.startswith("#"), files)  # skip empty lines
-            self._load_tracks(files)
+            lines: Iterable[str] = (x.strip() for x in f.readlines())  # remove redundant spaces
+            lines = (x for x in lines if len(x) > 0 and not x.startswith("#"))  # skip empty lines
+            self._load_tracks(lines)
 
     def _load_tracks(self, files: Iterable[str]) -> None:
         print("Reading playlist tracks metadata")

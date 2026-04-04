@@ -1,4 +1,4 @@
-from typing import Any, Iterable, List
+from typing import Any, Iterable
 
 from api.spotify import SpotifyAPI
 from matchers.spotify_matcher import SpotifyMatcher
@@ -33,14 +33,14 @@ class SpotifyPlaylist(Playlist):
 
     @classmethod
     def create_from_another_playlist(cls, playlist_name: str, source_playlist: TrackCollection, public: bool = False, autopilot: bool = False, embed_matches: bool = False) -> "SpotifyPlaylist":
-        sp_tracks: List[SpotifyTrack] = SpotifyPlaylist.track_matcher().match_list(source_playlist.tracks, autopilot=autopilot, embed_matches=embed_matches)  # type: ignore[assignment]
+        sp_tracks: list[Track] = SpotifyPlaylist.track_matcher().match_list(source_playlist.tracks, autopilot=autopilot, embed_matches=embed_matches)
         new_playlist = cls.create(playlist_name, public=public)
-        new_playlist.add_tracks(sp_tracks)
+        new_playlist.add_tracks(sp_tracks)  # type: ignore[arg-type]  # list[Track] contains SpotifyTrack instances at runtime
         return new_playlist
 
     def import_tracks(self, tracks: Iterable[Track], autopilot: bool = False, embed_matches: bool = False) -> None:
-        sp_tracks: List[SpotifyTrack] = SpotifyPlaylist.track_matcher().match_list(tracks, autopilot=autopilot, embed_matches=embed_matches)  # type: ignore[assignment]
-        self.add_tracks(sp_tracks)
+        sp_tracks: list[Track] = SpotifyPlaylist.track_matcher().match_list(tracks, autopilot=autopilot, embed_matches=embed_matches)
+        self.add_tracks(sp_tracks)  # type: ignore[arg-type]  # list[Track] contains SpotifyTrack instances at runtime
 
     @property
     def tracks(self) -> list[SpotifyTrack]:
@@ -50,16 +50,17 @@ class SpotifyPlaylist(Playlist):
 
     @property
     def playlist_id(self) -> str:
-        return self._id
+        return str(self._id)
 
     @property
     def name(self) -> str:
-        return self.data['name']
+        return str(self.data['name'])
 
     @property
     def data(self) -> dict[str, Any]:
         if not self._data:
             self._load_data()
+        assert self._data is not None
         return self._data
 
     def clear(self) -> None:

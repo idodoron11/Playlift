@@ -14,7 +14,7 @@ class PlaylistMock(Playlist):
 
     @staticmethod
     def track_matcher() -> Matcher:
-        return MatcherMock.get_instance()  # type: ignore[return-value]
+        return MatcherMock.get_instance()  # type: ignore[return-value]  # MatcherMock.get_instance() returns Matcher at runtime
 
     def remove_track(self, tracks: list[Track]) -> None:
         for track in tracks:
