@@ -36,6 +36,12 @@ class TestSpotifyMatcher(TestCase):
             best_target = targets[0]
             self.assertEqual(best_target.track_id, expected_track_id)
 
+    def test_match_by_isrc(self) -> None:
+        source = TrackMock("5", ["ZZZZZ"], "ZZZZZ", "ZZZZZ", 1, 1, isrc="USSM19701400")
+        target = SpotifyMatcher.get_instance().match(source)
+        assert target is not None
+        self.assertEqual(target.isrc, "USSM19701400")
+
 
 def _make_spotify_track_data(track_id: str = "abc123", isrc: str | None = "USRC17607839") -> dict:  # type: ignore[type-arg]
     """Build a minimal Spotify track data dict for testing."""

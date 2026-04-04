@@ -35,6 +35,10 @@ class TestSpotifyTrack(TestCase):
         track = SpotifyTrack("6kyxQuFD38mo4S3urD2Wkw")
         self.assertLessEqual(track.track_number, 7)
 
+    def test_isrc_returns_valid_isrc(self) -> None:
+        track = SpotifyTrack("0IFfrFeXFt0sO36KaFtL3b")
+        self.assertEqual(track.isrc, "USSM19701400")
+
 
 # ---------------------------------------------------------------------------
 # T013: SpotifyTrack.isrc unit tests (no API calls)
