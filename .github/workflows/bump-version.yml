@@ -44,6 +44,9 @@ jobs:
           git tag -l | xargs git tag -d
           git fetch --tags
 
+      - name: Restore uv.lock
+        run: git checkout -- uv.lock
+
       - name: Bump patch version
         run: uv run bump-my-version bump patch
 
