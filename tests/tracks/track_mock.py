@@ -26,6 +26,12 @@ class TrackMock(Track):
     def track_number(self) -> int:
         return self._track_number
 
+    @property
+    def isrc(self) -> str | None:
+        return self._isrc
+
+    # isrc is deliberately excluded from __eq__ and __hash__ —
+    # TrackMock identity is based on spotify_ref / track_id, not ISRC.
     def __eq__(self, other: object) -> bool:
         if other is None or not isinstance(other, self.__class__):
             return False
@@ -35,7 +41,14 @@ class TrackMock(Track):
         return hash(self._id)
 
     def __init__(
-        self, track_id: str, artists: list[str], album: str, title: str, duration: float, track_number: int
+        self,
+        track_id: str,
+        artists: list[str],
+        album: str,
+        title: str,
+        duration: float,
+        track_number: int,
+        isrc: str | None = None,
     ) -> None:
         self._id = track_id
         self._artists = artists
@@ -43,3 +56,4 @@ class TrackMock(Track):
         self._title = title
         self._duration = duration
         self._track_number = track_number
+        self._isrc = isrc

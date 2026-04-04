@@ -1,15 +1,27 @@
+import logging
 from typing import Any, Optional
 
 import music_tag
 import mutagen
 from music_tag import AudioFile
 from mutagen._file import FileType as MutagenFileType
-from mutagen.id3 import TXXX  # type: ignore[attr-defined]  # mutagen stubs don't re-export TXXX
+from mutagen.flac import FLAC
+from mutagen.id3 import (  # type: ignore[attr-defined]  # mutagen stubs don't re-export TSRC/TXXX
+    TSRC,
+    TXXX,
+)
 from mutagen.mp3 import MP3
 from mutagen.mp4 import MP4
 
 from api.spotify_utils import parse_spotify_id
 from tracks import Track
+
+logger = logging.getLogger(__name__)
+
+
+def _normalize_isrc(raw: str) -> str:
+    """Normalize an ISRC value: uppercase and strip hyphens."""
+    return raw.upper().strip().replace("-", "")
 
 
 class LocalTrack(Track):
@@ -110,6 +122,56 @@ class LocalTrack(Track):
         except (mutagen.MutagenError, OSError, AttributeError) as e:  # type: ignore[attr-defined]  # mutagen stubs don't export MutagenError top-level
             print(f"Could not save tags for {self.track_id} due to {e}")
         self.reload_metadata()
+
+    @property
+    def isrc(self) -> str | None:
+        """Return the ISRC tag value, normalized to uppercase with hyphens stripped.
+
+        Reads from the format-appropriate tag: TSRC (MP3), isrc Vorbis comment
+        (FLAC), or iTunes freeform tag (M4A). Returns None if the tag is absent
+        or empty.
+        """
+        raw: str | None = None
+        if isinstance(self._mutagen_file, MP3):
+            if self._mutagen_file.tags is not None and "TSRC" in self._mutagen_file.tags:
+                frame: Any = self._mutagen_file.tags["TSRC"]
+                raw = str(frame.text[0]) if frame.text else None
+        elif isinstance(self._mutagen_file, FLAC):
+            tag = self._get_tag("isrc")
+            raw = str(tag.first) if tag and tag.first else None
+        else:
+            raw = self._get_custom_tag("ISRC")
+        if not raw or not raw.strip():
+            return None
+        return _normalize_isrc(raw)
+
+    @isrc.setter
+    def isrc(self, value: str) -> None:
+        """Write the ISRC tag to the audio file if not already present.
+
+        MP3 writes a TSRC ID3 frame, FLAC writes via music_tag isrc key,
+        M4A writes an iTunes freeform tag. Only writes if current isrc is None.
+        """
+        if self.isrc is not None:
+            return
+        if self._mutagen_file is None:
+            return
+        try:
+            if isinstance(self._mutagen_file, MP3):
+                frame = TSRC(encoding=3, text=[value])  # type: ignore[no-untyped-call]  # mutagen stubs don't type TSRC.__init__
+                if self._mutagen_file.tags is not None:
+                    self._mutagen_file.tags.add(frame)
+                self._mutagen_file.save()
+            elif isinstance(self._mutagen_file, FLAC):
+                if self._mutagen_file.tags is not None:
+                    self._mutagen_file.tags["isrc"] = value  # type: ignore[index]  # VCFLACDict supports str indexing at runtime
+                self._mutagen_file.save()
+            else:
+                self._set_custom_tag("ISRC", value)
+                return  # _set_custom_tag handles save + reload
+            self.reload_metadata()
+        except (mutagen.MutagenError, OSError, AttributeError) as e:  # type: ignore[attr-defined]
+            logger.warning("Could not write ISRC for %s: %s", self.track_id, e)
 
     @property
     def spotify_ref(self) -> str | None:

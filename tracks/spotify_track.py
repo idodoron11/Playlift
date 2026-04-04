@@ -47,3 +47,9 @@ class SpotifyTrack(Track):
     @property
     def track_number(self) -> int:
         return int(self.data["track_number"])
+
+    @property
+    def isrc(self) -> str | None:
+        """Return the ISRC from Spotify's external_ids, or None if absent."""
+        result: str | None = self.data.get("external_ids", {}).get("isrc")
+        return result

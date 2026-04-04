@@ -3,7 +3,7 @@ from difflib import SequenceMatcher
 from typing import Iterable
 
 import click
-from tabulate import tabulate  # type: ignore[import-untyped]
+from tabulate import tabulate
 
 from tracks import Track
 

@@ -2,7 +2,7 @@ from difflib import SequenceMatcher
 
 import click
 from spotipy import SpotifyException
-from tabulate import tabulate  # type: ignore[import-untyped]
+from tabulate import tabulate
 from tqdm import tqdm
 
 from matchers.spotify_matcher import SpotifyMatcher
