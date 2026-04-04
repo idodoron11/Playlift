@@ -17,7 +17,7 @@
 
 - [x] CHK007 Does `uv run mypy .` pass with zero errors after all feature changes? [Acceptance Criteria, Constitution §VI]
 - [x] CHK008 Are there zero `# type: ignore` suppressions in new or modified lines? [Constitution §VI]
-- [ ] CHK009 Is `ISRC_PATTERN` typed as `re.Pattern[str]` (not inferred implicitly)? [Clarity, Constitution §VI]
+- [x] CHK009 Is `ISRC_PATTERN` typed as `re.Pattern[str]` (not inferred implicitly)? [Clarity, Constitution §VI]
 - [x] CHK010 Does the `LocalTrack.isrc` getter return type satisfy the rest of `LocalTrack`'s interface without triggering `union-attr` or `return-value` mypy errors? [Consistency, Constitution §VI]
 
 ## Naming Conventions (Constitution §I)
@@ -32,7 +32,7 @@
 - [x] CHK015 Does the ISRC-first lookup block inside `SpotifyMatcher.match()` stay within ~30 lines including error handling? [Completeness, Constitution §I]
 - [x] CHK016 Is nesting depth inside the ISRC lookup block ≤ 3 levels? [Clarity, Constitution §I]
 - [x] CHK017 Does the `LocalTrack.isrc` getter implement the format dispatch (MP3 / FLAC / M4A) without exceeding 3 levels of nesting? [Clarity, Constitution §I]
-- [ ] CHK018 Is ISRC normalization (uppercase, strip hyphens) a named, single-purpose expression or helper rather than inline string manipulation in multiple places? [DRY, Constitution §I, §III]
+- [x] CHK018 Is ISRC normalization (uppercase, strip hyphens) a named, single-purpose expression or helper rather than inline string manipulation in multiple places? [DRY, Constitution §I, §III]
 
 ## SOLID Compliance (Constitution §II)
 
@@ -58,7 +58,7 @@
 
 ## Error Handling (Constitution §I, §VI)
 
-- [ ] CHK029 Is the ISRC lookup error handler (FR-004 API/network failure) catching a specific exception type rather than bare `except:`? [Clarity, Constitution §I, Spec §FR-004]
+- [x] CHK029 Is the ISRC lookup error handler (FR-004 API/network failure) catching a specific exception type rather than bare `except:`? [Clarity, Constitution §I, Spec §FR-004]
 - [x] CHK030 Are no new bare `raise Exception(...)` calls introduced — only logging is used for non-fatal ISRC failures? [Clarity, Constitution §VI, Spec §FR-004, FR-007]
 
 ## Notes

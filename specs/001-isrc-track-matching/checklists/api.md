@@ -14,7 +14,7 @@
 ## Requirement Clarity
 
 - [x] CHK005 Is the term standard track-info response clearly defined so implementers can identify a single authoritative payload shape? [Clarity, Ambiguity]
-- [ ] CHK006 Is no additional request quantified as a requirement constraint rather than an implementation preference? [Clarity, Gap]
+- [x] CHK006 Is no additional request quantified as a requirement constraint rather than an implementation preference? [Clarity, Gap]
 
 ## Requirement Consistency
 

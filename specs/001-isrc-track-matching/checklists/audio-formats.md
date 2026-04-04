@@ -14,7 +14,7 @@
 
 ## Requirement Clarity
 
-- [ ] CHK006 Is "m4a" clarified as including ALAC containers explicitly, with no ambiguity about AAC-only assumptions? [Clarity, Ambiguity]
+- [x] CHK006 Is "m4a" clarified as including ALAC containers explicitly, with no ambiguity about AAC-only assumptions? [Clarity, Ambiguity]
 - [x] CHK007 Is the canonical normalized ISRC representation (uppercase, no hyphens) specified clearly enough to avoid format-specific normalization drift? [Clarity, Spec §FR-002, Research §Task 4]
 - [x] CHK008 Is the distinction between "missing tag", "malformed tag", and "valid but unmatched ISRC" explicitly defined for each format? [Clarity, Spec §FR-002, Spec §FR-004]
 
@@ -32,7 +32,7 @@
 
 ## Scenario and Edge Case Coverage
 
-- [ ] CHK015 Are alternate scenarios covered where one playlist contains a mix of mp3, m4a (ALAC), and FLAC tracks with different ISRC tag states? [Coverage, Gap]
+- [x] CHK015 Are alternate scenarios covered where one playlist contains a mix of mp3, m4a (ALAC), and FLAC tracks with different ISRC tag states? [Coverage, Gap]
 - [x] CHK016 Are exception scenarios covered for malformed ISRC in one format while valid ISRC exists in another within the same run? [Coverage, Spec §FR-002, Spec §FR-004]
 - [x] CHK017 Are recovery expectations defined when format-specific writes fail transiently (for example, permission or tag serialization errors) and subsequent tracks continue? [Recovery, Spec §FR-007]
 
