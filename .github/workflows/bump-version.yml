@@ -47,6 +47,12 @@ jobs:
       - name: Bump patch version
         run: uv run bump-my-version bump patch
 
+      - name: Sync uv.lock and amend bump commit
+        run: |
+          uv sync
+          git add uv.lock
+          git commit --amend --no-edit
+
       - name: Push commit and tag
         run: git push --follow-tags
       
