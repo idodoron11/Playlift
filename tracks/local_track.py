@@ -1,24 +1,25 @@
-from typing import List, Optional
+from typing import Any, Optional
 
 import music_tag
 import mutagen
 from music_tag import AudioFile
-from mutagen.id3 import TXXX
+from mutagen._file import FileType as MutagenFileType
+from mutagen.id3 import TXXX  # type: ignore[attr-defined]  # mutagen stubs don't re-export TXXX
 from mutagen.mp3 import MP3
 from mutagen.mp4 import MP4
 
-from tracks import Track
 from api.spotify_utils import parse_spotify_id
+from tracks import Track
 
 
 class LocalTrack(Track):
     def __init__(self, file_path: str):
         self._file_path = file_path
         self._audio: Optional[AudioFile] = None
-        self._mutagen_file: Optional[mutagen.File] = None
+        self._mutagen_file: Optional[MutagenFileType] = None
         self.reload_metadata()
 
-    def reload_metadata(self):
+    def reload_metadata(self) -> None:
         self._audio = music_tag.load_file(self._file_path)
         self._mutagen_file = self._audio.mfile
 
@@ -27,40 +28,40 @@ class LocalTrack(Track):
         return self._file_path
 
     @property
-    def artists(self) -> List[str]:
+    def artists(self) -> list[str]:
         tag = self._get_tag("artist")
-        return tag.values if tag else None
+        return tag.values if tag else []
 
     @property
     def display_artist(self) -> str:
         tag = self._get_tag("artist")
-        return tag.value if tag else None
+        return tag.value if tag else ""
 
     @property
     def title(self) -> str:
         tag = self._get_tag("title")
-        return tag.first if tag else None
+        return tag.first if tag else ""
 
     @property
     def album(self) -> str:
         tag = self._get_tag("album")
-        return tag.first if tag else None
+        return tag.first if tag else ""
 
     @property
     def duration(self) -> float:
         tag = self._get_tag("#length")
-        return tag.first if tag else None
+        return tag.first if tag else 0.0
 
     @property
     def track_number(self) -> int:
         tag = self._get_tag("tracknumber")
-        return tag.value if tag else None
+        return tag.value if tag else 0
 
-    def _get_tag(self, tag_name, assert_not_empty=False):
+    def _get_tag(self, tag_name: str, assert_not_empty: bool = False) -> Any:
         result = None
         try:
-            result = self._audio[tag_name]
-        except:
+            result = self._audio[tag_name]  # type: ignore[index]
+        except Exception:
             pass
         if assert_not_empty and not result:
             raise AttributeError(f"No {tag_name} found")
@@ -70,44 +71,52 @@ class LocalTrack(Track):
     def track_id(self) -> str:
         return self.file_path
 
-    def _get_custom_tag(self, tag_name: str):
+    def _get_custom_tag(self, tag_name: str) -> str | None:
         tag_name = tag_name.upper()
         if isinstance(self._mutagen_file, MP4):
             tag_name = f"----:com.apple.iTunes:{tag_name}"
         elif isinstance(self._mutagen_file, MP3):
             tag_name = f"TXXX:{tag_name}"
+        if self._mutagen_file is None or self._mutagen_file.tags is None:
+            return None
         if tag_name not in self._mutagen_file.tags:
             return None
-        tag = self._mutagen_file[tag_name]
+        tag: Any = self._mutagen_file[tag_name]
         tag = tag[0] if tag else None
         if isinstance(tag, bytes):
-            return tag.decode('utf-8')
+            return tag.decode("utf-8")
         elif isinstance(tag, str):
             return tag
-        return str(tag)
+        return str(tag) if tag is not None else None
 
-    def _set_custom_tag(self, tag_name: str, value: str):
+    def _set_custom_tag(self, tag_name: str, value: str) -> None:
         tag_name = tag_name.upper()
+        if self._mutagen_file is None:
+            return
         if isinstance(self._mutagen_file, MP4):
             tag_name = f"----:com.apple.iTunes:{tag_name}"
-            self._mutagen_file.tags[tag_name] = value.encode('utf-8')
+            if self._mutagen_file.tags is None:
+                raise AttributeError("MP4 file has no tags")
+            self._mutagen_file.tags[tag_name] = value.encode("utf-8")
         elif isinstance(self._mutagen_file, MP3):
-            frame = TXXX(encoding=3, desc=tag_name, text=value)
-            self._mutagen_file.tags.add(frame)
+            frame = TXXX(encoding=3, desc=tag_name, text=value)  # type: ignore[no-untyped-call]  # mutagen stubs don't type TXXX.__init__
+            if self._mutagen_file.tags is not None:
+                self._mutagen_file.tags.add(frame)
         else:
-            self._mutagen_file.tags[tag_name] = value
+            if self._mutagen_file.tags is not None:
+                self._mutagen_file.tags[tag_name] = value
         try:
             self._mutagen_file.save()
-        except (mutagen.MutagenError, OSError) as e:
+        except (mutagen.MutagenError, OSError, AttributeError) as e:  # type: ignore[attr-defined]  # mutagen stubs don't export MutagenError top-level
             print(f"Could not save tags for {self.track_id} due to {e}")
         self.reload_metadata()
 
     @property
-    def spotify_ref(self):
+    def spotify_ref(self) -> str | None:
         return self._get_custom_tag("spotify")
 
     @spotify_ref.setter
-    def spotify_ref(self, spotify_ref):
+    def spotify_ref(self, spotify_ref: str) -> None:
         self._set_custom_tag("spotify", spotify_ref)
 
     @property

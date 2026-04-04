@@ -1,22 +1,23 @@
-from typing import Union, Optional
+import os
+from typing import Optional, Union
 
 import click
 
+from playlists.compare import compare_playlists
 from playlists.local_library import LocalLibrary
 from playlists.local_playlist import LocalPlaylist
 from playlists.path_mapper import PathMapper
 from playlists.spotify_playlist import SpotifyPlaylist
-import os
-from playlists.compare import compare_playlists
+from tracks.local_track import LocalTrack
 
 
 @click.group()
-def cli():
+def cli() -> None:
     pass
 
 
 @cli.group("spotify")
-def cli_spotify():
+def cli_spotify() -> None:
     pass
 
 
@@ -28,7 +29,15 @@ def cli_spotify():
 @click.option("--public", is_flag=True, help="Create a public playlist (default is private)")
 @click.option("--from-path", default=None, help="Source path prefix for remapping (requires --to-path)")
 @click.option("--to-path", default=None, help="Destination path prefix for remapping (requires --from-path)")
-def cli_spotify_import(source, destination, autopilot: bool = False, embed_matches: bool = False, public: bool = False, from_path: Optional[str] = None, to_path: Optional[str] = None):
+def cli_spotify_import(
+    source: tuple[str, ...],
+    destination: tuple[str, ...],
+    autopilot: bool = False,
+    embed_matches: bool = False,
+    public: bool = False,
+    from_path: Optional[str] = None,
+    to_path: Optional[str] = None,
+) -> None:
     if len(source) != len(destination):
         raise click.BadParameter("Number of sources must match the number of destinations")
 
@@ -40,10 +49,12 @@ def cli_spotify_import(source, destination, autopilot: bool = False, embed_match
         raise click.BadParameter("Both --from-path and --to-path must be provided together")
 
     inputs = zip(source, destination)
-    for source, destination in inputs:
-        playlist = get_playlist(source, path_mapper=path_mapper)
-        SpotifyPlaylist.create_from_another_playlist(destination, playlist, autopilot=autopilot,
-                                                     embed_matches=embed_matches, public=public)
+    for src, dst in inputs:
+        playlist = get_playlist(src, path_mapper=path_mapper)
+        SpotifyPlaylist.create_from_another_playlist(
+            dst, playlist, autopilot=autopilot, embed_matches=embed_matches, public=public
+        )
+
 
 @cli_spotify.command("sync")
 @click.option("--source", "-s", required=True, help="Source playlist path")
@@ -53,7 +64,15 @@ def cli_spotify_import(source, destination, autopilot: bool = False, embed_match
 @click.option("--sort-tracks", is_flag=True, help="Sort tracks alphabetically")
 @click.option("--from-path", default=None, help="Source path prefix for remapping (requires --to-path)")
 @click.option("--to-path", default=None, help="Destination path prefix for remapping (requires --from-path)")
-def cli_spotify_sync(destination, source, autopilot: bool = False, embed_matches: bool = False, sort_tracks: bool = False, from_path: Optional[str] = None, to_path: Optional[str] = None):
+def cli_spotify_sync(
+    destination: str,
+    source: str,
+    autopilot: bool = False,
+    embed_matches: bool = False,
+    sort_tracks: bool = False,
+    from_path: Optional[str] = None,
+    to_path: Optional[str] = None,
+) -> None:
     # Create path mapper if both from_path and to_path are provided
     path_mapper = None
     if from_path and to_path:
@@ -65,27 +84,30 @@ def cli_spotify_sync(destination, source, autopilot: bool = False, embed_matches
     destination_playlist = SpotifyPlaylist(destination)
     destination_playlist.clear()
     if sort_tracks:
-        tracks = sorted(source_playlist.tracks, key=lambda track: track.track_id)
+        sorted_tracks = sorted(source_playlist.tracks, key=lambda track: track.track_id)
+        destination_playlist.import_tracks(sorted_tracks, autopilot=autopilot, embed_matches=embed_matches)
     else:
-        tracks = source_playlist.tracks
-    destination_playlist.import_tracks(tracks, autopilot=autopilot, embed_matches=embed_matches)
+        destination_playlist.import_tracks(source_playlist.tracks, autopilot=autopilot, embed_matches=embed_matches)
+
 
 @cli_spotify.command("duplicates")
 @click.option("--source", "-s", required=True, help="Source playlist path")
-def cli_spotify_duplicates(source):
+def cli_spotify_duplicates(source: str) -> None:
     source_playlist = get_playlist(source)
-    tracks = dict()
+    tracks_map: dict[str | None, list[LocalTrack]] = {}
     for track in source_playlist.tracks:
-        track_id = track.spotify_ref
-        if track_id not in tracks:
-            tracks[track_id] = []
-        tracks[track_id].append(track)
-    for track_id, tracks in tracks.items():
-        if len(tracks) == 1:
+        if not isinstance(track, LocalTrack):
             continue
-        print(f"{track_id}: {len(tracks)}")
-        for track in tracks:
-            print(track.track_id)
+        track_id = track.spotify_ref
+        if track_id not in tracks_map:
+            tracks_map[track_id] = []
+        tracks_map[track_id].append(track)
+    for track_id, dupes in tracks_map.items():
+        if len(dupes) == 1:
+            continue
+        print(f"{track_id}: {len(dupes)}")
+        for t in dupes:
+            print(t.track_id)
 
 
 @cli_spotify.command("match")
@@ -93,7 +115,12 @@ def cli_spotify_duplicates(source):
 @click.option("--autopilot", is_flag=True, help="When multiple matches are found, choose the first one")
 @click.option("--from-path", default=None, help="Source path prefix for remapping (requires --to-path)")
 @click.option("--to-path", default=None, help="Destination path prefix for remapping (requires --from-path)")
-def cli_spotify_match(source, autopilot: bool = False, from_path: Optional[str] = None, to_path: Optional[str] = None):
+def cli_spotify_match(
+    source: tuple[str, ...],
+    autopilot: bool = False,
+    from_path: Optional[str] = None,
+    to_path: Optional[str] = None,
+) -> None:
     # Create path mapper if both from_path and to_path are provided
     path_mapper = None
     if from_path and to_path:
@@ -101,8 +128,8 @@ def cli_spotify_match(source, autopilot: bool = False, from_path: Optional[str] 
     elif from_path or to_path:
         raise click.BadParameter("Both --from-path and --to-path must be provided together")
 
-    for source in source:
-        playlist = get_playlist(source, path_mapper=path_mapper)
+    for src in source:
+        playlist = get_playlist(src, path_mapper=path_mapper)
         SpotifyPlaylist.track_matcher().match_list(playlist.tracks, autopilot=autopilot, embed_matches=True)
 
 
@@ -111,7 +138,12 @@ def cli_spotify_match(source, autopilot: bool = False, from_path: Optional[str] 
 @click.option("--destination", "-d", required=True, help="Destination Spotify playlist id or URL")
 @click.option("--from-path", default=None, help="Source path prefix for remapping (requires --to-path)")
 @click.option("--to-path", default=None, help="Destination path prefix for remapping (requires --from-path)")
-def cli_spotify_compare(source, destination, from_path: Optional[str] = None, to_path: Optional[str] = None):
+def cli_spotify_compare(
+    source: str,
+    destination: str,
+    from_path: Optional[str] = None,
+    to_path: Optional[str] = None,
+) -> None:
     """Compare a local m3u playlist with a Spotify playlist and print differences."""
     # Create path mapper if both from_path and to_path are provided
     path_mapper = None
@@ -124,17 +156,17 @@ def cli_spotify_compare(source, destination, from_path: Optional[str] = None, to
 
     print(f"Local-only tracks: {len(local_only)}")
     if len(local_only) > 0:
-        for idx, track in enumerate(local_only, start=1):
-            spotify_ref = track.spotify_ref if track.spotify_ref is not None else "(none)"
-            print(f"{idx}. {track.file_path}  | spotify_ref: {spotify_ref}")
+        for idx, local_track in enumerate(local_only, start=1):
+            spotify_ref = local_track.spotify_ref if local_track.spotify_ref is not None else "(none)"
+            print(f"{idx}. {local_track.file_path}  | spotify_ref: {spotify_ref}")
 
     print("")
     print(f"Spotify-only tracks: {len(spotify_only)}")
     if len(spotify_only) > 0:
-        for idx, track in enumerate(spotify_only, start=1):
-            artists = ", ".join(track.artists) if track.artists else ""
-            title = track.title or "(unknown title)"
-            print(f"{idx}. {track.track_url}  | {title} — {artists}")
+        for idx, spotify_track in enumerate(spotify_only, start=1):
+            artists = ", ".join(spotify_track.artists) if spotify_track.artists else ""
+            title = spotify_track.title or "(unknown title)"
+            print(f"{idx}. {spotify_track.track_url}  | {title} — {artists}")
 
 
 def get_playlist(source: str, path_mapper: Optional[PathMapper] = None) -> Union[LocalPlaylist, LocalLibrary]:

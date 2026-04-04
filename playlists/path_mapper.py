@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Union
 
 from exceptions import InvalidPathMappingException
 
@@ -13,7 +12,7 @@ class PathMapper:
         unmapped = mapper.map("/other/path/song.mp3")  # Returns "/other/path/song.mp3" (pass-through)
     """
 
-    def __init__(self, from_path: Union[str, Path], to_path: Union[str, Path]):
+    def __init__(self, from_path: str | Path | None, to_path: str | Path | None):
         """Initialize PathMapper with source and destination path prefixes.
 
         Args:
@@ -58,4 +57,3 @@ class PathMapper:
         except ValueError:
             # Path doesn't match from_path prefix, return original
             return path
-

@@ -1,5 +1,3 @@
-from typing import List
-
 from matchers import Matcher
 from playlists import Playlist
 from tests.matchers.matcher_mock import MatcherMock
@@ -7,18 +5,18 @@ from tracks import Track
 
 
 class PlaylistMock(Playlist):
-    def __init__(self, tracks: List[Track]):
+    def __init__(self, tracks: list[Track]) -> None:
         self._tracks = tracks
 
     @property
-    def tracks(self) -> List[Track]:
+    def tracks(self) -> list[Track]:
         return self._tracks
 
     @staticmethod
     def track_matcher() -> Matcher:
         return MatcherMock.get_instance()
 
-    def remove_track(self, tracks: List[Track]) -> None:
+    def remove_track(self, tracks: list[Track]) -> None:
         for track in tracks:
             self._tracks.remove(track)
 

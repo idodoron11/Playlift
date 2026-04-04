@@ -1,10 +1,8 @@
-from typing import List, Iterable
+from pathlib import Path
+from typing import Iterable, List
 
-from matchers import Matcher
 from playlists import TrackCollection
 from tracks import Track
-from pathlib import Path
-
 from tracks.local_track import LocalTrack
 
 
@@ -14,10 +12,9 @@ class LocalLibrary(TrackCollection):
         supported_extensions = (".mp3", ".flac", ".m4a")
         self._tracks: List[LocalTrack] = []
         for extension in supported_extensions:
-            for file in self._root_directory.glob(f'**/*{extension}'):
+            for file in self._root_directory.glob(f"**/*{extension}"):
                 self._tracks.append(LocalTrack(str(file)))
 
     @property
     def tracks(self) -> Iterable[Track]:
         return self._tracks
-

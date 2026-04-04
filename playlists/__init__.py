@@ -1,4 +1,5 @@
 """Playlist Providers"""
+
 from abc import ABC, abstractmethod
 from typing import Iterable, List
 
@@ -14,7 +15,6 @@ class TrackCollection(ABC):
 
 
 class Playlist(TrackCollection, ABC):
-
     @staticmethod
     @abstractmethod
     def track_matcher() -> Matcher:

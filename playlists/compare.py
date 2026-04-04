@@ -1,4 +1,4 @@
-from typing import List, Tuple, Optional
+from typing import List, Optional, Tuple
 
 from playlists.local_playlist import LocalPlaylist
 from playlists.path_mapper import PathMapper
@@ -7,7 +7,11 @@ from tracks.local_track import LocalTrack
 from tracks.spotify_track import SpotifyTrack
 
 
-def compare_playlists(local_playlist_path: str, spotify_playlist_id_or_url: str, path_mapper: Optional[PathMapper] = None) -> Tuple[List[LocalTrack], List[SpotifyTrack]]:
+def compare_playlists(
+    local_playlist_path: str,
+    spotify_playlist_id_or_url: str,
+    path_mapper: Optional[PathMapper] = None,
+) -> Tuple[List[LocalTrack], List[SpotifyTrack]]:
     """Compare a local m3u playlist with a Spotify playlist.
 
     Returns a tuple (local_only, spotify_only) where:
@@ -27,8 +31,8 @@ def compare_playlists(local_playlist_path: str, spotify_playlist_id_or_url: str,
     spotify_playlist = SpotifyPlaylist(spotify_playlist_id_or_url)
 
     # Build a set/map of spotify ids referenced by local tracks
-    local_id_set = set()
-    local_map = dict()  # spotify_id -> list[LocalTrack]
+    local_id_set: set[str] = set()
+    local_map: dict[str | None, list[LocalTrack]] = {}  # spotify_id -> list[LocalTrack]
     for lt in local_playlist.tracks:
         sid = getattr(lt, "spotify_id", None)
         # sid will be None for missing/"SKIP" tags
@@ -53,4 +57,3 @@ def compare_playlists(local_playlist_path: str, spotify_playlist_id_or_url: str,
     spotify_only: List[SpotifyTrack] = [t for id_, t in spotify_map.items() if id_ not in local_id_set]
 
     return local_only, spotify_only
-
