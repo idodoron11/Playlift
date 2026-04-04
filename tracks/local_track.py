@@ -6,6 +6,7 @@ from music_tag import AudioFile
 from mutagen.id3 import TXXX  # type: ignore[attr-defined]  # mutagen stubs don't re-export TXXX
 from mutagen.mp3 import MP3
 from mutagen.mp4 import MP4
+from mutagen._file import FileType as MutagenFileType
 
 from tracks import Track
 from api.spotify_utils import parse_spotify_id
@@ -15,7 +16,7 @@ class LocalTrack(Track):
     def __init__(self, file_path: str):
         self._file_path = file_path
         self._audio: Optional[AudioFile] = None
-        self._mutagen_file: Optional[mutagen.FileType] = None
+        self._mutagen_file: Optional[MutagenFileType] = None
         self.reload_metadata()
 
     def reload_metadata(self) -> None:
@@ -29,32 +30,32 @@ class LocalTrack(Track):
     @property
     def artists(self) -> list[str]:
         tag = self._get_tag("artist")
-        return tag.values if tag else []  # type: ignore[no-any-return]
+        return tag.values if tag else []
 
     @property
     def display_artist(self) -> str:
         tag = self._get_tag("artist")
-        return tag.value if tag else ""  # type: ignore[no-any-return]
+        return tag.value if tag else ""
 
     @property
     def title(self) -> str:
         tag = self._get_tag("title")
-        return tag.first if tag else ""  # type: ignore[no-any-return]
+        return tag.first if tag else ""
 
     @property
     def album(self) -> str:
         tag = self._get_tag("album")
-        return tag.first if tag else ""  # type: ignore[no-any-return]
+        return tag.first if tag else ""
 
     @property
     def duration(self) -> float:
         tag = self._get_tag("#length")
-        return tag.first if tag else 0.0  # type: ignore[no-any-return]
+        return tag.first if tag else 0.0
 
     @property
     def track_number(self) -> int:
         tag = self._get_tag("tracknumber")
-        return tag.value if tag else 0  # type: ignore[no-any-return]
+        return tag.value if tag else 0
 
     def _get_tag(self, tag_name: str, assert_not_empty: bool = False) -> Any:
         result = None

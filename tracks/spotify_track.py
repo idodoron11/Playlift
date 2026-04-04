@@ -20,24 +20,24 @@ class SpotifyTrack(Track):
 
     @property
     def artists(self) -> list[str]:
-        return [item['name'] for item in self.data['artists']]
+        return [str(item['name']) for item in self.data['artists']]
 
     @property
     def title(self) -> str:
-        return self.data['name']
+        return str(self.data['name'])
 
     @property
     def album(self) -> str:
-        return self.data['album']['name']
+        return str(self.data['album']['name'])
 
     @property
     def duration(self) -> float:
         duration_ms = self.data['duration_ms']
-        return duration_ms / 1000
+        return float(duration_ms) / 1000
 
     @property
     def track_id(self) -> str:
-        return self._id
+        return str(self._id)
 
     @property
     def track_url(self) -> str:
@@ -45,4 +45,4 @@ class SpotifyTrack(Track):
 
     @property
     def track_number(self) -> int:
-        return self.data['track_number']
+        return int(self.data['track_number'])
