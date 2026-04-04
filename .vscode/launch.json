@@ -52,7 +52,6 @@
             "args": [
                 "spotify", "match",
                 "--source", "${input:matchSource}",
-                "--embed-matches"
             ]
         },
         {
