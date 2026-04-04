@@ -1,5 +1,7 @@
 from unittest import TestCase
 
+import pytest
+
 from playlists.spotify_playlist import SpotifyPlaylist
 from tests.playlists.playlist_mock import PlaylistMock
 from tests.playlists.spotify_playlist_spy import SpotifyPlaylistSpy
@@ -35,6 +37,7 @@ E2E_TRACK_IDS = ["4OSBTYWVwsQhGLF9NHvIbR", "5mFMb5OHI3cN0UjITVztCj", "1CRtJS94Hq
 E2E_TRACKS_AFTER_REMOVE = 2
 
 
+@pytest.mark.integration
 class TestSpotifyPlaylist(TestCase):
     def test_tracks(self) -> None:
         deep_purple_hits_playlist = SpotifyPlaylist(DEEP_PURPLE_HITS_PLAYLIST_ID)

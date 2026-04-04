@@ -1,8 +1,11 @@
 from unittest import TestCase
 
+import pytest
+
 from tracks.spotify_track import SpotifyTrack
 
 
+@pytest.mark.integration
 class TestSpotifyTrack(TestCase):
     def test_track_id(self) -> None:
         track = SpotifyTrack("6kyxQuFD38mo4S3urD2Wkw")
