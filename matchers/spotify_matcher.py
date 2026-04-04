@@ -1,6 +1,6 @@
 import logging
 import re
-from typing import Iterable, Optional
+from typing import Iterable
 
 from tqdm import tqdm
 
@@ -36,7 +36,7 @@ class SpotifyMatcher(Matcher):
             if match.isrc is not None and source_track.isrc is None:
                 source_track.isrc = match.isrc
 
-    def match(self, track: Track) -> Optional[SpotifyTrack]:
+    def match(self, track: Track) -> SpotifyTrack | None:
         ref = self._find_spotify_match_in_source_track(track)
         if ref == "SKIP":
             raise SkipTrackException
@@ -48,7 +48,7 @@ class SpotifyMatcher(Matcher):
     def _match_by_isrc(self, track: Track) -> SpotifyTrack | None:
         """Look up a track by its ISRC code on Spotify."""
         if not _is_valid_isrc(track.isrc):
-            logger.info("No valid ISRC for '%s', skipping ISRC lookup", track.title)
+            logger.debug("No valid ISRC for '%s', skipping ISRC lookup", track.title)
             return None
         try:
             results = SpotifyMatcher._search(f"isrc:{track.isrc}")
