@@ -43,21 +43,28 @@ class SpotifyMatcher(Matcher):
         elif ref:
             return SpotifyTrack(ref)
 
-        # ISRC-first lookup (T015/T016)
-        if _is_valid_isrc(track.isrc):
-            try:
-                results = SpotifyMatcher._search(f"isrc:{track.isrc}")
-                if results:
-                    logger.info("Matched '%s' via ISRC %s", track.title, track.isrc)
-                    return results[0]
-            except Exception:
-                logger.warning(
-                    "ISRC lookup failed for '%s' (ISRC %s), falling back to fuzzy search",
-                    track.title,
-                    track.isrc,
-                )
+        return self._match_by_isrc(track) or self._match_by_fuzzy_search(track)
 
-        # Fuzzy search fallback
+    def _match_by_isrc(self, track: Track) -> SpotifyTrack | None:
+        """Look up a track by its ISRC code on Spotify."""
+        if not _is_valid_isrc(track.isrc):
+            logger.info("No valid ISRC for '%s', skipping ISRC lookup", track.title)
+            return None
+        try:
+            results = SpotifyMatcher._search(f"isrc:{track.isrc}")
+            if results:
+                logger.info("Matched '%s' via ISRC %s", track.title, track.isrc)
+                return results[0]
+        except Exception:
+            logger.warning(
+                "ISRC lookup failed for '%s' (ISRC %s), falling back to fuzzy search",
+                track.title,
+                track.isrc,
+            )
+        return None
+
+    def _match_by_fuzzy_search(self, track: Track) -> SpotifyTrack | None:
+        """Search Spotify using artist/album/title metadata."""
         artist_components = [f'artist:"{artist}"' for artist in track.artists] if track.artists else [""]
         album_component = f'album:"{track.album}"' if track.album else ""
         title_component = f'track:"{track.title}"' if track.title else ""
