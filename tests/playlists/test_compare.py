@@ -1,65 +1,67 @@
+from typing import Any
+
 from playlists import compare as compare_module
 
 
 class FakeLocalTrack:
-    def __init__(self, file_path, spotify_ref):
+    def __init__(self, file_path: str, spotify_ref: str | None) -> None:
         self.file_path = file_path
         self._spotify_ref = spotify_ref
 
     @property
-    def spotify_ref(self):
+    def spotify_ref(self) -> str | None:
         return self._spotify_ref
 
     @property
-    def spotify_id(self):
+    def spotify_id(self) -> str | None:
         # reuse parse logic via attribute access used in compare
         return getattr(self, "_spotify_id", None) or self._spotify_ref
 
 
 class FakeSpotifyTrack:
-    def __init__(self, track_id, title="t", artists=None):
+    def __init__(self, track_id: str, title: str = "t", artists: list[str] | None = None) -> None:
         self._id = track_id
         self._title = title
         self._artists = artists or ["Artist"]
 
     @property
-    def track_id(self):
+    def track_id(self) -> str:
         return self._id
 
     @property
-    def track_url(self):
+    def track_url(self) -> str:
         return f"https://open.spotify.com/track/{self._id}"
 
     @property
-    def title(self):
+    def title(self) -> str:
         return self._title
 
     @property
-    def artists(self):
+    def artists(self) -> list[str]:
         return self._artists
 
 
-def test_compare_simple(monkeypatch):
+def test_compare_simple(monkeypatch: Any) -> None:
     # local has two tracks: one references S1, the other has SKIP
     local_tracks = [FakeLocalTrack("/tmp/a.mp3", "S1"), FakeLocalTrack("/tmp/b.mp3", "SKIP")]
 
     class FakeLocalPlaylist:
-        def __init__(self, path, path_mapper=None):
+        def __init__(self, path: str, path_mapper: Any = None) -> None:
             self._tracks = local_tracks
 
         @property
-        def tracks(self):
+        def tracks(self) -> list[FakeLocalTrack]:
             return self._tracks
 
     # spotify playlist has tracks S1 and S2
     spotify_tracks = [FakeSpotifyTrack("S1"), FakeSpotifyTrack("S2")]
 
     class FakeSpotifyPlaylist:
-        def __init__(self, pid):
+        def __init__(self, pid: str) -> None:
             self._tracks = spotify_tracks
 
         @property
-        def tracks(self):
+        def tracks(self) -> list[FakeSpotifyTrack]:
             return self._tracks
 
     monkeypatch.setattr(compare_module, "LocalPlaylist", FakeLocalPlaylist)
@@ -74,4 +76,3 @@ def test_compare_simple(monkeypatch):
     # spotify_only should contain S2
     assert len(spotify_only) == 1
     assert spotify_only[0].track_id == "S2"
-

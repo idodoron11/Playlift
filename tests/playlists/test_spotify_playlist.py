@@ -4,29 +4,30 @@ from playlists.spotify_playlist import SpotifyPlaylist
 from tests.playlists.playlist_mock import PlaylistMock
 from tests.playlists.spotify_playlist_spy import SpotifyPlaylistSpy
 from tests.tracks.track_mock import TrackMock
+from tracks import Track
 from tracks.spotify_track import SpotifyTrack
 
 
 class TestSpotifyPlaylist(TestCase):
-    def test_tracks(self):
+    def test_tracks(self) -> None:
         indie_mix_playlist = SpotifyPlaylist("37i9dQZF1EQqkOPvHGajmW")
         self.assertEqual(len(list(indie_mix_playlist.tracks)), 50)
 
-    def test_tracks_with_more_than_100_tracks(self):
+    def test_tracks_with_more_than_100_tracks(self) -> None:
         chill_vibes_playlist = SpotifyPlaylist("37i9dQZF1DX889U0CL85jj")
         tracks = list(chill_vibes_playlist.tracks)
         self.assertGreater(len(tracks), 100)
 
-    def test_playlist_id(self):
+    def test_playlist_id(self) -> None:
         indie_mix_playlist = SpotifyPlaylist("37i9dQZF1EQqkOPvHGajmW")
         self.assertEqual(indie_mix_playlist.playlist_id, "37i9dQZF1EQqkOPvHGajmW")
 
-    def test_name(self):
+    def test_name(self) -> None:
         indie_mix_playlist = SpotifyPlaylist("37i9dQZF1EQqkOPvHGajmW")
         self.assertEqual(indie_mix_playlist.name, "Indie Mix")
 
-    def test_create_from_another_playlist(self):
-        source_tracks = [
+    def test_create_from_another_playlist(self) -> None:
+        source_tracks: list[Track] = [
             TrackMock(
                 "1",
                 ["Led Zeppelin"],
@@ -43,7 +44,7 @@ class TestSpotifyPlaylist(TestCase):
         self.assertEqual(target_playlist.tracks[0].display_artist, source_playlist.tracks[0].display_artist)
         self.assertEqual(target_playlist.tracks[0].album, source_playlist.tracks[0].album)
 
-    def test_init(self):
+    def test_init(self) -> None:
         playlist = SpotifyPlaylist("https://open.spotify.com/playlist/3cEYpjA9oz9GiPac4AsH4n")
         tracks = playlist.tracks
         expected_songs_names = [
@@ -56,7 +57,7 @@ class TestSpotifyPlaylist(TestCase):
         actual_songs_names = [track.title for track in tracks]
         self.assertEqual(expected_songs_names, actual_songs_names)
 
-    def test_e2e_spotify_playlist(self):
+    def test_e2e_spotify_playlist(self) -> None:
         playlist = SpotifyPlaylist.create("Test Playlist")
         self.assertEqual(len(playlist.tracks), 0)
         track_ids = [
