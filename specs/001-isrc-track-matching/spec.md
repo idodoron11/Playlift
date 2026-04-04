@@ -9,11 +9,11 @@
 
 ### User Story 1 - ISRC-Based Track Matching (Priority: P1)
 
-A user imports or syncs a playlist. Some local tracks already have ISRC codes stored in their audio tags (from a previous rip, download, or from an earlier sync run). Instead of performing a fuzzy text search, the system reads the ISRC from the tag and looks up the Spotify track directly using that code. The match is returned instantly and with certainty — no guessing based on title/artist spelling variations.
+A user imports or syncs a playlist, or runs a match pass. Some local tracks already have ISRC codes stored in their audio tags (from a previous rip, download, or from an earlier run). Instead of performing a fuzzy text search, the system reads the ISRC from the tag and looks up the Spotify track directly using that code. The match is returned instantly and with certainty — no guessing based on title/artist spelling variations.
 
 **Why this priority**: This is the core value of the feature. ISRC matching is deterministic — one code maps to exactly one recording. It eliminates false positives from fuzzy search (e.g., a live version matching instead of the studio version) and is especially valuable for tracks with non-Latin names where fuzzy search is least reliable.
 
-**Independent Test**: Can be fully tested by running an import on a playlist containing only tracks with ISRC tags and verifying that all matches are found without any fuzzy search being invoked.
+**Independent Test**: Can be fully tested by running an import (or sync, or match) on a playlist containing only tracks with ISRC tags and verifying that all matches are found without any fuzzy search being invoked.
 
 **Acceptance Scenarios**:
 
@@ -30,7 +30,7 @@ A user imports a playlist where many local tracks have no ISRC in their tags (co
 
 **Why this priority**: This ensures backward compatibility. The feature must not regress existing behavior for tracks without ISRCs. Every track without an ISRC must still go through the proven fuzzy matching path.
 
-**Independent Test**: Can be fully tested by running an import on a playlist where no local tracks have ISRC tags and verifying that all matches proceed via fuzzy search as they did before this feature.
+**Independent Test**: Can be fully tested by running an import (or sync, or match) on a playlist where no local tracks have ISRC tags and verifying that all matches proceed via fuzzy search as they did before this feature.
 
 **Acceptance Scenarios**:
 
@@ -63,7 +63,6 @@ After a local track is successfully matched to a Spotify track — whether via I
 - What happens when an ISRC tag is structurally valid (12 characters) but returns no catalog result? → Fall back to fuzzy search, log a warning with the ISRC value.
 - What happens when the ISRC lookup fails due to a network or API error? → Treat as a non-match: fall back to fuzzy search and log a warning. The sync run is not aborted.
 - What happens when a track is matched via fuzzy search and the matched Spotify track has no ISRC in its metadata? → Skip embedding; do not write an empty tag.
-- What happens during a sync run (not just import) when the track was previously matched via fuzzy search but now has an ISRC embedded from a prior import? → ISRC lookup is attempted first; if it returns the same match, the existing `SPOTIFY_REF` is confirmed. If it returns a different match, the ISRC result takes priority.
 
 ## Requirements *(mandatory)*
 
@@ -102,6 +101,7 @@ After a local track is successfully matched to a Spotify track — whether via I
 - Q: Should ISRC embedding follow the existing `--embed-matches` flag or always happen on every match? → A: Follow the `--embed-matches` flag — consistent with how `SPOTIFY_REF` is written.
 - Q: Should an API/network error during ISRC lookup propagate or fall back to fuzzy search? → A: Fall back to fuzzy search and log a warning; sync continues.
 - Q: Should the system validate the ISRC format before attempting a Spotify lookup, or attempt with any non-empty string? → A: Validate format (`^[A-Z]{2}[A-Z0-9]{3}[0-9]{7}$`) first; skip lookup and fall back to fuzzy if invalid.
+- Q: Does ISRC-based matching apply to `import` only, or also `sync` and `match`? → A: All three commands trigger the same matching logic for tracks without a `SPOTIFY_REF`; ISRC matching applies uniformly to any unmatched track regardless of which command triggered it.
 
 ## Assumptions
 
