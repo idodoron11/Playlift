@@ -45,7 +45,7 @@ playlist_path = click.prompt("Enter playlist path")
 matcher: SpotifyMatcher = SpotifyMatcher.get_instance()  # type: ignore[assignment]
 
 playlist = LocalPlaylist(playlist_path)
-for index, track in enumerate(tqdm(playlist.tracks)):
+for _index, track in enumerate(tqdm(playlist.tracks)):
     spotify_ref = track.spotify_ref
     if not spotify_ref or spotify_ref == "SKIP":
         continue

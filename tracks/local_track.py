@@ -1,10 +1,12 @@
+from __future__ import annotations
+
+import contextlib
 import logging
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any
 
 import music_tag
 import mutagen
 from music_tag import AudioFile
-from mutagen._file import FileType as MutagenFileType
 from mutagen.flac import FLAC
 from mutagen.id3 import (  # type: ignore[attr-defined]  # mutagen stubs don't re-export TSRC/TXXX
     TSRC,
@@ -12,6 +14,9 @@ from mutagen.id3 import (  # type: ignore[attr-defined]  # mutagen stubs don't r
 )
 from mutagen.mp3 import MP3
 from mutagen.mp4 import MP4
+
+if TYPE_CHECKING:
+    from mutagen._file import FileType as MutagenFileType
 
 from api.spotify_utils import parse_spotify_id
 from tracks import Track
@@ -27,8 +32,8 @@ def _normalize_isrc(raw: str) -> str:
 class LocalTrack(Track):
     def __init__(self, file_path: str):
         self._file_path = file_path
-        self._audio: Optional[AudioFile] = None
-        self._mutagen_file: Optional[MutagenFileType] = None
+        self._audio: AudioFile | None = None
+        self._mutagen_file: MutagenFileType | None = None
         self.reload_metadata()
 
     def reload_metadata(self) -> None:
@@ -71,10 +76,8 @@ class LocalTrack(Track):
 
     def _get_tag(self, tag_name: str, assert_not_empty: bool = False) -> Any:
         result = None
-        try:
+        with contextlib.suppress(Exception):
             result = self._audio[tag_name]  # type: ignore[index]
-        except Exception:
-            pass
         if assert_not_empty and not result:
             raise AttributeError(f"No {tag_name} found")
         return result
@@ -182,7 +185,7 @@ class LocalTrack(Track):
         self._set_custom_tag("spotify", spotify_ref)
 
     @property
-    def spotify_id(self) -> Optional[str]:
+    def spotify_id(self) -> str | None:
         """Return a normalized Spotify track id derived from `spotify_ref`.
 
         This leaves the behavior of `spotify_ref` unchanged (it still returns

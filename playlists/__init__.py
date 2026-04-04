@@ -1,7 +1,7 @@
 """Playlist Providers"""
 
 from abc import ABC, abstractmethod
-from typing import Iterable, List
+from collections.abc import Iterable
 
 from matchers import Matcher
 from tracks import Track
@@ -21,7 +21,7 @@ class Playlist(TrackCollection, ABC):
         pass
 
     @abstractmethod
-    def remove_track(self, tracks: List[Track]) -> None:
+    def remove_track(self, tracks: list[Track]) -> None:
         pass
 
     @abstractmethod

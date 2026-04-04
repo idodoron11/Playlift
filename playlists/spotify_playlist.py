@@ -1,4 +1,5 @@
-from typing import Any, Iterable
+from collections.abc import Iterable
+from typing import Any
 
 from api.spotify import SpotifyAPI
 from matchers.spotify_matcher import SpotifyMatcher
@@ -81,7 +82,7 @@ class SpotifyPlaylist(Playlist):
         try:
             for start in range(0, len(tracks), 100):
                 end = min(len(tracks), start + 100)
-                chunk = map(lambda track: track.track_id, tracks[start:end])
+                chunk = (track.track_id for track in tracks[start:end])
                 SpotifyAPI.get_instance().playlist_remove_all_occurrences_of_items(self.playlist_id, chunk)
         finally:
             self._data = None
@@ -90,7 +91,7 @@ class SpotifyPlaylist(Playlist):
         try:
             for start in range(0, len(tracks), 100):
                 end = min(len(tracks), start + 100)
-                chunk = map(lambda track: track.track_id, tracks[start:end])
+                chunk = (track.track_id for track in tracks[start:end])
                 SpotifyAPI.get_instance().playlist_add_items(self.playlist_id, chunk)
         finally:
             self._data = None

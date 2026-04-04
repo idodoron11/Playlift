@@ -15,10 +15,7 @@ def sync_playlists(path: Path) -> None:
     The playlist name is inferred from the file name.
     """
     # Find all .m3u files recursively
-    if path.is_dir():
-        playlist_files = list(path.rglob("*.m3u"))
-    else:
-        playlist_files = [path]
+    playlist_files = list(path.rglob("*.m3u")) if path.is_dir() else [path]
 
     if not playlist_files:
         click.echo("No .m3u files found in the specified directory.")
@@ -37,7 +34,7 @@ def sync_playlists(path: Path) -> None:
 
     # Create command line arguments
     cmd = [sys.executable, "main.py", "spotify", "import"]
-    for src, dst in zip(sources, destinations):
+    for src, dst in zip(sources, destinations, strict=True):
         cmd.extend(["--source", src, "--destination", dst])
 
     # Run the command in a subprocess, inheriting stdin/stdout for interactivity
@@ -46,7 +43,7 @@ def sync_playlists(path: Path) -> None:
         click.echo("Successfully imported playlists to Spotify!")
     except subprocess.CalledProcessError as e:
         click.echo(f"Error importing playlists. Exit code: {e.returncode}", err=True)
-        raise click.Abort()
+        raise click.Abort() from e
 
 
 if __name__ == "__main__":

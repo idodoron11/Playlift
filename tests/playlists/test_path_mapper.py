@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from exceptions import InvalidPathMappingException
+from exceptions import InvalidPathMappingError
 from playlists.path_mapper import PathMapper
 
 
@@ -28,18 +28,18 @@ class TestPathMapperInitialization:
         assert mapper is not None
 
     def test_init_with_empty_from_path(self) -> None:
-        """Test that empty from_path raises InvalidPathMappingException."""
-        with pytest.raises(InvalidPathMappingException, match="from_path cannot be empty"):
+        """Test that empty from_path raises InvalidPathMappingError."""
+        with pytest.raises(InvalidPathMappingError, match="from_path cannot be empty"):
             PathMapper("", "/mnt/d/music")
 
     def test_init_with_none_from_path(self) -> None:
-        """Test that None from_path raises InvalidPathMappingException."""
-        with pytest.raises(InvalidPathMappingException, match="from_path cannot be empty"):
+        """Test that None from_path raises InvalidPathMappingError."""
+        with pytest.raises(InvalidPathMappingError, match="from_path cannot be empty"):
             PathMapper(None, "/mnt/d/music")
 
     def test_init_with_whitespace_only_from_path(self) -> None:
-        """Test that whitespace-only from_path raises InvalidPathMappingException."""
-        with pytest.raises(InvalidPathMappingException, match="from_path cannot be empty"):
+        """Test that whitespace-only from_path raises InvalidPathMappingError."""
+        with pytest.raises(InvalidPathMappingError, match="from_path cannot be empty"):
             PathMapper("   ", "/mnt/d/music")
 
     def test_init_with_empty_to_path(self) -> None:

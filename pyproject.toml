@@ -42,7 +42,20 @@ indent-width = 4
 target-version = "py311"
 
 [tool.ruff.lint]
-select = ["E", "F", "I"]  # pycodestyle errors, pyflakes, isort
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "I",    # isort
+    "N",    # pep8-naming
+    "UP",   # pyupgrade (modernize syntax)
+    "B",    # flake8-bugbear
+    "C4",   # flake8-comprehensions
+    "SIM",  # flake8-simplify
+    "RUF",  # ruff-specific (mutable defaults, unused noqa, etc.)
+    "PT",   # flake8-pytest-style
+    "TCH",  # flake8-type-checking
+]
 
 [tool.ruff.format]
 indent-style = "space"

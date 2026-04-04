@@ -1,4 +1,4 @@
-from typing import Iterable, List, Optional
+from collections.abc import Iterable
 
 import mutagen
 from tqdm import tqdm
@@ -10,11 +10,11 @@ from tracks.local_track import LocalTrack
 
 
 class LocalPlaylist(Playlist):
-    def __init__(self, playlist_file_path: str, path_mapper: Optional[PathMapper] = None):
+    def __init__(self, playlist_file_path: str, path_mapper: PathMapper | None = None):
         self._source_filepath = playlist_file_path
         self._path_mapper = path_mapper
-        self._tracks: List[LocalTrack] = []
-        with open(self._source_filepath, "r", encoding="utf-8") as f:
+        self._tracks: list[LocalTrack] = []
+        with open(self._source_filepath, encoding="utf-8") as f:
             lines: Iterable[str] = (x.strip() for x in f.readlines())  # remove redundant spaces
             lines = (x for x in lines if len(x) > 0 and not x.startswith("#"))  # skip empty lines
             self._load_tracks(lines)
