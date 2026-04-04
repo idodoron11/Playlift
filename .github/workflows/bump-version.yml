@@ -55,6 +55,8 @@ jobs:
           uv sync
           git add uv.lock
           git commit --amend --no-edit
+          TAG=$(git describe --tags --abbrev=0)
+          git tag -f "$TAG" HEAD
 
       - name: Push commit and tag
         run: git push --follow-tags
