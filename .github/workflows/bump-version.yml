@@ -32,10 +32,7 @@ jobs:
           enable-cache: true
 
       - name: Install dependencies
-        run: |
-          uv sync --group dev
-          git status
-          git diff
+        run: uv sync --group dev
 
       - name: Configure Git
         run: |
@@ -48,10 +45,7 @@ jobs:
           git fetch --tags
 
       - name: Bump patch version
-        run: |
-          uv run bump-my-version bump patch
-          git status
-          git diff
+        run: uv run bump-my-version bump patch
 
       - name: Push commit and tag
         run: git push --follow-tags
