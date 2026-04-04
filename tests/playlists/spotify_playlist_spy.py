@@ -1,31 +1,31 @@
-from typing import List, Optional
+from typing import Any
 
 from playlists.spotify_playlist import SpotifyPlaylist
-from tracks import Track
 from tracks.spotify_track import SpotifyTrack
 
 
 class SpotifyPlaylistSpy(SpotifyPlaylist):
-    def __init__(self, playlist_url: str = None):
-        self._id = playlist_url
-        self._data: Optional[dict] = {}
-        self._tracks: List[Track] = []
+    def __init__(self, playlist_url: str | None = None) -> None:
+        self._id = playlist_url or ""
+        self._data: dict[str, Any] | None = {}
+        self._tracks: list[SpotifyTrack] = []
 
     @classmethod
-    def create(cls, playlist_name: str, public: bool = False):
+    def create(cls, playlist_name: str, public: bool = False) -> "SpotifyPlaylistSpy":
         return cls("dummy playlist id")
 
     @property
-    def tracks(self) -> List[Track]:
+    def tracks(self) -> list[SpotifyTrack]:
         return self._tracks
 
     @property
-    def data(self):
-        return self._data
+    def data(self) -> dict[str, Any]:
+        return self._data or {}
 
-    def add_tracks(self, tracks: List[SpotifyTrack]) -> None:
+    def add_tracks(self, tracks: list[SpotifyTrack]) -> None:  # type: ignore[override]
         self._tracks.extend(tracks)
 
-    def remove_track(self, track: SpotifyTrack) -> None:
-        for track in self._tracks:
-            self._tracks.remove(track)
+    def remove_track(self, tracks: list[SpotifyTrack]) -> None:  # type: ignore[override]
+        for track in list(self._tracks):
+            if track in tracks:
+                self._tracks.remove(track)

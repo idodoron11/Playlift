@@ -17,12 +17,12 @@ class TestSpotifyMatcher(TestCase):
         ZE_RAK_HALEV: "0wRnFA1iu3RSfCPvWfvWgp"
     }
 
-    def test_match(self):
+    def test_match(self) -> None:
         source = self.UNINTENDED_TRACK
         target = SpotifyMatcher.get_instance().match(source)
         self.assertEqual(target.track_id, self.match_map[source])
 
-    def test_suggest_match(self):
+    def test_suggest_match(self) -> None:
         for source, expected_track_id in self.match_map.items():
             targets = SpotifyMatcher.get_instance().suggest_match(source)
             self.assertGreater(len(targets), 0)
