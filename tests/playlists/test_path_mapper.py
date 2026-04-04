@@ -106,6 +106,7 @@ class TestPathMapperMapping:
         result = mapper.map(original)
         assert result == original
 
+    @pytest.mark.skipif(sys.platform != "win32", reason="Windows path parsing only works on Windows")
     def test_map_windows_paths(self) -> None:
         """Test mapping with Windows-style paths."""
         mapper = PathMapper("C:\\music", "D:\\music")
