@@ -27,6 +27,17 @@ When the declared type of a function argument or return value is unclear, use th
 
 Use this chain to arrive at the most specific concrete type that is correct.
 
+### Class Field Inference
+
+For untyped class fields and instance variables, use this reasoning order:
+
+1. **`__init__` assignment**: what is assigned to the field? (`self.name = name` → same type as the `name` parameter; `self.items = []` → look at how it's populated elsewhere to determine element type)
+2. **All methods that write the field**: check every `self.field = ...` assignment across the class body to find the full set of assigned types
+3. **All methods that read the field**: how is it used? (passed to a function → check that function's signature; iterated → `Iterable[X]`; indexed → `Sequence[X]` or `dict[K, V]`)
+4. **Subclasses**: if overridden in a subclass, the base class annotation must be compatible with all subclass assignments
+5. **Lazy-initialized fields** (e.g. `self._cache: X | None = None` set later): annotate as `X | None` at the class level, narrowing with guards at read sites
+6. **Properties**: if the field is accessed via a `@property`, annotate the backing attribute (`_field`) precisely and let the property return type follow
+
 ## Procedure
 
 ### Step 1 — Identify Target
