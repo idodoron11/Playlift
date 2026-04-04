@@ -15,7 +15,6 @@
 
 - [x] CHK005 Is the term standard track-info response clearly defined so implementers can identify a single authoritative payload shape? [Clarity, Ambiguity]
 - [ ] CHK006 Is no additional request quantified as a requirement constraint rather than an implementation preference? [Clarity, Gap]
-- [ ] CHK007 Are the expectations for API call count measurable for the ISRC-first path (for example, one lookup request only)? [Measurability, Gap]
 
 ## Requirement Consistency
 
@@ -25,7 +24,6 @@
 
 ## Acceptance Criteria Quality
 
-- [ ] CHK011 Is there at least one acceptance criterion that can objectively confirm ISRC is consumed from the initial response model without a second enrichment request? [Acceptance Criteria, Gap]
 - [x] CHK012 Is there at least one acceptance criterion that distinguishes no ISRC in response from API failure, with different expected behavior for each? [Acceptance Criteria, Spec §FR-004]
 
 ## Scenario Coverage
