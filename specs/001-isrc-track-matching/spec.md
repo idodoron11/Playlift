@@ -20,7 +20,7 @@ A user imports or syncs a playlist. Some local tracks already have ISRC codes st
 1. **Given** a local track has a valid ISRC in its tags, **When** the matching process is triggered, **Then** the system uses the ISRC to find the Spotify track without performing a fuzzy search.
 2. **Given** a local track has a valid ISRC in its tags, **When** the ISRC lookup returns a Spotify track, **Then** the returned track is used as the match result.
 3. **Given** a local track has a valid ISRC in its tags, **When** the ISRC lookup returns no result, **Then** the system falls back to fuzzy search using title, artist, and album.
-4. **Given** a local track has a malformed or empty ISRC tag, **When** the matching process is triggered, **Then** the system skips ISRC lookup and proceeds directly with fuzzy search.
+4. **Given** a local track has a malformed or empty ISRC tag (i.e., does not match `^[A-Z]{2}[A-Z0-9]{3}[0-9]{7}$`), **When** the matching process is triggered, **Then** the system skips ISRC lookup and proceeds directly with fuzzy search.
 
 ---
 
@@ -41,7 +41,7 @@ A user imports a playlist where many local tracks have no ISRC in their tags (co
 
 ### User Story 3 - ISRC Embedding After Match (Priority: P3)
 
-After a local track is successfully matched to a Spotify track — whether via ISRC lookup or fuzzy search — the system writes the Spotify track's ISRC back into the local file's tags, if the ISRC is not already present. On the next sync or import run, that track can be matched via ISRC directly, skipping fuzzy search entirely.
+After a local track is successfully matched to a Spotify track — whether via ISRC lookup or fuzzy search — and `--embed-matches` is active, the system writes the Spotify track's ISRC back into the local file's tags, if the ISRC is not already present. On the next sync or import run, that track can be matched via ISRC directly, skipping fuzzy search entirely.
 
 **Why this priority**: This is a compounding improvement: each sync run enriches the local library. Over time, the proportion of tracks matched via fast ISRC lookup grows, and the dependency on imprecise fuzzy search decreases. It also acts as a persistent quality signal — ISRC-tagged tracks were verified against Spotify's catalog.
 
@@ -61,6 +61,7 @@ After a local track is successfully matched to a Spotify track — whether via I
 - What happens when a local track has an ISRC that exists in Spotify's catalog but the recording is not available in the user's regional market? → Fall back to fuzzy search.
 - What happens when two Spotify tracks share the same ISRC (rare with reissues or compilations)? → Use the first result returned by the catalog.
 - What happens when an ISRC tag is structurally valid (12 characters) but returns no catalog result? → Fall back to fuzzy search, log a warning with the ISRC value.
+- What happens when the ISRC lookup fails due to a network or API error? → Treat as a non-match: fall back to fuzzy search and log a warning. The sync run is not aborted.
 - What happens when a track is matched via fuzzy search and the matched Spotify track has no ISRC in its metadata? → Skip embedding; do not write an empty tag.
 - What happens during a sync run (not just import) when the track was previously matched via fuzzy search but now has an ISRC embedded from a prior import? → ISRC lookup is attempted first; if it returns the same match, the existing `SPOTIFY_REF` is confirmed. If it returns a different match, the ISRC result takes priority.
 
@@ -69,10 +70,10 @@ After a local track is successfully matched to a Spotify track — whether via I
 ### Functional Requirements
 
 - **FR-001**: The system MUST read any existing ISRC value from a local track's audio tags (mp3, flac, and m4a formats) before initiating the matching process.
-- **FR-002**: If a valid ISRC is found in the local track's tags, the system MUST attempt to look up the corresponding Spotify track using that ISRC as the primary matching method.
+- **FR-002**: If an ISRC is found in the local track's tags, the system MUST validate its format (12-character alphanumeric string matching the pattern `^[A-Z]{2}[A-Z0-9]{3}[0-9]{7}$`) before attempting lookup. Only a structurally valid ISRC triggers a Spotify lookup; an invalid value is treated as absent and falls back to fuzzy search.
 - **FR-003**: If the ISRC lookup yields a match, the system MUST use that result as the track match and skip fuzzy search for that track.
-- **FR-004**: If the local track has no ISRC tag, or the ISRC lookup returns no result, the system MUST fall back to the existing fuzzy search using the track's title, artist, and album metadata.
-- **FR-005**: After a successful match (via either ISRC lookup or fuzzy search), the system MUST write the matched Spotify track's ISRC into the local file's tags, provided the local file does not already have an ISRC tag.
+- **FR-004**: If the local track has no ISRC tag, the ISRC lookup returns no result, or the ISRC lookup fails due to a network or API error, the system MUST fall back to the existing fuzzy search using the track's title, artist, and album metadata. API or network errors MUST be logged as warnings and MUST NOT abort the sync.
+- **FR-005**: After a successful match (via either ISRC lookup or fuzzy search), when the `--embed-matches` flag is active, the system MUST write the matched Spotify track's ISRC into the local file's tags, provided the local file does not already have an ISRC tag. If `--embed-matches` is not active, no ISRC is written.
 - **FR-006**: The system MUST NOT overwrite an existing ISRC tag on a local file.
 - **FR-007**: If writing the ISRC tag to a local file fails for any reason, the system MUST log a warning and continue the sync without treating the write failure as a blocking error.
 - **FR-008**: The system MUST indicate (via logging or output) whether each track was matched via ISRC lookup or fuzzy search.
@@ -93,6 +94,14 @@ After a local track is successfully matched to a Spotify track — whether via I
 - **SC-003**: After a completed import or sync run, every matched local track that lacked an ISRC tag now has one written to its file — confirmed by reading tags after the run.
 - **SC-004**: A second sync run on the same playlist resolves a higher proportion of tracks via ISRC lookup than the first run did, demonstrating the compounding improvement from embedding.
 - **SC-005**: No regressions in match results for tracks that had no ISRC tag — they continue to be matched (or not) with the same outcome as before this feature.
+
+## Clarifications
+
+### Session 2026-04-04
+
+- Q: Should ISRC embedding follow the existing `--embed-matches` flag or always happen on every match? → A: Follow the `--embed-matches` flag — consistent with how `SPOTIFY_REF` is written.
+- Q: Should an API/network error during ISRC lookup propagate or fall back to fuzzy search? → A: Fall back to fuzzy search and log a warning; sync continues.
+- Q: Should the system validate the ISRC format before attempting a Spotify lookup, or attempt with any non-empty string? → A: Validate format (`^[A-Z]{2}[A-Z0-9]{3}[0-9]{7}$`) first; skip lookup and fall back to fuzzy if invalid.
 
 ## Assumptions
 
