@@ -47,20 +47,8 @@ jobs:
       - name: Restore uv.lock
         run: git checkout -- uv.lock
 
-      - name: DEBUG Git status and diff
-        if: always()
-        run: |
-          git status
-          git diff
-
       - name: Bump patch version
         run: uv run --frozen bump-my-version bump patch
-
-      - name: DEBUG Git status and diff
-        if: always()
-        run: |
-          git status
-          git diff
 
       - name: Sync uv.lock and amend bump commit
         run: |
