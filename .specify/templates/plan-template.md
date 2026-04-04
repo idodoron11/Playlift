@@ -31,7 +31,20 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+- [ ] **Principle I (Clean Code)**: All new identifiers are precise and descriptive; no magic
+  literals; functions stay under ~30 lines; nesting ≤ 3 levels.
+- [ ] **Principle II (SOLID)**: Each new class has a single responsibility; dependencies are
+  injected, not instantiated inside business logic; no polymorphism violations.
+- [ ] **Principle III (DRY)**: No logic duplicated across modules; thresholds and constants
+  defined once in `config/` or module-level constants.
+- [ ] **Principle IV (Readability First)**: No premature optimizations; any performance
+  trade-off is measured and commented with benchmark evidence.
+- [ ] **Principle V (Unit Tests)**: Every new concrete class has tests covering core logic,
+  edge cases (empty inputs, non-Latin chars, `"SKIP"` sentinel, `None` `spotify_ref`),
+  and regression scenarios. Tests are isolated from filesystem/network.
+- [ ] **Principle VI (Type Safety)**: All public APIs carry complete type hints; code passes
+  `mypy` strict mode; custom exception classes defined for each failure mode.
+- [ ] **Quality Gates**: `ruff format .`, `ruff check .`, `mypy .`, `pytest tests/` all pass.
 
 ## Project Structure
 
