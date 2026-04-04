@@ -57,4 +57,3 @@ def compare_playlists(
     spotify_only: List[SpotifyTrack] = [t for id_, t in spotify_map.items() if id_ not in local_id_set]
 
     return local_only, spotify_only
-

@@ -6,15 +6,15 @@ from tests.tracks.track_mock import TrackMock
 
 class TestSpotifyMatcher(TestCase):
     UNINTENDED_TRACK = TrackMock("1", ["Muse"], "Showbiz", "Unintended", 3 * 60 + 55, 7)
-    HERE_WITHOUT_YOU_TRACK = TrackMock("2", ["3 doors down"], "away from the sun", "here without you", 3 * 60 + 57,6)
-    WILD_TRACK = TrackMock("3", ['LP'], "Love Lines (Deluxe Version)", "Wild", 181, 2)
-    ZE_RAK_HALEV = TrackMock("4", ['אביב גפן'], "עם הזמן", "זה רק הלב שכואב לך", 232, 4)
+    HERE_WITHOUT_YOU_TRACK = TrackMock("2", ["3 doors down"], "away from the sun", "here without you", 3 * 60 + 57, 6)
+    WILD_TRACK = TrackMock("3", ["LP"], "Love Lines (Deluxe Version)", "Wild", 181, 2)
+    ZE_RAK_HALEV = TrackMock("4", ["אביב גפן"], "עם הזמן", "זה רק הלב שכואב לך", 232, 4)
 
     match_map = {
         UNINTENDED_TRACK: "6kyxQuFD38mo4S3urD2Wkw",
         HERE_WITHOUT_YOU_TRACK: "3NLrRZoMF0Lx6zTlYqeIo4",
         WILD_TRACK: "3QdeMlhJH3fAMbMPVD5ZAu",
-        ZE_RAK_HALEV: "0wRnFA1iu3RSfCPvWfvWgp"
+        ZE_RAK_HALEV: "0wRnFA1iu3RSfCPvWfvWgp",
     }
 
     def test_match(self) -> None:

@@ -5,6 +5,7 @@ Provides a small, robust parser to extract Spotify IDs from various forms
 (spotify: URIs, open.spotify.com URLs, or raw IDs). It treats the special
 value "SKIP" (case-insensitive) as a marker meaning "no spotify reference".
 """
+
 from typing import Optional
 
 
@@ -39,4 +40,3 @@ def parse_spotify_id(value: Optional[str]) -> Optional[str]:
     # otherwise assume it's already an id
     v = v.split("?")[0]
     return v or None
-

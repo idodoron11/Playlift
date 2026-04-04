@@ -9,19 +9,19 @@ from tracks.spotify_track import SpotifyTrack
 
 class SpotifyPlaylist(Playlist):
     def __init__(self, playlist_url: str | None = None, data: dict[str, Any] | None = None):
-        self._id = SpotifyAPI.get_instance()._get_id('playlist', playlist_url)
+        self._id = SpotifyAPI.get_instance()._get_id("playlist", playlist_url)
         self._data: dict[str, Any] | None = data
-        if self._data and self._data['id'] != self._id:
+        if self._data and self._data["id"] != self._id:
             raise ValueError("The data object does not match the track id")
         self._tracks: list[SpotifyTrack] = []
 
     def _load_data(self) -> None:
         self._data = SpotifyAPI.get_instance().playlist(self.playlist_id)
         self._tracks = []
-        api_tracks = self._data['tracks']
+        api_tracks = self._data["tracks"]
         while api_tracks:
-            for api_track in api_tracks['items']:
-                self._tracks.append(SpotifyTrack(api_track['track']['id'], data=api_track['track']))
+            for api_track in api_tracks["items"]:
+                self._tracks.append(SpotifyTrack(api_track["track"]["id"], data=api_track["track"]))
             api_tracks = SpotifyAPI.get_instance().next(api_tracks)
 
     @classmethod
@@ -65,7 +65,7 @@ class SpotifyPlaylist(Playlist):
 
     @property
     def name(self) -> str:
-        return str(self.data['name'])
+        return str(self.data["name"])
 
     @property
     def data(self) -> dict[str, Any]:

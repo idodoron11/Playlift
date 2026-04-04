@@ -46,12 +46,7 @@ class Matcher(ABC):
             else 0
         )
         album_d = SequenceMatcher(None, track1.album, track2.album).ratio() if track1.album and track2.album else 0
-        return (
-            1 - title_d,
-            1 - artist_d,
-            1 - album_d,
-            abs(track1.duration - track2.duration)
-        )
+        return (1 - title_d, 1 - artist_d, 1 - album_d, abs(track1.duration - track2.duration))
 
     @abstractmethod
     def match_list(self, tracks: Iterable[Track], autopilot: bool = False, embed_matches: bool = False) -> list[Track]:
@@ -59,11 +54,15 @@ class Matcher(ABC):
 
     @staticmethod
     def choose_suggestion(track: Track, suggestions: list[Track]) -> int:
-        print(f'Please choose the best match for\n{track}')
+        print(f"Please choose the best match for\n{track}")
         print("If none match, type -1")
         headers = ["#", "Artist", "Track Title", "Album", "Track Position", "Duration"]
-        data = [(pos, track.display_artist, track.title, track.album, track.track_number, track.duration)
-                for pos, track in enumerate(suggestions)]
+        data = [
+            (pos, track.display_artist, track.title, track.album, track.track_number, track.duration)
+            for pos, track in enumerate(suggestions)
+        ]
         results_tbl_visual = tabulate(data, headers=headers)
         print(results_tbl_visual)
-        return int(click.prompt("Enter best match index (#):", default=0, type=click.IntRange(-1, len(suggestions)-1)))
+        return int(
+            click.prompt("Enter best match index (#):", default=0, type=click.IntRange(-1, len(suggestions) - 1))
+        )

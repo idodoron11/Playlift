@@ -3,11 +3,7 @@ from spotipy.oauth2 import SpotifyOAuth
 
 from config import CONFIG
 
-scopes = [
-    "user-library-read",
-    "playlist-modify-public",
-    "playlist-modify-private"
-]
+scopes = ["user-library-read", "playlist-modify-public", "playlist-modify-private"]
 
 
 class SpotifyAPI:
@@ -20,11 +16,11 @@ class SpotifyAPI:
                 scope=scopes,
                 client_id=CONFIG.spotify_client_id,
                 client_secret=CONFIG.spotify_client_secret,
-                redirect_uri=CONFIG.spotify_redirect_url
+                redirect_uri=CONFIG.spotify_redirect_url,
             )
             cls.__instance = spotipy.Spotify(
                 auth_manager=auth_manager,
-                retries=0  # See https://github.com/spotipy-dev/spotipy/issues/913#issuecomment-1899143238
+                retries=0,  # See https://github.com/spotipy-dev/spotipy/issues/913#issuecomment-1899143238
             )
         return cls.__instance
 

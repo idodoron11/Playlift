@@ -51,8 +51,10 @@ def cli_spotify_import(
     inputs = zip(source, destination)
     for src, dst in inputs:
         playlist = get_playlist(src, path_mapper=path_mapper)
-        SpotifyPlaylist.create_from_another_playlist(dst, playlist, autopilot=autopilot,
-                                                     embed_matches=embed_matches, public=public)
+        SpotifyPlaylist.create_from_another_playlist(
+            dst, playlist, autopilot=autopilot, embed_matches=embed_matches, public=public
+        )
+
 
 @cli_spotify.command("sync")
 @click.option("--source", "-s", required=True, help="Source playlist path")
@@ -86,6 +88,7 @@ def cli_spotify_sync(
         destination_playlist.import_tracks(sorted_tracks, autopilot=autopilot, embed_matches=embed_matches)
     else:
         destination_playlist.import_tracks(source_playlist.tracks, autopilot=autopilot, embed_matches=embed_matches)
+
 
 @cli_spotify.command("duplicates")
 @click.option("--source", "-s", required=True, help="Source playlist path")

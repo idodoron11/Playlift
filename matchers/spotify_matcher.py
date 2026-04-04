@@ -47,7 +47,7 @@ class SpotifyMatcher(Matcher):
         album_d = 1 - album_d
 
         def is_latin(text: str) -> bool:
-            return all(not char.isalpha() or ord('a') <= ord(char.lower()) <= ord('z') for char in text)
+            return all(not char.isalpha() or ord("a") <= ord(char.lower()) <= ord("z") for char in text)
 
         if not is_latin(source_track.display_artist):
             artist_d = 1  # Spotify may not list the artist in the original language
@@ -63,15 +63,12 @@ class SpotifyMatcher(Matcher):
         ):
             return True
 
-        return (title_d >= 0.5
-                and artist_d >= 0.5
-                and album_d >= 0.5
-                and duration_d <= 5)
+        return title_d >= 0.5 and artist_d >= 0.5 and album_d >= 0.5 and duration_d <= 5
 
     def suggest_match(self, track: Track) -> list[SpotifyTrack]:
         results_set: set[SpotifyTrack] = set()
         for artist in track.artists:
-            search_string = f'{artist} {track.title}'
+            search_string = f"{artist} {track.title}"
             results_set.update(SpotifyMatcher._search(search_string))
 
         results: list[SpotifyTrack] = list(
@@ -80,8 +77,11 @@ class SpotifyMatcher(Matcher):
         results.sort(key=lambda result: SpotifyMatcher.track_distance(track, result))
 
         for result in results:
-            if set(result.artists) == set(
-                    track.artists) and result.album == track.album and result.track_number == track.track_number:
+            if (
+                set(result.artists) == set(track.artists)
+                and result.album == track.album
+                and result.track_number == track.track_number
+            ):
                 return [result]
 
         return results
@@ -89,9 +89,9 @@ class SpotifyMatcher(Matcher):
     @staticmethod
     def _search(query: str) -> list[SpotifyTrack]:
         response = SpotifyAPI.get_instance().search(query, limit=None)
-        if not response['tracks'] or response['tracks']['total'] == 0:
+        if not response["tracks"] or response["tracks"]["total"] == 0:
             return []
-        return [SpotifyTrack(track['id'], data=track) for track in response['tracks']['items']]
+        return [SpotifyTrack(track["id"], data=track) for track in response["tracks"]["items"]]
 
     def _match_list(self, tracks: Iterable[Track]) -> list[list[SpotifyTrack]]:
         tracks = list(tracks)

@@ -13,11 +13,13 @@ from tracks.spotify_track import SpotifyTrack
 
 def rematch(track: LocalTrack) -> None:
     search_results = matcher._search(f"{track.title} {track.display_artist}")
-    print(f'Please choose the best match for\n{track}')
+    print(f"Please choose the best match for\n{track}")
     print("If none match, type -1")
     headers = ["#", "Artist", "Track Title", "Album", "Track Position", "Duration"]
-    data = [(pos, sp_track.display_artist, sp_track.title, sp_track.album, sp_track.track_number, sp_track.duration)
-            for pos, sp_track in enumerate(search_results)]
+    data = [
+        (pos, sp_track.display_artist, sp_track.title, sp_track.album, sp_track.track_number, sp_track.duration)
+        for pos, sp_track in enumerate(search_results)
+    ]
     results_tbl_visual = tabulate(data, headers=headers)
     print(results_tbl_visual)
 

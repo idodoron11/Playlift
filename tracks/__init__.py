@@ -1,4 +1,5 @@
 """Tracks"""
+
 import json
 from abc import ABC, abstractmethod
 
@@ -52,11 +53,11 @@ class Track(ABC):
 
     def __repr__(self) -> str:
         json_object = {
-            'track id': self.track_id,
-            'title': self.title,
-            'artist': self.display_artist,
-            'album': self.album,
-            'track number': self.track_number,
-            'duration': self.duration
+            "track id": self.track_id,
+            "title": self.title,
+            "artist": self.display_artist,
+            "album": self.album,
+            "track number": self.track_number,
+            "duration": self.duration,
         }
         return json.dumps(json_object, indent=2, ensure_ascii=False)

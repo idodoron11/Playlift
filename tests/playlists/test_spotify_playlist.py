@@ -28,14 +28,7 @@ class TestSpotifyPlaylist(TestCase):
 
     def test_create_from_another_playlist(self) -> None:
         source_tracks: list[Track] = [
-            TrackMock(
-                "1",
-                ["Led Zeppelin"],
-                "Led Zeppelin IV (Remaster)",
-                "Black Dog - Remaster",
-                4 * 60 + 55,
-                1
-            )
+            TrackMock("1", ["Led Zeppelin"], "Led Zeppelin IV (Remaster)", "Black Dog - Remaster", 4 * 60 + 55, 1)
         ]
         source_playlist = PlaylistMock(source_tracks)
         target_playlist = SpotifyPlaylistSpy.create_from_another_playlist("playlist name", source_playlist)
@@ -47,24 +40,14 @@ class TestSpotifyPlaylist(TestCase):
     def test_init(self) -> None:
         playlist = SpotifyPlaylist("https://open.spotify.com/playlist/3cEYpjA9oz9GiPac4AsH4n")
         tracks = playlist.tracks
-        expected_songs_names = [
-            "Api",
-            "Is",
-            "All I Want",
-            "Endpoints",
-            "You Are So Beautiful"
-        ]
+        expected_songs_names = ["Api", "Is", "All I Want", "Endpoints", "You Are So Beautiful"]
         actual_songs_names = [track.title for track in tracks]
         self.assertEqual(expected_songs_names, actual_songs_names)
 
     def test_e2e_spotify_playlist(self) -> None:
         playlist = SpotifyPlaylist.create("Test Playlist")
         self.assertEqual(len(playlist.tracks), 0)
-        track_ids = [
-            "4OSBTYWVwsQhGLF9NHvIbR",
-            "5mFMb5OHI3cN0UjITVztCj",
-            "1CRtJS94Hq3PbBZT9LuF90"
-        ]
+        track_ids = ["4OSBTYWVwsQhGLF9NHvIbR", "5mFMb5OHI3cN0UjITVztCj", "1CRtJS94Hq3PbBZT9LuF90"]
         tracks = list(map(SpotifyTrack, track_ids))
         playlist.add_tracks(tracks)
         self.assertEqual(playlist.tracks, tracks)
@@ -72,6 +55,3 @@ class TestSpotifyPlaylist(TestCase):
         self.assertEqual(len(playlist.tracks), 2)
         playlist.clear()
         self.assertEqual(len(playlist.tracks), 0)
-
-
-

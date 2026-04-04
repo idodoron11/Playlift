@@ -4,7 +4,6 @@ from tracks.spotify_track import SpotifyTrack
 
 
 class TestSpotifyTrack(TestCase):
-
     def test_track_id(self) -> None:
         track = SpotifyTrack("6kyxQuFD38mo4S3urD2Wkw")
         self.assertEqual(track.track_id, "6kyxQuFD38mo4S3urD2Wkw")

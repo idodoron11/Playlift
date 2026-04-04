@@ -8,9 +8,9 @@ from tracks import Track
 
 class SpotifyTrack(Track):
     def __init__(self, track_url: str, data: dict[str, Any] | None = None):
-        self._id = SpotifyAPI.get_instance()._get_id('track', track_url)
+        self._id = SpotifyAPI.get_instance()._get_id("track", track_url)
         self._data: dict[str, Any] | None = data
-        if self._data and self._data['id'] != self._id:
+        if self._data and self._data["id"] != self._id:
             raise ValueError("The data object does not match the track id")
 
     @property
@@ -21,19 +21,19 @@ class SpotifyTrack(Track):
 
     @property
     def artists(self) -> list[str]:
-        return [str(item['name']) for item in self.data['artists']]
+        return [str(item["name"]) for item in self.data["artists"]]
 
     @property
     def title(self) -> str:
-        return str(self.data['name'])
+        return str(self.data["name"])
 
     @property
     def album(self) -> str:
-        return str(self.data['album']['name'])
+        return str(self.data["album"]["name"])
 
     @property
     def duration(self) -> float:
-        duration_ms = self.data['duration_ms']
+        duration_ms = self.data["duration_ms"]
         return float(duration_ms) / 1000
 
     @property
@@ -46,4 +46,4 @@ class SpotifyTrack(Track):
 
     @property
     def track_number(self) -> int:
-        return int(self.data['track_number'])
+        return int(self.data["track_number"])

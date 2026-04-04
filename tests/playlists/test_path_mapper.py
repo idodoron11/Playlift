@@ -1,4 +1,5 @@
 """Unit tests for PathMapper class."""
+
 import sys
 from pathlib import Path
 
@@ -219,4 +220,3 @@ class TestPathMapperEdgeCases:
         result = mapper.map("/mnt/c/music//song.mp3")
         # pathlib should normalize consecutive slashes
         assert "song.mp3" in result
-

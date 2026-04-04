@@ -57,4 +57,3 @@ class PathMapper:
         except ValueError:
             # Path doesn't match from_path prefix, return original
             return path
-

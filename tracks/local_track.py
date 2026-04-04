@@ -84,7 +84,7 @@ class LocalTrack(Track):
         tag: Any = self._mutagen_file[tag_name]
         tag = tag[0] if tag else None
         if isinstance(tag, bytes):
-            return tag.decode('utf-8')
+            return tag.decode("utf-8")
         elif isinstance(tag, str):
             return tag
         return str(tag) if tag is not None else None
@@ -95,9 +95,9 @@ class LocalTrack(Track):
             return
         if isinstance(self._mutagen_file, MP4):
             tag_name = f"----:com.apple.iTunes:{tag_name}"
-            if self._mutagen_file.tags is  None:
+            if self._mutagen_file.tags is None:
                 raise AttributeError("MP4 file has no tags")
-            self._mutagen_file.tags[tag_name] = value.encode('utf-8')
+            self._mutagen_file.tags[tag_name] = value.encode("utf-8")
         elif isinstance(self._mutagen_file, MP3):
             frame = TXXX(encoding=3, desc=tag_name, text=value)  # type: ignore[no-untyped-call]  # mutagen stubs don't type TXXX.__init__
             if self._mutagen_file.tags is not None:
