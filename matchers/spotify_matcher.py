@@ -1,3 +1,5 @@
+import logging
+import re
 from typing import Iterable, Optional
 
 from tqdm import tqdm
@@ -8,6 +10,17 @@ from matchers import Matcher
 from tracks import Track
 from tracks.local_track import LocalTrack
 from tracks.spotify_track import SpotifyTrack
+
+ISRC_PATTERN: re.Pattern[str] = re.compile(r"^[A-Z]{2}[A-Z0-9]{3}[0-9]{7}$")
+
+logger = logging.getLogger(__name__)
+
+
+def _is_valid_isrc(isrc: str | None) -> bool:
+    """Check whether *isrc* matches the ISRC format (12-char uppercase alphanumeric)."""
+    if not isrc:
+        return False
+    return ISRC_PATTERN.match(isrc) is not None
 
 
 class SpotifyMatcher(Matcher):
@@ -20,6 +33,8 @@ class SpotifyMatcher(Matcher):
         if isinstance(source_track, LocalTrack):
             if source_track.spotify_ref != match.track_url:
                 source_track.spotify_ref = match.track_url
+            if match.isrc is not None and source_track.isrc is None:
+                source_track.isrc = match.isrc
 
     def match(self, track: Track) -> Optional[SpotifyTrack]:
         ref = self._find_spotify_match_in_source_track(track)
@@ -27,6 +42,22 @@ class SpotifyMatcher(Matcher):
             raise SkipTrackException
         elif ref:
             return SpotifyTrack(ref)
+
+        # ISRC-first lookup (T015/T016)
+        if _is_valid_isrc(track.isrc):
+            try:
+                results = SpotifyMatcher._search(f"isrc:{track.isrc}")
+                if results:
+                    logger.info("Matched '%s' via ISRC %s", track.title, track.isrc)
+                    return results[0]
+            except Exception:
+                logger.warning(
+                    "ISRC lookup failed for '%s' (ISRC %s), falling back to fuzzy search",
+                    track.title,
+                    track.isrc,
+                )
+
+        # Fuzzy search fallback
         artist_components = [f'artist:"{artist}"' for artist in track.artists] if track.artists else [""]
         album_component = f'album:"{track.album}"' if track.album else ""
         title_component = f'track:"{track.title}"' if track.title else ""
@@ -36,6 +67,7 @@ class SpotifyMatcher(Matcher):
                 return None
             results = SpotifyMatcher._search(explicit_search_string)
             if results:
+                logger.info("Matched '%s' via fuzzy search", track.title)
                 return results[0]
         return None
 
