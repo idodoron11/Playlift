@@ -67,8 +67,9 @@ jobs:
           uv sync
           git add uv.lock
           TAG=$(git describe --tags --abbrev=0)
+          TAG_MSG=$(git for-each-ref --format='%(contents)' "refs/tags/$TAG")
           git commit --amend --no-edit
-          git tag -f "$TAG" HEAD
+          git tag -f -a "$TAG" -m "$TAG_MSG" HEAD
 
       - name: DEBUG after amend
         if: always()
