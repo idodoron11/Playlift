@@ -2,7 +2,7 @@ from difflib import SequenceMatcher
 
 import click
 from spotipy import SpotifyException
-from tabulate import tabulate
+from tabulate import tabulate  # type: ignore[import-untyped]
 from tqdm import tqdm
 
 from matchers.spotify_matcher import SpotifyMatcher
@@ -11,7 +11,7 @@ from tracks.local_track import LocalTrack
 from tracks.spotify_track import SpotifyTrack
 
 
-def rematch(track: LocalTrack):
+def rematch(track: LocalTrack) -> None:
     search_results = matcher._search(f"{track.title} {track.display_artist}")
     print(f'Please choose the best match for\n{track}')
     print("If none match, type -1")

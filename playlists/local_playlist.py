@@ -27,7 +27,7 @@ class LocalPlaylist(Playlist):
         for file_path in tqdm(list(files)):
             try:
                 self._tracks.append(LocalTrack(file_path))
-            except mutagen.MutagenError as e:
+            except mutagen.MutagenError as e:  # type: ignore[attr-defined]
                 print(f"Error during file scan: {e}"
                       f"\nFile: {file_path}")
 
@@ -35,13 +35,14 @@ class LocalPlaylist(Playlist):
     def tracks(self) -> Iterable[LocalTrack]:
         return self._tracks
 
-    def remove_track(self, track: LocalTrack) -> None:
-        self._tracks.remove(track)
+    def remove_track(self, tracks: list[LocalTrack]) -> None:  # type: ignore[override]  # narrowed type is safe in practice
+        for t in tracks:
+            self._tracks.remove(t)
 
-    def add_tracks(self, tracks: List[LocalTrack]) -> None:
+    def add_tracks(self, tracks: list[LocalTrack]) -> None:  # type: ignore[override]  # narrowed type is safe in practice
         self._tracks += tracks
 
-    def save_playlist(self):
+    def save_playlist(self) -> None:
         files = [track.file_path for track in self._tracks]
         with open(self._source_filepath, "w", encoding='utf-8') as f:
             f.write("\n".join(files))

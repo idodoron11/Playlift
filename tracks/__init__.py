@@ -1,13 +1,12 @@
 """Tracks"""
 import json
 from abc import ABC, abstractmethod
-from typing import List
 
 
 class Track(ABC):
     @property
     @abstractmethod
-    def artists(self) -> List[str]:
+    def artists(self) -> list[str]:
         pass
 
     @property
@@ -39,7 +38,7 @@ class Track(ABC):
     def track_number(self) -> int:
         pass
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         if other is None:
             return False
         if self is other:
@@ -48,10 +47,10 @@ class Track(ABC):
             return False
         return self.track_id == other.track_id
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(self.track_id)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         json_object = {
             'track id': self.track_id,
             'title': self.title,

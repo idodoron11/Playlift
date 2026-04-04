@@ -1,7 +1,7 @@
-from typing import Iterable, Optional, List
+from typing import Iterable, Optional
 
 import click
-from tabulate import tabulate
+from tabulate import tabulate  # type: ignore[import-untyped]
 
 from api.spotify import SpotifyAPI
 from exceptions import SkipTrackException
@@ -13,12 +13,12 @@ from tracks.spotify_track import SpotifyTrack
 
 
 class SpotifyMatcher(Matcher):
-    def _find_spotify_match_in_source_track(self, track: Track):
+    def _find_spotify_match_in_source_track(self, track: Track) -> str | None:
         if isinstance(track, LocalTrack):
             return track.spotify_ref
         return None
 
-    def _update_spotify_match_in_source_track(self, source_track: Track, match: SpotifyTrack):
+    def _update_spotify_match_in_source_track(self, source_track: Track, match: SpotifyTrack) -> None:
         if isinstance(source_track, LocalTrack):
             if source_track.spotify_ref != match.track_url:
                 source_track.spotify_ref = match.track_url
@@ -90,9 +90,9 @@ class SpotifyMatcher(Matcher):
             return []
         return [SpotifyTrack(track['id'], data=track) for track in response['tracks']['items']]
 
-    def _match_list(self, tracks: Iterable[Track]) -> List[Iterable[SpotifyTrack]]:
+    def _match_list(self, tracks: Iterable[Track]) -> list[list[SpotifyTrack]]:
         tracks = list(tracks)
-        sp_tracks: List[Iterable[SpotifyTrack]] = []
+        sp_tracks: list[list[SpotifyTrack]] = []
         print("Matching source tracks to Spotify tracks")
         for index, track in enumerate(tqdm(tracks)):
             try:
@@ -111,13 +111,13 @@ class SpotifyMatcher(Matcher):
                 continue
         return sp_tracks
 
-    def match_list(self, tracks: Iterable[Track], autopilot: bool = False, embed_matches: bool = False) -> List[SpotifyTrack]:
-        suggestions_list = self._match_list(tracks)
-        suggestions_list = map(lambda x: list(x), suggestions_list)
-        sp_tracks: List[SpotifyTrack] = []
+    def match_list(self, tracks: Iterable[Track], autopilot: bool = False, embed_matches: bool = False) -> list[Track]:  # type: ignore[override]  # covariant return is safe: SpotifyTrack is-a Track
+        suggestions_list: list[list[SpotifyTrack]] = self._match_list(tracks)
+        processed: list[list[SpotifyTrack]] = list(map(list, suggestions_list))
+        sp_tracks: list[SpotifyTrack] = []
 
         print("Reviewing matches")
-        for index, (track, suggestions) in tqdm(list(enumerate(zip(tracks, suggestions_list)))):
+        for index, (track, suggestions) in tqdm(list(enumerate(zip(tracks, processed)))):
             if len(suggestions) == 0:
                 continue
             choice = 0

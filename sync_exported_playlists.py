@@ -7,7 +7,7 @@ from pathlib import Path
 
 @click.command()
 @click.argument('path', type=click.Path(exists=True, file_okay=True, dir_okay=True, path_type=Path))
-def sync_playlists(path: Path):
+def sync_playlists(path: Path) -> None:
     """
     Scans a directory recursively for .m3u files and imports them into Spotify.
     The playlist name is inferred from the file name.

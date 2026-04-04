@@ -11,20 +11,20 @@ if not os.path.exists(CONFIG_PATH):
 
 
 class Config:
-    def __init__(self):
+    def __init__(self) -> None:
         self.config = configparser.ConfigParser()
         self.config.read(CONFIG_PATH)
 
     @property
-    def spotify_client_id(self):
+    def spotify_client_id(self) -> str:
         return self.config.get("SPOTIFY", "CLIENT_ID")
 
     @property
-    def spotify_client_secret(self):
+    def spotify_client_secret(self) -> str:
         return self.config.get("SPOTIFY", "CLIENT_SECRET")
 
     @property
-    def spotify_redirect_url(self):
+    def spotify_redirect_url(self) -> str:
         return self.config.get("SPOTIFY", "REDIRECT_URL")
 
 

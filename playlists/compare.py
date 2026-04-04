@@ -27,8 +27,8 @@ def compare_playlists(local_playlist_path: str, spotify_playlist_id_or_url: str,
     spotify_playlist = SpotifyPlaylist(spotify_playlist_id_or_url)
 
     # Build a set/map of spotify ids referenced by local tracks
-    local_id_set = set()
-    local_map = dict()  # spotify_id -> list[LocalTrack]
+    local_id_set: set[str] = set()
+    local_map: dict[str | None, list[LocalTrack]] = {}  # spotify_id -> list[LocalTrack]
     for lt in local_playlist.tracks:
         sid = getattr(lt, "spotify_id", None)
         # sid will be None for missing/"SKIP" tags
