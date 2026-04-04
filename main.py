@@ -29,7 +29,15 @@ def cli_spotify() -> None:
 @click.option("--public", is_flag=True, help="Create a public playlist (default is private)")
 @click.option("--from-path", default=None, help="Source path prefix for remapping (requires --to-path)")
 @click.option("--to-path", default=None, help="Destination path prefix for remapping (requires --from-path)")
-def cli_spotify_import(source: tuple[str, ...], destination: tuple[str, ...], autopilot: bool = False, embed_matches: bool = False, public: bool = False, from_path: Optional[str] = None, to_path: Optional[str] = None) -> None:
+def cli_spotify_import(
+    source: tuple[str, ...],
+    destination: tuple[str, ...],
+    autopilot: bool = False,
+    embed_matches: bool = False,
+    public: bool = False,
+    from_path: Optional[str] = None,
+    to_path: Optional[str] = None,
+) -> None:
     if len(source) != len(destination):
         raise click.BadParameter("Number of sources must match the number of destinations")
 
@@ -54,7 +62,15 @@ def cli_spotify_import(source: tuple[str, ...], destination: tuple[str, ...], au
 @click.option("--sort-tracks", is_flag=True, help="Sort tracks alphabetically")
 @click.option("--from-path", default=None, help="Source path prefix for remapping (requires --to-path)")
 @click.option("--to-path", default=None, help="Destination path prefix for remapping (requires --from-path)")
-def cli_spotify_sync(destination: str, source: str, autopilot: bool = False, embed_matches: bool = False, sort_tracks: bool = False, from_path: Optional[str] = None, to_path: Optional[str] = None) -> None:
+def cli_spotify_sync(
+    destination: str,
+    source: str,
+    autopilot: bool = False,
+    embed_matches: bool = False,
+    sort_tracks: bool = False,
+    from_path: Optional[str] = None,
+    to_path: Optional[str] = None,
+) -> None:
     # Create path mapper if both from_path and to_path are provided
     path_mapper = None
     if from_path and to_path:
@@ -96,7 +112,12 @@ def cli_spotify_duplicates(source: str) -> None:
 @click.option("--autopilot", is_flag=True, help="When multiple matches are found, choose the first one")
 @click.option("--from-path", default=None, help="Source path prefix for remapping (requires --to-path)")
 @click.option("--to-path", default=None, help="Destination path prefix for remapping (requires --from-path)")
-def cli_spotify_match(source: tuple[str, ...], autopilot: bool = False, from_path: Optional[str] = None, to_path: Optional[str] = None) -> None:
+def cli_spotify_match(
+    source: tuple[str, ...],
+    autopilot: bool = False,
+    from_path: Optional[str] = None,
+    to_path: Optional[str] = None,
+) -> None:
     # Create path mapper if both from_path and to_path are provided
     path_mapper = None
     if from_path and to_path:
@@ -114,7 +135,12 @@ def cli_spotify_match(source: tuple[str, ...], autopilot: bool = False, from_pat
 @click.option("--destination", "-d", required=True, help="Destination Spotify playlist id or URL")
 @click.option("--from-path", default=None, help="Source path prefix for remapping (requires --to-path)")
 @click.option("--to-path", default=None, help="Destination path prefix for remapping (requires --from-path)")
-def cli_spotify_compare(source: str, destination: str, from_path: Optional[str] = None, to_path: Optional[str] = None) -> None:
+def cli_spotify_compare(
+    source: str,
+    destination: str,
+    from_path: Optional[str] = None,
+    to_path: Optional[str] = None,
+) -> None:
     """Compare a local m3u playlist with a Spotify playlist and print differences."""
     # Create path mapper if both from_path and to_path are provided
     path_mapper = None

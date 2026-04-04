@@ -34,7 +34,9 @@ class TrackMock(Track):
     def __hash__(self) -> int:
         return hash(self._id)
 
-    def __init__(self, track_id: str, artists: list[str], album: str, title: str, duration: float, track_number: int) -> None:
+    def __init__(
+        self, track_id: str, artists: list[str], album: str, title: str, duration: float, track_number: int
+    ) -> None:
         self._id = track_id
         self._artists = artists
         self._album = album

@@ -32,14 +32,25 @@ class SpotifyPlaylist(Playlist):
         return cls(playlist_id)
 
     @classmethod
-    def create_from_another_playlist(cls, playlist_name: str, source_playlist: TrackCollection, public: bool = False, autopilot: bool = False, embed_matches: bool = False) -> "SpotifyPlaylist":
-        sp_tracks: list[Track] = SpotifyPlaylist.track_matcher().match_list(source_playlist.tracks, autopilot=autopilot, embed_matches=embed_matches)
+    def create_from_another_playlist(
+        cls,
+        playlist_name: str,
+        source_playlist: TrackCollection,
+        public: bool = False,
+        autopilot: bool = False,
+        embed_matches: bool = False,
+    ) -> "SpotifyPlaylist":
+        sp_tracks: list[Track] = SpotifyPlaylist.track_matcher().match_list(
+            source_playlist.tracks, autopilot=autopilot, embed_matches=embed_matches
+        )
         new_playlist = cls.create(playlist_name, public=public)
         new_playlist.add_tracks(sp_tracks)  # type: ignore[arg-type]  # list[Track] contains SpotifyTrack instances at runtime
         return new_playlist
 
     def import_tracks(self, tracks: Iterable[Track], autopilot: bool = False, embed_matches: bool = False) -> None:
-        sp_tracks: list[Track] = SpotifyPlaylist.track_matcher().match_list(tracks, autopilot=autopilot, embed_matches=embed_matches)
+        sp_tracks: list[Track] = SpotifyPlaylist.track_matcher().match_list(
+            tracks, autopilot=autopilot, embed_matches=embed_matches
+        )
         self.add_tracks(sp_tracks)  # type: ignore[arg-type]  # list[Track] contains SpotifyTrack instances at runtime
 
     @property

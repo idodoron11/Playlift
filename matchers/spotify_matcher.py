@@ -55,7 +55,12 @@ class SpotifyMatcher(Matcher):
         avg_d = (title_d + artist_d + album_d) / 3
         if avg_d > 0.6 and duration_d < 3:
             return True
-        if artist_d >= 0.75 and album_d >= 0.75 and source_track.track_number == suggestion.track_number and duration_d <= 3:
+        if (
+            artist_d >= 0.75
+            and album_d >= 0.75
+            and source_track.track_number == suggestion.track_number
+            and duration_d <= 3
+        ):
             return True
 
         return (title_d >= 0.5

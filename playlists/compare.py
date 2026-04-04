@@ -7,7 +7,11 @@ from tracks.local_track import LocalTrack
 from tracks.spotify_track import SpotifyTrack
 
 
-def compare_playlists(local_playlist_path: str, spotify_playlist_id_or_url: str, path_mapper: Optional[PathMapper] = None) -> Tuple[List[LocalTrack], List[SpotifyTrack]]:
+def compare_playlists(
+    local_playlist_path: str,
+    spotify_playlist_id_or_url: str,
+    path_mapper: Optional[PathMapper] = None,
+) -> Tuple[List[LocalTrack], List[SpotifyTrack]]:
     """Compare a local m3u playlist with a Spotify playlist.
 
     Returns a tuple (local_only, spotify_only) where:
