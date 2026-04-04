@@ -23,6 +23,7 @@ dev = [
     "pytest>=9.0.2",
     "ruff>=0.15.9",
     "types-tabulate>=0.10.0.20260308",
+    "types-tqdm>=4.67.3.20260402",
 ]
 
 [build-system]
@@ -57,3 +58,11 @@ check_untyped_defs = true
 warn_return_any = true
 warn_unused_ignores = true
 show_error_codes = true
+
+[[tool.mypy.overrides]]
+module = ["spotipy", "spotipy.*", "music_tag"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["api.spotify", "tracks.local_track"]
+disallow_any_unimported = false
