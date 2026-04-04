@@ -40,7 +40,6 @@ jobs:
 
       - name: Sync tags with remote
         run: |
-          git reset --hard HEAD
           git tag -l | xargs git tag -d
           git fetch --tags
 
@@ -49,3 +48,6 @@ jobs:
 
       - name: Push commit and tag
         run: git push --follow-tags
+      
+      - name: Clean up working directory
+        run: git reset --hard HEAD
