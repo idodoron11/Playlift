@@ -41,7 +41,7 @@ A user imports a playlist where many local tracks have no ISRC in their tags (co
 
 ### User Story 3 - ISRC Embedding After Match (Priority: P3)
 
-After a local track is successfully matched to a Spotify track — whether via ISRC lookup or fuzzy search — and `--embed-matches` is active, the system writes the Spotify track's ISRC back into the local file's tags, if the ISRC is not already present. On the next sync or import run, that track can be matched via ISRC directly, skipping fuzzy search entirely.
+After a local track is successfully matched to a Spotify track — whether via ISRC lookup or fuzzy search — the system writes the Spotify track's ISRC back into the local file's tags, if the ISRC is not already present. For `spotify match`, embedding always occurs (it is the command's purpose). For `spotify import` and `spotify sync`, embedding occurs only when `--embed-matches` is active. On the next run, that track can be matched via ISRC directly, skipping fuzzy search entirely.
 
 **Why this priority**: This is a compounding improvement: each sync run enriches the local library. Over time, the proportion of tracks matched via fast ISRC lookup grows, and the dependency on imprecise fuzzy search decreases. It also acts as a persistent quality signal — ISRC-tagged tracks were verified against Spotify's catalog.
 
@@ -72,7 +72,7 @@ After a local track is successfully matched to a Spotify track — whether via I
 - **FR-002**: If an ISRC is found in the local track's tags, the system MUST validate its format (12-character alphanumeric string matching the pattern `^[A-Z]{2}[A-Z0-9]{3}[0-9]{7}$`) before attempting lookup. Only a structurally valid ISRC triggers a Spotify lookup; an invalid value is treated as absent and falls back to fuzzy search.
 - **FR-003**: If the ISRC lookup yields a match, the system MUST use that result as the track match and skip fuzzy search for that track.
 - **FR-004**: If the local track has no ISRC tag, the ISRC lookup returns no result, or the ISRC lookup fails due to a network or API error, the system MUST fall back to the existing fuzzy search using the track's title, artist, and album metadata. API or network errors MUST be logged as warnings and MUST NOT abort the sync.
-- **FR-005**: After a successful match (via either ISRC lookup or fuzzy search), when the `--embed-matches` flag is active, the system MUST write the matched Spotify track's ISRC into the local file's tags, provided the local file does not already have an ISRC tag. If `--embed-matches` is not active, no ISRC is written.
+- **FR-005**: After a successful match (via either ISRC lookup or fuzzy search), the system MUST write the matched Spotify track's ISRC into the local file's tags, provided the local file does not already have an ISRC tag, under these conditions: (a) always, when the command is `spotify match`; (b) only when `--embed-matches` is active, for `spotify import` and `spotify sync`. If the embedding condition is not met, no ISRC is written.
 - **FR-006**: The system MUST NOT overwrite an existing ISRC tag on a local file.
 - **FR-007**: If writing the ISRC tag to a local file fails for any reason, the system MUST log a warning and continue the sync without treating the write failure as a blocking error.
 - **FR-008**: The system MUST indicate (via logging or output) whether each track was matched via ISRC lookup or fuzzy search.
@@ -102,6 +102,7 @@ After a local track is successfully matched to a Spotify track — whether via I
 - Q: Should an API/network error during ISRC lookup propagate or fall back to fuzzy search? → A: Fall back to fuzzy search and log a warning; sync continues.
 - Q: Should the system validate the ISRC format before attempting a Spotify lookup, or attempt with any non-empty string? → A: Validate format (`^[A-Z]{2}[A-Z0-9]{3}[0-9]{7}$`) first; skip lookup and fall back to fuzzy if invalid.
 - Q: Does ISRC-based matching apply to `import` only, or also `sync` and `match`? → A: All three commands trigger the same matching logic for tracks without a `SPOTIFY_REF`; ISRC matching applies uniformly to any unmatched track regardless of which command triggered it.
+- Q: Should `spotify match` get a `--embed-matches` flag for ISRC embedding, or leave it as-is? → A: Leave as-is — `match` always embeds unconditionally by design; no flag needed.
 
 ## Assumptions
 
