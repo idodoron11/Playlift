@@ -50,4 +50,5 @@ jobs:
         run: git push --follow-tags
       
       - name: Clean up working directory
+        if: always()
         run: git reset --hard HEAD
