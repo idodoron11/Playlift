@@ -1,6 +1,6 @@
 # Feature Specification: ISRC-Based Track Matching and Embedding
 
-**Feature Branch**: `005-isrc-track-matching`  
+**Feature Branch**: `001-isrc-track-matching`  
 **Created**: 2026-04-04  
 **Status**: Draft  
 **Input**: User description: "I want to start use ISRCs for track identification and matching. Today, we use a fuzzy search, to match the local track to the spotify track using its title, artist and album. However, if the track already has an ISRC embedded in its tags (mp3, flac or m4a), we can use it directly. This is a much more reliable info to use for track matching. We can first try to match the track using its ISRC, and fallback to fuzzy search if it fails. In addition, once a track is matched, we should embed the ISRC in the local track's tags (if it is not already embedded)."
