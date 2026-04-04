@@ -81,7 +81,7 @@ class LocalTrack(Track):
             return None
         if tag_name not in self._mutagen_file.tags:
             return None
-        tag: Any = self._mutagen_file[tag_name]  # type: ignore[index]  # MutagenFileType doesn't expose __getitem__ in stubs
+        tag: Any = self._mutagen_file[tag_name]  # type: ignore[index]  # MutagenFileType indexing not in stubs
         tag = tag[0] if tag else None
         if isinstance(tag, bytes):
             return tag.decode('utf-8')
@@ -95,17 +95,17 @@ class LocalTrack(Track):
             return
         if isinstance(self._mutagen_file, MP4):
             tag_name = f"----:com.apple.iTunes:{tag_name}"
-            self._mutagen_file.tags[tag_name] = value.encode('utf-8')  # type: ignore[index]  # MP4Tags is indexable
+            self._mutagen_file.tags[tag_name] = value.encode('utf-8')  # type: ignore[index]  # MP4Tags indexing not in stubs
         elif isinstance(self._mutagen_file, MP3):
-            frame = TXXX(encoding=3, desc=tag_name, text=value)
+            frame = TXXX(encoding=3, desc=tag_name, text=value)  # type: ignore[no-untyped-call]  # mutagen stubs don't type TXXX.__init__
             if self._mutagen_file.tags is not None:
                 self._mutagen_file.tags.add(frame)
         else:
             if self._mutagen_file.tags is not None:
-                self._mutagen_file.tags[tag_name] = value  # type: ignore[index]  # Tags is indexable
+                self._mutagen_file.tags[tag_name] = value  # type: ignore[index]  # Tags indexing not in stubs
         try:
             self._mutagen_file.save()
-        except (mutagen.MutagenError, OSError) as e:  # type: ignore[attr-defined]  # mutagen stubs don't export MutagenError at top level
+        except (mutagen.MutagenError, OSError) as e:  # type: ignore[attr-defined]  # mutagen stubs don't export MutagenError top-level
             print(f"Could not save tags for {self.track_id} due to {e}")
         self.reload_metadata()
 

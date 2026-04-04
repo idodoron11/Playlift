@@ -111,7 +111,7 @@ class SpotifyMatcher(Matcher):
                 continue
         return sp_tracks
 
-    def match_list(self, tracks: Iterable[Track], autopilot: bool = False, embed_matches: bool = False) -> list[Track]:  # type: ignore[override]  # narrower return type is safe: SpotifyTrack is-a Track
+    def match_list(self, tracks: Iterable[Track], autopilot: bool = False, embed_matches: bool = False) -> list[Track]:
         suggestions_list: list[list[SpotifyTrack]] = self._match_list(tracks)
         processed: list[list[SpotifyTrack]] = list(map(list, suggestions_list))
         sp_tracks: list[Track] = []
