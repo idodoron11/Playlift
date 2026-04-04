@@ -91,8 +91,8 @@ After a local track is successfully matched to a Spotify track — whether via I
 
 - **SC-001**: Local tracks with valid ISRC tags are matched without any fuzzy text comparison being performed — confirmed by observing zero fuzzy search invocations for those tracks.
 - **SC-002**: Tracks that previously failed fuzzy matching due to title/artist encoding issues (e.g., Cyrillic, CJK characters) are successfully matched if their ISRC is present in their tags.
-- **SC-003**: After a completed import or sync run, every matched local track that lacked an ISRC tag now has one written to its file — confirmed by reading tags after the run.
-- **SC-004**: A second sync run on the same playlist resolves a higher proportion of tracks via ISRC lookup than the first run did, demonstrating the compounding improvement from embedding.
+- **SC-003**: After a completed import or sync run with `--embed-matches` active, every matched local track that lacked an ISRC tag now has one written to its file — confirmed by reading tags after the run.
+- **SC-004**: A second sync run on the same playlist (with `--embed-matches` active on the first run) resolves a higher proportion of tracks via ISRC lookup than the first run did, demonstrating the compounding improvement from embedding.
 - **SC-005**: No regressions in match results for tracks that had no ISRC tag — they continue to be matched (or not) with the same outcome as before this feature.
 
 ## Clarifications
