@@ -157,10 +157,14 @@ class LocalTrack(Track):
 
     @isrc.setter
     def isrc(self, value: str) -> None:
-        """Write the ISRC tag to the audio file if not already present.
+        """Write the ISRC tag to the audio file.
 
         MP3 writes a TSRC ID3 frame, FLAC writes via music_tag isrc key,
-        M4A writes an iTunes freeform tag. Only writes if current isrc is None.
+        M4A writes an iTunes freeform tag. For M4A, skips the write when the
+        normalized value is already stored — this guards against creating a
+        second uppercase atom when the file already carries the same ISRC
+        under a lowercase freeform key (a case-insensitive variant that
+        _set_custom_tag would not detect on its own).
         """
         if self._mutagen_file is None:
             return
@@ -175,6 +179,10 @@ class LocalTrack(Track):
                     self._mutagen_file.tags["isrc"] = value  # type: ignore[index]  # VCFLACDict supports str indexing at runtime
                 self._mutagen_file.save()
             else:
+                # M4A only: _set_custom_tag always writes the canonical uppercase key
+                # (e.g. "----:com.apple.iTunes:ISRC"). If the file already holds the
+                # same ISRC under a lowercase variant key, writing unconditionally
+                # would produce a duplicate atom. The guard prevents that.
                 if self.isrc is not None and self.isrc == _normalize_isrc(value):
                     return
                 self._set_custom_tag("ISRC", value)
