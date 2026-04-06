@@ -36,7 +36,7 @@ description: "Task list for 002-fix-isrc-mp4-bugs"
 **Independent test criteria**: After this phase, `tests/matchers/test_spotify_matcher.py` has a passing test that mocks `_update_spotify_match_in_source_track` with a hyphenated Spotify ISRC and asserts the track setter is never invoked.
 
 - [X] T006 [US2] Write failing test `test_update_match_skips_isrc_write_when_normalized_values_match` in `tests/matchers/test_spotify_matcher.py` — mock a `LocalTrack` with `isrc = "USSM19604431"` and a `SpotifyTrack` with `isrc = "USSM1-9604431"`, call `_update_spotify_match_in_source_track`, assert `source_track.isrc` setter is never called (currently fails: setter is invoked)
-- [X] T007 [US2] Implement Bug 3 fix in `matchers/spotify_matcher.py`: import `_normalize_isrc` from `tracks.local_track` and normalize `match.isrc` before the comparison: `source_track.isrc != _normalize_isrc(match.isrc)`
+- [X] T007 [US2] Implement Bug 3 fix in `matchers/spotify_matcher.py`: import `_normalize_isrc` from `tracks.local_track` and change condition to `source_track.isrc != _normalize_isrc(match.isrc)` — skip write only when semantically equal, update otherwise
 - [X] T008 [P] [US2] Verify T006 now passes: `uv run pytest tests/matchers/test_spotify_matcher.py -v`
 
 ---

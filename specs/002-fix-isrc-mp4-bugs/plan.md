@@ -5,12 +5,12 @@
 
 ## Summary
 
-Three bugs in the M4A metadata write path silently corrupt ISRC tags. The root cause (Bug 1) is a case-sensitive key lookup in `_get_custom_tag`: M4A files with a lowercase `----:com.apple.iTunes:isrc` atom are not found, the setter guard is bypassed, and a second uppercase `----:com.apple.iTunes:ISRC` atom is written. Bug 2 writes raw `bytes` instead of a proper `MP4FreeForm` value. Bug 3 fails to normalize the Spotify ISRC before comparing with the local value, triggering unnecessary writes.
+Three bugs in the M4A metadata write path silently corrupt ISRC tags. The root cause (Bug 1) is a case-sensitive key lookup in `_get_custom_tag`: M4A files with a lowercase `----:com.apple.iTunes:isrc` atom are not found, the setter guard is bypassed, and a second uppercase `----:com.apple.iTunes:ISRC` atom is written. Bug 2 writes raw `bytes` instead of a proper `MP4FreeForm` value. Bug 3 compares the local ISRC against the raw (un-normalized) Spotify ISRC, so formatting differences (hyphens, casing) cause incorrect writes.
 
 Fix strategy:
 - Bug 1: add a case-insensitive fallback scan in `_get_custom_tag` for all MP4 freeform tags.
 - Bug 2: wrap the encoded bytes in `[MP4FreeForm(value.encode("utf-8"))]` in `_set_custom_tag`.
-- Bug 3: normalize `match.isrc` using `_normalize_isrc` before the comparison in `_update_spotify_match_in_source_track`.
+- Bug 3: normalize `match.isrc` using `_normalize_isrc` before the comparison in `_update_spotify_match_in_source_track`. Write if they differ; skip if semantically equal.
 
 ## Technical Context
 

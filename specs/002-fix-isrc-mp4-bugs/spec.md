@@ -30,18 +30,19 @@ A user runs `spotify match` against a directory containing an M4A file that alre
 
 ---
 
-### User Story 2 - ISRC comparison ignores formatting differences (Priority: P2)
+### User Story 2 - ISRC comparison normalizes before comparing (Priority: P2)
 
-A user's local file (M4A, MP3, or FLAC) has an ISRC `"USSM19604431"` (no hyphens). Spotify returns the same ISRC as `"USSM1-9604431"` (with hyphen). The system must recognize these as equal and not overwrite the tag on any format.
+A user's local file (M4A, MP3, or FLAC) has an ISRC. When `spotify match` embeds a result, the system normalizes both the local and Spotify ISRCs before comparing. If they are semantically the same value (ignoring hyphens and casing), the tag is not rewritten. If they are genuinely different, the local ISRC is updated with the normalized Spotify value.
 
-**Why this priority**: Without normalization before comparison, the setter fires and overwrites the local ISRC with the un-normalized Spotify value on every format — not just M4A. This corrupts a valid tag with a semantically identical but differently formatted value.
+**Why this priority**: Without normalization before comparison, the setter fires and overwrites the local ISRC with the un-normalized Spotify value on every format — not just M4A. Conversely, a track whose local ISRC is stale or wrong should be corrected by a fresh Spotify match.
 
-**Independent Test**: Confirm that a local track (any format) whose `isrc` matches the Spotify track's ISRC modulo hyphens and casing does not have its ISRC tag rewritten.
+**Independent Test**: Confirm that a local track whose ISRC matches the Spotify track's ISRC modulo hyphens and casing does not have its tag rewritten. Confirm that a track with a genuinely different local ISRC is updated to the Spotify value.
 
 **Acceptance Scenarios**:
 
-1. **Given** an M4A/MP3/FLAC file with ISRC `"USSM19604431"` and a Spotify match returning `"USSM1-9604431"`, **When** match embedding runs, **Then** the file's ISRC tag is not modified.
+1. **Given** an M4A/MP3/FLAC file with ISRC `"USSM19604431"` and a Spotify match returning `"USSM1-9604431"`, **When** match embedding runs, **Then** the file's ISRC tag is not modified (values are semantically identical).
 2. **Given** an M4A/MP3/FLAC file with ISRC `"ussm19604431"` (lowercase) and a Spotify match returning `"USSM19604431"`, **When** match embedding runs, **Then** the file's ISRC tag is not modified.
+3. **Given** an M4A/MP3/FLAC file with ISRC `"GBAYE0100538"` and a Spotify match returning `"USRC17607839"` (genuinely different), **When** match embedding runs, **Then** the file's ISRC tag is updated to `"USRC17607839"`.
 
 ---
 
@@ -73,7 +74,7 @@ When a new custom tag (ISRC, SPOTIFY ref, or any other freeform tag) is written 
 - **FR-001**: The `_get_custom_tag` helper MUST resolve a freeform iTunes atom using a case-insensitive match on the key suffix when an exact-case match is not found — this applies to all freeform tags (ISRC, SPOTIFY ref, and any future custom tag).
 - **FR-002**: The system MUST NOT write a new ISRC atom to an M4A file when a valid ISRC already exists under any casing of the freeform key.
 - **FR-003**: When writing a new freeform atom to an M4A file, the value MUST be stored as a proper MP4 freeform value with UTF-8 data type, compatible with the iTunes metadata specification.
-- **FR-004**: Before attempting to write an ISRC from a Spotify match result, the system MUST normalize the Spotify ISRC (uppercase, hyphens stripped) before comparing it with the local ISRC. This prevents overwriting a valid local ISRC with a semantically identical but differently formatted Spotify value on **all formats** (M4A, MP3, FLAC).
+- **FR-004**: Before writing an ISRC from a Spotify match result, the system MUST normalize the Spotify ISRC (uppercase, hyphens stripped) and compare it with the local ISRC value. If the normalized values are equal, no write is performed. If they differ, the local ISRC is updated with the normalized Spotify value. This applies on **all formats** (M4A, MP3, FLAC).
 - **FR-005**: MP3 and FLAC ISRC read paths MUST remain unchanged. Only the comparison in `_update_spotify_match_in_source_track` is modified for these formats.
 - **FR-006**: All existing behaviour for reading and writing the Spotify reference freeform tag (`----:com.apple.iTunes:SPOTIFY`) MUST remain unchanged.
 
