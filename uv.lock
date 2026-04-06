@@ -474,7 +474,7 @@ wheels = [
 
 [[package]]
 name = "playlist-sync"
-version = "0.1.9"
+version = "0.1.10"
 source = { editable = "." }
 dependencies = [
     { name = "click" },
