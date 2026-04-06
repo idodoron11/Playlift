@@ -155,8 +155,6 @@ class LocalTrack(Track):
         MP3 writes a TSRC ID3 frame, FLAC writes via music_tag isrc key,
         M4A writes an iTunes freeform tag. Only writes if current isrc is None.
         """
-        if self.isrc is not None:
-            return
         if self._mutagen_file is None:
             return
         try:
