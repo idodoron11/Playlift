@@ -13,7 +13,7 @@ from mutagen.id3 import (  # type: ignore[attr-defined]  # mutagen stubs don't r
     TXXX,
 )
 from mutagen.mp3 import MP3
-from mutagen.mp4 import MP4
+from mutagen.mp4 import MP4, MP4FreeForm
 
 if TYPE_CHECKING:
     from mutagen._file import FileType as MutagenFileType
@@ -96,6 +96,11 @@ class LocalTrack(Track):
             tag_name = f"TXXX:{tag_name}"
         if self._mutagen_file is None or self._mutagen_file.tags is None:
             return None
+        if isinstance(self._mutagen_file, MP4) and tag_name not in self._mutagen_file.tags:
+            tag_name = next(
+                (k for k in self._mutagen_file.tags if k.lower() == tag_name.lower()),
+                tag_name,
+            )
         if tag_name not in self._mutagen_file.tags:
             return None
         tag: Any = self._mutagen_file[tag_name]
@@ -114,7 +119,7 @@ class LocalTrack(Track):
             tag_name = f"{_ITUNES_FREEFORM_PREFIX}{tag_name}"
             if self._mutagen_file.tags is None:
                 raise AttributeError("MP4 file has no tags")
-            self._mutagen_file.tags[tag_name] = value.encode("utf-8")
+            self._mutagen_file.tags[tag_name] = [MP4FreeForm(value.encode("utf-8"))]
         elif isinstance(self._mutagen_file, MP3):
             frame = TXXX(encoding=3, desc=tag_name, text=value)  # type: ignore[no-untyped-call]  # mutagen stubs don't type TXXX.__init__
             if self._mutagen_file.tags is not None:
@@ -170,6 +175,8 @@ class LocalTrack(Track):
                     self._mutagen_file.tags["isrc"] = value  # type: ignore[index]  # VCFLACDict supports str indexing at runtime
                 self._mutagen_file.save()
             else:
+                if self.isrc is not None and self.isrc == _normalize_isrc(value):
+                    return
                 self._set_custom_tag("ISRC", value)
                 return  # _set_custom_tag handles save + reload
             self.reload_metadata()
