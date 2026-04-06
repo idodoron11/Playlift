@@ -173,6 +173,20 @@ class TestLocalTrackIsrcGetterM4a(_LocalTrackTestBase):
         track = self._make_local_track(mock_mp4)
         assert track.isrc is None
 
+    def test_isrc_returns_value_from_lowercase_itunes_key(self) -> None:
+        from mutagen.mp4 import MP4, MP4FreeForm
+
+        mock_mp4 = MagicMock(spec=MP4)
+        mock_mp4.__class__ = MP4  # type: ignore[assignment]
+        # Key is lowercase, as written by Apple Music / some encoders
+        tags_dict = {"----:com.apple.iTunes:isrc": [MP4FreeForm(b"USSM19604431")]}  # type: ignore[no-untyped-call]
+        mock_mp4.tags = tags_dict
+        mock_mp4.__getitem__ = Mock(side_effect=lambda key: tags_dict[key])
+        mock_mp4.__contains__ = Mock(side_effect=lambda key: key in tags_dict)
+
+        track = self._make_local_track(mock_mp4)
+        assert track.isrc == "USSM19604431"  # Must not return None
+
 
 # ---------------------------------------------------------------------------
 # T026: LocalTrack.isrc setter tests
@@ -262,5 +276,46 @@ class TestLocalTrackIsrcSetterM4a(_LocalTrackTestBase):
         with self._isrc_setter_patch():
             track.isrc = "USRC17607839"
 
-        # _set_custom_tag for MP4 encodes to UTF-8
-        mock_mp4.tags.__setitem__.assert_called_once_with("----:com.apple.iTunes:ISRC", b"USRC17607839")
+        # _set_custom_tag for MP4 must write a proper MP4FreeForm list, not raw bytes
+        from mutagen.mp4 import MP4FreeForm
+
+        call_args = mock_mp4.tags.__setitem__.call_args
+        assert call_args is not None
+        key, value = call_args.args
+        assert key == "----:com.apple.iTunes:ISRC"
+        assert isinstance(value, list)
+        assert all(isinstance(v, MP4FreeForm) for v in value)
+
+    def test_isrc_setter_skips_write_when_lowercase_key_exists(self) -> None:
+        from mutagen.mp4 import MP4, MP4FreeForm
+
+        mock_mp4 = MagicMock(spec=MP4)
+        mock_mp4.__class__ = MP4  # type: ignore[assignment]
+        tags_dict = {"----:com.apple.iTunes:isrc": [MP4FreeForm(b"USSM19604431")]}  # type: ignore[no-untyped-call]
+        mock_mp4.tags = tags_dict
+        mock_mp4.__getitem__ = Mock(side_effect=lambda key: tags_dict[key])
+        mock_mp4.__contains__ = Mock(side_effect=lambda key: key in tags_dict)
+
+        track = self._make_local_track(mock_mp4)
+        track.isrc = "USSM19604431"  # Must not write a new atom
+        mock_mp4.save.assert_not_called()
+
+    def test_isrc_setter_writes_mp4freeform_not_raw_bytes(self) -> None:
+        from mutagen.mp4 import MP4, MP4FreeForm
+
+        mock_mp4 = MagicMock(spec=MP4)
+        mock_mp4.__class__ = MP4  # type: ignore[assignment]
+        written: dict = {}  # type: ignore[type-arg]
+        mock_mp4.tags = MagicMock()
+        mock_mp4.tags.__contains__ = Mock(return_value=False)
+        mock_mp4.tags.__setitem__ = Mock(side_effect=lambda k, v: written.update({k: v}))
+
+        mock_audio = MagicMock()
+
+        track = self._make_local_track(mock_mp4, audio_file=mock_audio)
+        with self._isrc_setter_patch():
+            track.isrc = "USSM19604431"
+
+        value = written.get("----:com.apple.iTunes:ISRC")
+        assert isinstance(value, list)
+        assert all(isinstance(v, MP4FreeForm) for v in value)

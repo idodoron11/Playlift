@@ -1,4 +1,4 @@
-# Playlist Sync — AI Agent Guidelines
+﻿# Playlist Sync — AI Agent Guidelines
 
 Workspace conventions for playlist-sync, a Python tool that syncs local m3u playlists to Spotify via fuzzy track matching.
 

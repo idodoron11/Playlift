@@ -13,7 +13,7 @@ from mutagen.id3 import (  # type: ignore[attr-defined]  # mutagen stubs don't r
     TXXX,
 )
 from mutagen.mp3 import MP3
-from mutagen.mp4 import MP4
+from mutagen.mp4 import MP4, MP4FreeForm
 
 if TYPE_CHECKING:
     from mutagen._file import FileType as MutagenFileType
@@ -22,6 +22,8 @@ from api.spotify_utils import parse_spotify_id
 from tracks import Track
 
 logger = logging.getLogger(__name__)
+
+_ITUNES_FREEFORM_PREFIX = "----:com.apple.iTunes:"
 
 
 def _normalize_isrc(raw: str) -> str:
@@ -89,11 +91,16 @@ class LocalTrack(Track):
     def _get_custom_tag(self, tag_name: str) -> str | None:
         tag_name = tag_name.upper()
         if isinstance(self._mutagen_file, MP4):
-            tag_name = f"----:com.apple.iTunes:{tag_name}"
+            tag_name = f"{_ITUNES_FREEFORM_PREFIX}{tag_name}"
         elif isinstance(self._mutagen_file, MP3):
             tag_name = f"TXXX:{tag_name}"
         if self._mutagen_file is None or self._mutagen_file.tags is None:
             return None
+        if isinstance(self._mutagen_file, MP4) and tag_name not in self._mutagen_file.tags:
+            tag_name = next(
+                (k for k in self._mutagen_file.tags if k.lower() == tag_name.lower()),
+                tag_name,
+            )
         if tag_name not in self._mutagen_file.tags:
             return None
         tag: Any = self._mutagen_file[tag_name]
@@ -109,10 +116,10 @@ class LocalTrack(Track):
         if self._mutagen_file is None:
             return
         if isinstance(self._mutagen_file, MP4):
-            tag_name = f"----:com.apple.iTunes:{tag_name}"
+            tag_name = f"{_ITUNES_FREEFORM_PREFIX}{tag_name}"
             if self._mutagen_file.tags is None:
                 raise AttributeError("MP4 file has no tags")
-            self._mutagen_file.tags[tag_name] = value.encode("utf-8")
+            self._mutagen_file.tags[tag_name] = [MP4FreeForm(value.encode("utf-8"))]
         elif isinstance(self._mutagen_file, MP3):
             frame = TXXX(encoding=3, desc=tag_name, text=value)  # type: ignore[no-untyped-call]  # mutagen stubs don't type TXXX.__init__
             if self._mutagen_file.tags is not None:
@@ -150,13 +157,15 @@ class LocalTrack(Track):
 
     @isrc.setter
     def isrc(self, value: str) -> None:
-        """Write the ISRC tag to the audio file if not already present.
+        """Write the ISRC tag to the audio file.
 
         MP3 writes a TSRC ID3 frame, FLAC writes via music_tag isrc key,
-        M4A writes an iTunes freeform tag. Only writes if current isrc is None.
+        M4A writes an iTunes freeform tag. For M4A, skips the write when the
+        normalized value is already stored — this guards against creating a
+        second uppercase atom when the file already carries the same ISRC
+        under a lowercase freeform key (a case-insensitive variant that
+        _set_custom_tag would not detect on its own).
         """
-        if self.isrc is not None:
-            return
         if self._mutagen_file is None:
             return
         try:
@@ -170,6 +179,12 @@ class LocalTrack(Track):
                     self._mutagen_file.tags["isrc"] = value  # type: ignore[index]  # VCFLACDict supports str indexing at runtime
                 self._mutagen_file.save()
             else:
+                # M4A only: _set_custom_tag always writes the canonical uppercase key
+                # (e.g. "----:com.apple.iTunes:ISRC"). If the file already holds the
+                # same ISRC under a lowercase variant key, writing unconditionally
+                # would produce a duplicate atom. The guard prevents that.
+                if self.isrc is not None and self.isrc == _normalize_isrc(value):
+                    return
                 self._set_custom_tag("ISRC", value)
                 return  # _set_custom_tag handles save + reload
             self.reload_metadata()

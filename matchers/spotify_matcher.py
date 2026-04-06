@@ -8,7 +8,7 @@ from api.spotify import SpotifyAPI
 from exceptions import SkipTrackError
 from matchers import Matcher
 from tracks import Track
-from tracks.local_track import LocalTrack
+from tracks.local_track import LocalTrack, _normalize_isrc
 from tracks.spotify_track import SpotifyTrack
 
 ISRC_PATTERN: re.Pattern[str] = re.compile(r"^[A-Z]{2}[A-Z0-9]{3}[0-9]{7}$")
@@ -33,8 +33,8 @@ class SpotifyMatcher(Matcher):
         if isinstance(source_track, LocalTrack):
             if source_track.spotify_ref != match.track_url:
                 source_track.spotify_ref = match.track_url
-            if match.isrc is not None and source_track.isrc is None:
-                source_track.isrc = match.isrc
+            if match.isrc is not None and source_track.isrc != _normalize_isrc(match.isrc):
+                source_track.isrc = _normalize_isrc(match.isrc)
 
     def match(self, track: Track) -> SpotifyTrack | None:
         ref = self._find_spotify_match_in_source_track(track)
