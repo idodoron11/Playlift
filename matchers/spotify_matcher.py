@@ -33,7 +33,7 @@ class SpotifyMatcher(Matcher):
         if isinstance(source_track, LocalTrack):
             if source_track.spotify_ref != match.track_url:
                 source_track.spotify_ref = match.track_url
-            if match.isrc is not None and source_track.isrc is None:
+            if match.isrc is not None and source_track.isrc != match.isrc:
                 source_track.isrc = match.isrc
 
     def match(self, track: Track) -> SpotifyTrack | None:
