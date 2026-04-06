@@ -430,3 +430,22 @@ class TestEmbedIsrc(_MatcherTestBase):
 
         matcher = SpotifyMatcher()
         matcher._update_spotify_match_in_source_track(track, matched)
+
+    def test_update_match_skips_isrc_write_when_normalized_values_match(self) -> None:
+        """T006/Bug3: hyphenated Spotify ISRC must not trigger a write when local ISRC already has the same value."""
+        from unittest.mock import Mock, PropertyMock
+
+        from tracks.local_track import LocalTrack
+
+        # Local ISRC is normalized (no hyphens), Spotify returns same ISRC with a hyphen
+        matched = _make_spotify_track("abc123", "USSM1-9604431")
+        mock_local = Mock(spec=LocalTrack)
+        mock_local.spotify_ref = None
+        isrc_prop = PropertyMock(return_value="USSM19604431")
+        type(mock_local).isrc = isrc_prop
+
+        matcher = SpotifyMatcher()
+        matcher._update_spotify_match_in_source_track(mock_local, matched)
+
+        set_calls = [c for c in isrc_prop.call_args_list if c[0]]
+        assert len(set_calls) == 0
