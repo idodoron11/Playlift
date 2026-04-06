@@ -69,7 +69,7 @@ self._mutagen_file.tags[tag_name] = [MP4FreeForm(value.encode("utf-8"))]
 
 ## Bug 3 — Normalize ISRC before comparison (`matchers/spotify_matcher.py`)
 
-**What to change**: In `_update_spotify_match_in_source_track`, normalize `match.isrc` before comparing with `source_track.isrc` (which is already normalized by the getter).
+**What to change**: In `_update_spotify_match_in_source_track`, normalize `match.isrc` before comparing with `source_track.isrc`. This prevents overwriting a valid local ISRC with a semantically identical but differently formatted Spotify value **on all formats (M4A, MP3, FLAC)** — the setter no longer has a guard that would catch this.
 
 **Add import**:
 ```python

@@ -35,7 +35,9 @@ The prefix `"----:com.apple.iTunes:"` must be extracted to a module-level consta
 
 **Decision**: Import `_normalize_isrc` from `tracks.local_track` in `spotify_matcher.py`.
 
-**Rationale**: The Matching layer already depends on the Track layer (imports `LocalTrack`, `SpotifyTrack`). `_normalize_isrc` is a pure, stateless string-transformation function with no side-effects. Placing it in `tracks.local_track` is correct — it is a track-level domain utility. Cross-module import within the correct dependency direction does not violate SOLID or the layered architecture.
+**Rationale**: The Matching layer already depends on the Track layer (imports `LocalTrack`, `SpotifyTrack`). `_normalize_isrc` is a pure, stateless string-transformation function with no side effects. Cross-module import within the correct dependency direction does not violate SOLID or the layered architecture.
+
+Critically, Bug 3 affects **all formats** (M4A, MP3, FLAC): the setter no longer has an early-exit guard, so an un-normalized Spotify ISRC that differs only by formatting (e.g. `"USSM1-9604431"` vs. `"USSM19604431"`) will overwrite the local tag on every format. Normalizing `match.isrc` before the comparison is required to prevent corruption regardless of file format.
 
 **Alternatives considered**: Duplicate the normalization logic in `spotify_matcher.py`. Rejected: violates DRY; two copies of the same normalization would diverge.
 
