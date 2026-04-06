@@ -23,6 +23,8 @@ from tracks import Track
 
 logger = logging.getLogger(__name__)
 
+_ITUNES_FREEFORM_PREFIX = "----:com.apple.iTunes:"
+
 
 def _normalize_isrc(raw: str) -> str:
     """Normalize an ISRC value: uppercase and strip hyphens."""
@@ -89,7 +91,7 @@ class LocalTrack(Track):
     def _get_custom_tag(self, tag_name: str) -> str | None:
         tag_name = tag_name.upper()
         if isinstance(self._mutagen_file, MP4):
-            tag_name = f"----:com.apple.iTunes:{tag_name}"
+            tag_name = f"{_ITUNES_FREEFORM_PREFIX}{tag_name}"
         elif isinstance(self._mutagen_file, MP3):
             tag_name = f"TXXX:{tag_name}"
         if self._mutagen_file is None or self._mutagen_file.tags is None:
@@ -109,7 +111,7 @@ class LocalTrack(Track):
         if self._mutagen_file is None:
             return
         if isinstance(self._mutagen_file, MP4):
-            tag_name = f"----:com.apple.iTunes:{tag_name}"
+            tag_name = f"{_ITUNES_FREEFORM_PREFIX}{tag_name}"
             if self._mutagen_file.tags is None:
                 raise AttributeError("MP4 file has no tags")
             self._mutagen_file.tags[tag_name] = value.encode("utf-8")
