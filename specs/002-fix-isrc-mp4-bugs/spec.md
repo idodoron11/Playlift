@@ -5,6 +5,13 @@
 **Status**: Draft  
 **Input**: User description: "Fix three M4A ISRC bugs: case-sensitive freeform key lookup, wrong MP4FreeForm type, and un-normalized ISRC comparison"
 
+## Clarifications
+
+### Session 2026-04-06
+
+- Q: Should the case-insensitive freeform key lookup fix live in `_get_custom_tag` (affecting all freeform tags) or only in the `isrc` getter? → A: Fix inside `_get_custom_tag` — case-insensitive fallback applies to all freeform tags.
+- Q: What test approach for the regression test — mock-only or real temp file? → A: Mock-only, extending existing `TestLocalTrackIsrcGetterM4a` with a lowercase-keyed tags dict.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - M4A file with existing lowercase ISRC is not duplicated (Priority: P1)
@@ -63,7 +70,7 @@ When a new custom tag (ISRC, SPOTIFY ref, or any other freeform tag) is written 
 
 ### Functional Requirements
 
-- **FR-001**: The system MUST read an existing ISRC from an M4A file regardless of the casing of the freeform atom key suffix (e.g. `isrc`, `ISRC`, `Isrc` must all be recognized).
+- **FR-001**: The `_get_custom_tag` helper MUST resolve a freeform iTunes atom using a case-insensitive match on the key suffix when an exact-case match is not found — this applies to all freeform tags (ISRC, SPOTIFY ref, and any future custom tag).
 - **FR-002**: The system MUST NOT write a new ISRC atom to an M4A file when a valid ISRC already exists under any casing of the freeform key.
 - **FR-003**: When writing a new freeform atom to an M4A file, the value MUST be stored as a proper MP4 freeform value with UTF-8 data type, compatible with the iTunes metadata specification.
 - **FR-004**: Before attempting to write an ISRC from a Spotify match result, the system MUST normalize both the local ISRC and the Spotify ISRC (uppercase, hyphens stripped) before comparing them.
@@ -79,6 +86,7 @@ When a new custom tag (ISRC, SPOTIFY ref, or any other freeform tag) is written 
 - **SC-003**: An M4A file written by the tool contains freeform atoms that are readable as UTF-8 text by any conformant MP4/iTunes metadata reader.
 - **SC-004**: All existing unit tests continue to pass without modification.
 - **SC-005**: New unit tests covering the case-insensitive lookup, the MP4FreeForm write type, and the normalized comparison all pass.
+- **SC-006**: Regression tests use mock mutagen objects (no real files on disk), consistent with the existing test style in `tests/tracks/test_local_track.py`.
 
 ## Assumptions
 
