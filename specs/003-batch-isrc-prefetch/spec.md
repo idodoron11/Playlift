@@ -65,14 +65,21 @@ endpoint is never called.
 - What happens when the playlist has exactly 50 or 51 matched tracks? — Exactly 1 or 2 batch
   requests are made respectively (boundary condition).
 
+## Clarifications
+
+### Session 2026-04-07
+
+- Q: How should the system determine when a track is eligible to be skipped from the batch prefetch? → A: `_data` is loaded **and** `external_ids.isrc` is present in it — a non-null `_data` without `external_ids` still requires a batch fetch.
+
 ## Requirements *(mandatory)*
 
 ### Functional Requirements
 
 - **FR-001**: When `embed_matches` is `True`, the system MUST batch-fetch full track data for all
   chosen matches before writing any ISRC tags, using at most ⌈N/50⌉ network requests.
-- **FR-002**: The system MUST skip tracks that already have ISRC data available in memory — they
-  MUST NOT be included in the batch request.
+- **FR-002**: The system MUST skip tracks from the batch request only when their in-memory data
+  object is loaded **and** contains a non-empty `external_ids.isrc` value. A track whose data is
+  loaded but lacks `external_ids.isrc` MUST still be included in the batch.
 - **FR-003**: When `embed_matches` is `False`, the system MUST NOT make any batch ISRC prefetch
   request.
 - **FR-004**: A failure in the batch prefetch for a given track MUST NOT prevent the `spotify_ref`
