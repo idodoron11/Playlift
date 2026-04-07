@@ -150,7 +150,7 @@ class LocalTrack(Track):
             tag = self._get_tag("isrc")
             raw = str(tag.first) if tag and tag.first else None
         else:
-            raw = self._get_custom_tag("ISRC")
+            raw = self._get_custom_tag("isrc")
         if not raw or not raw.strip():
             return None
         return _normalize_isrc(raw)
@@ -185,7 +185,7 @@ class LocalTrack(Track):
                 # would produce a duplicate atom. The guard prevents that.
                 if self.isrc is not None and self.isrc == _normalize_isrc(value):
                     return
-                self._set_custom_tag("ISRC", value)
+                self._set_custom_tag("isrc", value)
                 return  # _set_custom_tag handles save + reload
             self.reload_metadata()
         except (mutagen.MutagenError, OSError, AttributeError) as e:  # type: ignore[attr-defined]
