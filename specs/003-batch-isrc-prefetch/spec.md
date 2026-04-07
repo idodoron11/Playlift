@@ -64,6 +64,9 @@ endpoint is never called.
   no-op.
 - What happens when the playlist has exactly 50 or 51 matched tracks? — Exactly 1 or 2 batch
   requests are made respectively (boundary condition).
+- What happens when the Spotify batch response returns `null` for an individual track (deleted or
+  unavailable)? — ISRC embedding is skipped for that track only, a `DEBUG` log entry is emitted,
+  and remaining tracks in the batch are processed normally.
 
 ## Clarifications
 
@@ -71,6 +74,7 @@ endpoint is never called.
 
 - Q: How should the system determine when a track is eligible to be skipped from the batch prefetch? → A: `_data` is loaded **and** `external_ids.isrc` is present in it — a non-null `_data` without `external_ids` still requires a batch fetch.
 - Q: Should batch prefetch failures be surfaced to the user, and if so at what granularity? → A: Log a `WARNING` per failed batch (not per track), including the count of affected tracks.
+- Q: How should the system handle a `null` item in an otherwise successful batch response (e.g. deleted/unavailable track)? → A: Skip ISRC embedding for that track only, log at `DEBUG` level, continue for remaining tracks in the batch.
 
 ## Requirements *(mandatory)*
 
@@ -89,6 +93,9 @@ endpoint is never called.
   tracks whose ISRC could not be embedded.
 - **FR-005**: The system MUST correctly handle playlists larger than 50 matched tracks by splitting
   them into sequential batches of at most 50 tracks each.
+- **FR-007**: When a batch response contains a `null` item for a specific track ID, the system MUST
+  skip ISRC embedding for that track only, emit a `DEBUG` log entry, and continue processing all
+  remaining tracks in the batch.
 - **FR-006**: After a successful prefetch, all subsequent reads of a matched track's ISRC MUST be
   served from memory with no additional network calls.
 
