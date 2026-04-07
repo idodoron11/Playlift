@@ -70,6 +70,7 @@ endpoint is never called.
 ### Session 2026-04-07
 
 - Q: How should the system determine when a track is eligible to be skipped from the batch prefetch? → A: `_data` is loaded **and** `external_ids.isrc` is present in it — a non-null `_data` without `external_ids` still requires a batch fetch.
+- Q: Should batch prefetch failures be surfaced to the user, and if so at what granularity? → A: Log a `WARNING` per failed batch (not per track), including the count of affected tracks.
 
 ## Requirements *(mandatory)*
 
@@ -82,8 +83,10 @@ endpoint is never called.
   loaded but lacks `external_ids.isrc` MUST still be included in the batch.
 - **FR-003**: When `embed_matches` is `False`, the system MUST NOT make any batch ISRC prefetch
   request.
-- **FR-004**: A failure in the batch prefetch for a given track MUST NOT prevent the `spotify_ref`
-  from being written to that track's local file; ISRC embedding for that track is skipped.
+- **FR-004**: A failure in a batch prefetch request MUST NOT prevent `spotify_ref` from being
+  written to any track's local file. ISRC embedding is skipped for all tracks in the failed batch.
+  The system MUST emit a single `WARNING` log entry for the failed batch, including the number of
+  tracks whose ISRC could not be embedded.
 - **FR-005**: The system MUST correctly handle playlists larger than 50 matched tracks by splitting
   them into sequential batches of at most 50 tracks each.
 - **FR-006**: After a successful prefetch, all subsequent reads of a matched track's ISRC MUST be
