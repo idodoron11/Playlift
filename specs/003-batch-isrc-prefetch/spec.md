@@ -56,8 +56,9 @@ endpoint is never called.
 
 ### Edge Cases
 
-- What happens when a batch request fails for one or more tracks? — ISRC embedding for those
-  tracks is silently skipped; the `spotify_ref` is still written normally.
+- What happens when a batch request fails for one or more tracks? — ISRC embedding for all tracks
+  in that batch is skipped, a `WARNING` is logged with the affected track count, and `spotify_ref`
+  is still written normally for all tracks.
 - What happens when a matched `SpotifyTrack` already has ISRC data available in memory? — It is
   excluded from the batch; no redundant request is made for it.
 - What happens when there are 0 matched tracks? — No batch request is made; the prefetch step is a
