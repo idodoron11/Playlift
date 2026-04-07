@@ -1,6 +1,6 @@
-from typing import ClassVar
+from typing import ClassVar, cast
 from unittest import TestCase
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -98,6 +98,216 @@ class TestIsValidIsrc(TestCase):
 
     def test_none_returns_false(self) -> None:
         assert _is_valid_isrc(None) is False
+
+
+# ---------------------------------------------------------------------------
+# Helper: build a SpotifyTrack with no _data (simulates unloaded track)
+# ---------------------------------------------------------------------------
+
+
+def _make_spotify_track_no_data(track_id: str = "abc123") -> SpotifyTrack:
+    """Build a SpotifyTrack with _data=None (ISRC not yet loaded)."""
+    track = SpotifyTrack.__new__(SpotifyTrack)
+    track._id = track_id
+    track._data = None
+    return track
+
+
+# ---------------------------------------------------------------------------
+# T002-T007: Tests for _prefetch_isrc_data (write first - must FAIL before T008)
+# ---------------------------------------------------------------------------
+
+
+class TestPrefetchIsrcData(_MatcherTestBase):
+    # T002
+    def test_prefetch_isrc_data_fetches_tracks_with_no_data(self) -> None:
+        """Tracks with _data=None → SpotifyAPI.tracks() called with correct IDs, _data updated."""
+        track = _make_spotify_track_no_data("id1")
+        batch_data = _make_spotify_track_data("id1", isrc="USRC17607839")
+        matcher = cast("SpotifyMatcher", SpotifyMatcher.get_instance())
+
+        with patch("matchers.spotify_matcher.SpotifyAPI") as mock_api_cls:
+            mock_api = MagicMock()
+            mock_api_cls.get_instance.return_value = mock_api
+            mock_api.tracks.return_value = {"tracks": [batch_data]}
+
+            matcher._prefetch_isrc_data([track])
+
+        mock_api.tracks.assert_called_once_with(["id1"])
+        assert track._data == batch_data
+
+    # T003
+    def test_prefetch_isrc_data_skips_tracks_that_already_have_isrc(self) -> None:
+        """Tracks with external_ids.isrc already in _data → SpotifyAPI.tracks() never called."""
+        track = _make_spotify_track("id1", isrc="USRC17607839")
+        matcher = cast("SpotifyMatcher", SpotifyMatcher.get_instance())
+
+        with patch("matchers.spotify_matcher.SpotifyAPI") as mock_api_cls:
+            mock_api = MagicMock()
+            mock_api_cls.get_instance.return_value = mock_api
+
+            matcher._prefetch_isrc_data([track])
+
+        mock_api.tracks.assert_not_called()
+
+    # T004
+    def test_prefetch_isrc_data_fetches_only_tracks_missing_isrc(self) -> None:
+        """Mix of loaded/unloaded tracks → batch contains only the unloaded IDs."""
+        loaded = _make_spotify_track("id1", isrc="USRC17607839")
+        unloaded = _make_spotify_track_no_data("id2")
+        batch_data = _make_spotify_track_data("id2", isrc="GBUM71505079")
+        matcher = cast("SpotifyMatcher", SpotifyMatcher.get_instance())
+
+        with patch("matchers.spotify_matcher.SpotifyAPI") as mock_api_cls:
+            mock_api = MagicMock()
+            mock_api_cls.get_instance.return_value = mock_api
+            mock_api.tracks.return_value = {"tracks": [batch_data]}
+
+            matcher._prefetch_isrc_data([loaded, unloaded])
+
+        mock_api.tracks.assert_called_once_with(["id2"])
+        assert unloaded._data == batch_data
+
+    # T005
+    def test_prefetch_isrc_data_splits_into_batches_of_50(self) -> None:
+        """51 tracks with no _data → SpotifyAPI.tracks() called exactly twice."""
+        tracks = [_make_spotify_track_no_data(f"id{i}") for i in range(51)]
+        batch_1_ids = [f"id{i}" for i in range(50)]
+        batch_2_ids = ["id50"]
+        batch_1_items = [_make_spotify_track_data(f"id{i}") for i in range(50)]
+        batch_2_items = [_make_spotify_track_data("id50")]
+        matcher = cast("SpotifyMatcher", SpotifyMatcher.get_instance())
+
+        with patch("matchers.spotify_matcher.SpotifyAPI") as mock_api_cls:
+            mock_api = MagicMock()
+            mock_api_cls.get_instance.return_value = mock_api
+            mock_api.tracks.side_effect = [
+                {"tracks": batch_1_items},
+                {"tracks": batch_2_items},
+            ]
+
+            matcher._prefetch_isrc_data(tracks)
+
+        assert mock_api.tracks.call_count == 2
+        mock_api.tracks.assert_any_call(batch_1_ids)
+        mock_api.tracks.assert_any_call(batch_2_ids)
+
+    # T006
+    def test_prefetch_isrc_data_logs_warning_and_continues_on_batch_failure(self) -> None:
+        """SpotifyAPI.tracks() raises exception → WARNING logged, no crash."""
+        tracks = [_make_spotify_track_no_data(f"id{i}") for i in range(3)]
+        matcher = cast("SpotifyMatcher", SpotifyMatcher.get_instance())
+
+        with patch("matchers.spotify_matcher.SpotifyAPI") as mock_api_cls:
+            mock_api = MagicMock()
+            mock_api_cls.get_instance.return_value = mock_api
+            mock_api.tracks.side_effect = Exception("network error")
+
+            with patch("matchers.spotify_matcher.logger") as mock_logger:
+                matcher._prefetch_isrc_data(tracks)
+
+        mock_logger.warning.assert_called_once()
+        warning_args = mock_logger.warning.call_args
+        assert "3" in str(warning_args) or 3 in warning_args.args
+
+    # T007
+    def test_prefetch_isrc_data_skips_null_items_with_debug_log(self) -> None:
+        """None in batch response → DEBUG logged for that track, _data updated for others."""
+        track_a = _make_spotify_track_no_data("id1")
+        track_b = _make_spotify_track_no_data("id2")
+        data_b = _make_spotify_track_data("id2", isrc="GBUM71505079")
+        matcher = cast("SpotifyMatcher", SpotifyMatcher.get_instance())
+
+        with patch("matchers.spotify_matcher.SpotifyAPI") as mock_api_cls:
+            mock_api = MagicMock()
+            mock_api_cls.get_instance.return_value = mock_api
+            mock_api.tracks.return_value = {"tracks": [None, data_b]}
+
+            with patch("matchers.spotify_matcher.logger") as mock_logger:
+                matcher._prefetch_isrc_data([track_a, track_b])
+
+        mock_logger.debug.assert_called_once()
+        assert track_a._data is None  # null item — unchanged
+        assert track_b._data == data_b
+
+
+# ---------------------------------------------------------------------------
+# T009, T010, T012: Tests for match_list (US1 + US2 — write first, must FAIL before T011)
+# ---------------------------------------------------------------------------
+
+
+def _make_local_track_mock(title: str = "Track") -> MagicMock:
+    """Build a minimal LocalTrack-like mock for embed tests."""
+    track = MagicMock()
+    track.title = title
+    track.spotify_ref = None
+    track.isrc = None
+    return track
+
+
+class TestMatchListBatchPrefetch(_MatcherTestBase):
+    """Tests for the two-pass match_list design (US1 + US2)."""
+
+    def _build_matcher_with_suggestions(self, sp_tracks: list[SpotifyTrack]) -> SpotifyMatcher:
+        matcher = cast("SpotifyMatcher", SpotifyMatcher.get_instance())
+        matcher._match_list = MagicMock(return_value=[[t] for t in sp_tracks])  # type: ignore[method-assign]
+        return matcher
+
+    # T009
+    def test_match_list_with_embed_matches_calls_prefetch_once_per_batch(self) -> None:
+        """embed_matches=True, N tracks all needing ISRC → SpotifyAPI.tracks() called ⌈N/50⌉ times."""
+        n = 55  # two batches
+        sp_tracks = [_make_spotify_track_no_data(f"id{i}") for i in range(n)]
+        source_tracks = [TrackMock(str(i), ["Artist"], "Album", f"Track {i}", 200, i) for i in range(n)]
+
+        batch_items_1 = [_make_spotify_track_data(f"id{i}") for i in range(50)]
+        batch_items_2 = [_make_spotify_track_data(f"id{i}") for i in range(50, n)]
+
+        with patch("matchers.spotify_matcher.SpotifyAPI") as mock_api_cls:
+            mock_api = MagicMock()
+            mock_api_cls.get_instance.return_value = mock_api
+            mock_api.tracks.side_effect = [
+                {"tracks": batch_items_1},
+                {"tracks": batch_items_2},
+            ]
+
+            matcher = self._build_matcher_with_suggestions(sp_tracks)
+            with patch.object(matcher, "_update_spotify_match_in_source_track"):
+                matcher.match_list(source_tracks, autopilot=True, embed_matches=True)
+
+        assert mock_api.tracks.call_count == 2
+
+    # T010
+    def test_match_list_with_embed_matches_skips_prefetch_when_isrc_cached(self) -> None:
+        """embed_matches=True, all matches already have ISRC → SpotifyAPI.tracks() never called."""
+        sp_tracks = [_make_spotify_track(f"id{i}", isrc="USRC17607839") for i in range(5)]
+        source_tracks = [TrackMock(str(i), ["Artist"], "Album", f"Track {i}", 200, i) for i in range(5)]
+
+        with patch("matchers.spotify_matcher.SpotifyAPI") as mock_api_cls:
+            mock_api = MagicMock()
+            mock_api_cls.get_instance.return_value = mock_api
+
+            matcher = self._build_matcher_with_suggestions(sp_tracks)
+            with patch.object(matcher, "_update_spotify_match_in_source_track"):
+                matcher.match_list(source_tracks, autopilot=True, embed_matches=True)
+
+        mock_api.tracks.assert_not_called()
+
+    # T012
+    def test_match_list_without_embed_matches_never_calls_batch_endpoint(self) -> None:
+        """embed_matches=False, any playlist → SpotifyAPI.tracks() never called."""
+        sp_tracks = [_make_spotify_track_no_data(f"id{i}") for i in range(10)]
+        source_tracks = [TrackMock(str(i), ["Artist"], "Album", f"Track {i}", 200, i) for i in range(10)]
+
+        with patch("matchers.spotify_matcher.SpotifyAPI") as mock_api_cls:
+            mock_api = MagicMock()
+            mock_api_cls.get_instance.return_value = mock_api
+
+            matcher = self._build_matcher_with_suggestions(sp_tracks)
+            result = matcher.match_list(source_tracks, autopilot=True, embed_matches=False)
+
+        mock_api.tracks.assert_not_called()
+        assert len(result) == len(sp_tracks)
 
     def test_empty_string_returns_false(self) -> None:
         assert _is_valid_isrc("") is False

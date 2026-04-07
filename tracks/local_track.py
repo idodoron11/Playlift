@@ -149,8 +149,10 @@ class LocalTrack(Track):
         elif isinstance(self._mutagen_file, FLAC):
             tag = self._get_tag("isrc")
             raw = str(tag.first) if tag and tag.first else None
+        elif isinstance(self._mutagen_file, MP4):
+            raw = self._get_custom_tag("isrc")
         else:
-            raw = self._get_custom_tag("ISRC")
+            raise NotImplementedError("Unsupported file type for ISRC reading")
         if not raw or not raw.strip():
             return None
         return _normalize_isrc(raw)
@@ -178,15 +180,13 @@ class LocalTrack(Track):
                 if self._mutagen_file.tags is not None:
                     self._mutagen_file.tags["isrc"] = value  # type: ignore[index]  # VCFLACDict supports str indexing at runtime
                 self._mutagen_file.save()
-            else:
-                # M4A only: _set_custom_tag always writes the canonical uppercase key
-                # (e.g. "----:com.apple.iTunes:ISRC"). If the file already holds the
-                # same ISRC under a lowercase variant key, writing unconditionally
-                # would produce a duplicate atom. The guard prevents that.
+            elif isinstance(self._mutagen_file, MP4):
                 if self.isrc is not None and self.isrc == _normalize_isrc(value):
                     return
-                self._set_custom_tag("ISRC", value)
+                self._set_custom_tag("isrc", value)
                 return  # _set_custom_tag handles save + reload
+            else:
+                raise NotImplementedError("Unsupported file type for ISRC writing")
             self.reload_metadata()
         except (mutagen.MutagenError, OSError, AttributeError) as e:  # type: ignore[attr-defined]
             logger.warning("Could not write ISRC for %s: %s", self.track_id, e)
