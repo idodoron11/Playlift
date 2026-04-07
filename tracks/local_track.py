@@ -149,8 +149,10 @@ class LocalTrack(Track):
         elif isinstance(self._mutagen_file, FLAC):
             tag = self._get_tag("isrc")
             raw = str(tag.first) if tag and tag.first else None
-        else:
+        elif isinstance(self._mutagen_file, MP4):
             raw = self._get_custom_tag("isrc")
+        else:
+            raise NotImplementedError("Unsupported file type for ISRC reading")
         if not raw or not raw.strip():
             return None
         return _normalize_isrc(raw)
