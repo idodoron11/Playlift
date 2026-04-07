@@ -18,7 +18,7 @@
 
 **Purpose**: Add the batch-size constant that all subsequent phases depend on.
 
-- [ ] T001 Add `SPOTIFY_BATCH_SIZE: int = 50` module-level constant to `matchers/spotify_matcher.py` (above class definition, with inline comment citing the Spotify API limit)
+- [X] T001 Add `SPOTIFY_BATCH_SIZE: int = 50` module-level constant to `matchers/spotify_matcher.py` (above class definition, with inline comment citing the Spotify API limit)
 
 **Checkpoint**: Constant in place — Foundational phase can begin.
 
@@ -34,16 +34,16 @@ are tested end-to-end in their own phases but rely on this method being correct.
 
 ### Tests for Foundational Phase (write first — must FAIL before T008)
 
-- [ ] T002 [P] Add test `test_prefetch_isrc_data_fetches_tracks_with_no_data` — tracks with `_data=None` → `SpotifyAPI.tracks()` called with correct IDs, `_data` updated on each `SpotifyTrack` in `tests/matchers/test_spotify_matcher.py`
-- [ ] T003 [P] Add test `test_prefetch_isrc_data_skips_tracks_that_already_have_isrc` — tracks with `external_ids.isrc` already in `_data` → `SpotifyAPI.tracks()` never called in `tests/matchers/test_spotify_matcher.py`
-- [ ] T004 [P] Add test `test_prefetch_isrc_data_fetches_only_tracks_missing_isrc` — mix of loaded and unloaded tracks → batch contains only the unloaded IDs in `tests/matchers/test_spotify_matcher.py`
-- [ ] T005 [P] Add test `test_prefetch_isrc_data_splits_into_batches_of_50` — 51 tracks with no `_data` → `SpotifyAPI.tracks()` called exactly twice with correct batch sizes in `tests/matchers/test_spotify_matcher.py`
-- [ ] T006 [P] Add test `test_prefetch_isrc_data_logs_warning_and_continues_on_batch_failure` — `SpotifyAPI.tracks()` raises exception → `WARNING` logged with affected track count, no crash, other batches unaffected in `tests/matchers/test_spotify_matcher.py`
-- [ ] T007 [P] Add test `test_prefetch_isrc_data_skips_null_items_with_debug_log` — batch response contains `None` for one track → `DEBUG` logged for that track, `_data` updated on remaining tracks in `tests/matchers/test_spotify_matcher.py`
+- [X] T002 [P] Add test `test_prefetch_isrc_data_fetches_tracks_with_no_data` — tracks with `_data=None` → `SpotifyAPI.tracks()` called with correct IDs, `_data` updated on each `SpotifyTrack` in `tests/matchers/test_spotify_matcher.py`
+- [X] T003 [P] Add test `test_prefetch_isrc_data_skips_tracks_that_already_have_isrc` — tracks with `external_ids.isrc` already in `_data` → `SpotifyAPI.tracks()` never called in `tests/matchers/test_spotify_matcher.py`
+- [X] T004 [P] Add test `test_prefetch_isrc_data_fetches_only_tracks_missing_isrc` — mix of loaded and unloaded tracks → batch contains only the unloaded IDs in `tests/matchers/test_spotify_matcher.py`
+- [X] T005 [P] Add test `test_prefetch_isrc_data_splits_into_batches_of_50` — 51 tracks with no `_data` → `SpotifyAPI.tracks()` called exactly twice with correct batch sizes in `tests/matchers/test_spotify_matcher.py`
+- [X] T006 [P] Add test `test_prefetch_isrc_data_logs_warning_and_continues_on_batch_failure` — `SpotifyAPI.tracks()` raises exception → `WARNING` logged with affected track count, no crash, other batches unaffected in `tests/matchers/test_spotify_matcher.py`
+- [X] T007 [P] Add test `test_prefetch_isrc_data_skips_null_items_with_debug_log` — batch response contains `None` for one track → `DEBUG` logged for that track, `_data` updated on remaining tracks in `tests/matchers/test_spotify_matcher.py`
 
 ### Implementation for Foundational Phase
 
-- [ ] T008 Implement `_prefetch_isrc_data(self, matches: list[SpotifyTrack]) -> None` on `SpotifyMatcher` in `matchers/spotify_matcher.py` — see quickstart.md for full pseudocode (must make T002–T007 pass)
+- [X] T008 Implement `_prefetch_isrc_data(self, matches: list[SpotifyTrack]) -> None` on `SpotifyMatcher` in `matchers/spotify_matcher.py` — see quickstart.md for full pseudocode (must make T002–T007 pass)
 
 **Checkpoint**: All 6 foundational tests pass. `_prefetch_isrc_data` is independently verified before `match_list` is touched.
 
@@ -59,12 +59,12 @@ All tests pass. The `SpotifyAPI.tracks()` mock is called at most ⌈N/50⌉ time
 
 ### Tests for User Story 1 (write first — must FAIL before T011)
 
-- [ ] T009 [P] [US1] Add test `test_match_list_with_embed_matches_calls_prefetch_once_per_batch` — `embed_matches=True`, N tracks all needing ISRC → `SpotifyAPI.tracks()` called ⌈N/50⌉ times, all ISRCs written to `LocalTrack` in `tests/matchers/test_spotify_matcher.py`
-- [ ] T010 [P] [US1] Add test `test_match_list_with_embed_matches_skips_prefetch_when_isrc_cached` — `embed_matches=True`, all matches already have `external_ids.isrc` in `_data` → `SpotifyAPI.tracks()` never called, `spotify_ref` still written to `LocalTrack` in `tests/matchers/test_spotify_matcher.py`
+- [X] T009 [P] [US1] Add test `test_match_list_with_embed_matches_calls_prefetch_once_per_batch` — `embed_matches=True`, N tracks all needing ISRC → `SpotifyAPI.tracks()` called ⌈N/50⌉ times, all ISRCs written to `LocalTrack` in `tests/matchers/test_spotify_matcher.py`
+- [X] T010 [P] [US1] Add test `test_match_list_with_embed_matches_skips_prefetch_when_isrc_cached` — `embed_matches=True`, all matches already have `external_ids.isrc` in `_data` → `SpotifyAPI.tracks()` never called, `spotify_ref` still written to `LocalTrack` in `tests/matchers/test_spotify_matcher.py`
 
 ### Implementation for User Story 1
 
-- [ ] T011 [US1] Restructure `match_list` in `matchers/spotify_matcher.py` to two-pass design: (1) review loop collects `pairs_to_embed: list[tuple[Track, SpotifyTrack]]`; (2) `if pairs_to_embed:` calls `_prefetch_isrc_data` then embeds — see quickstart.md for full pseudocode (must make T009–T010 pass)
+- [X] T011 [US1] Restructure `match_list` in `matchers/spotify_matcher.py` to two-pass design: (1) review loop collects `pairs_to_embed: list[tuple[Track, SpotifyTrack]]`; (2) `if pairs_to_embed:` calls `_prefetch_isrc_data` then embeds — see quickstart.md for full pseudocode (must make T009–T010 pass)
 
 **Checkpoint**: User Story 1 independently testable and functional. `embed_matches=True` on a playlist of any size calls `_prefetch_isrc_data` once, not once per track.
 
@@ -80,7 +80,7 @@ Test passes. Zero calls to `SpotifyAPI.tracks()`.
 
 ### Tests for User Story 2 (write first — must FAIL before T011 merges)
 
-- [ ] T012 [P] [US2] Add test `test_match_list_without_embed_matches_never_calls_batch_endpoint` — `embed_matches=False`, any playlist → `SpotifyAPI.tracks()` never called, return value is the list of matched `SpotifyTrack` objects identical to current behaviour in `tests/matchers/test_spotify_matcher.py`
+- [X] T012 [P] [US2] Add test `test_match_list_without_embed_matches_never_calls_batch_endpoint` — `embed_matches=False`, any playlist → `SpotifyAPI.tracks()` never called, return value is the list of matched `SpotifyTrack` objects identical to current behaviour in `tests/matchers/test_spotify_matcher.py`
 
 ### Implementation for User Story 2
 
@@ -94,10 +94,10 @@ ever executing.
 
 ## Final Phase: Polish & Quality Gates
 
-- [ ] T013 [P] Run `uv run ruff check .` — zero violations
-- [ ] T014 [P] Run `uv run ruff format .` — zero style violations
-- [ ] T015 [P] Run `uv run mypy .` — strict mode, zero errors
-- [ ] T016 Run `uv run pytest tests/` — all tests pass, none skipped without justification
+- [X] T013 [P] Run `uv run ruff check .` — zero violations
+- [X] T014 [P] Run `uv run ruff format .` — zero style violations
+- [X] T015 [P] Run `uv run mypy .` — strict mode, zero errors
+- [X] T016 Run `uv run pytest tests/` — all tests pass, none skipped without justification
 
 ---
 
