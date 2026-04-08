@@ -49,11 +49,15 @@ def get_spotify_client() -> spotipy.Spotify:
 
 ```python
 def __init__(self, client: spotipy.Spotify | None = None) -> None:
-    self._client: spotipy.Spotify = client or get_spotify_client()
+    if client is None:
+        raise ValueError("client must be provided")
+    self._client: spotipy.Spotify = client
 ```
 
 **Invariant**: `self._client` is always a non-`None` `spotipy.Spotify` instance after
-construction.
+construction. Callers must supply the client explicitly (use `get_spotify_client()` in
+production; pass a mock in tests). `Matcher.get_instance()` supplies `client=get_spotify_client()`
+when constructing the singleton.
 
 ### `_search` signature change
 
@@ -65,7 +69,7 @@ Internal callers inside the class: `SpotifyMatcher._search(q)` → `self._search
 
 ### Removed dependency
 
-`SpotifyAPI` import removed. `get_spotify_client` imported from `api.spotify`.
+`SpotifyAPI` import removed. `import spotipy` added at the top level.
 
 ---
 
@@ -81,7 +85,9 @@ def __init__(
     *,
     client: spotipy.Spotify | None = None,
 ) -> None:
-    self._client: spotipy.Spotify = client or get_spotify_client()
+    if client is None:
+        raise ValueError("client must be provided")
+    self._client: spotipy.Spotify = client
     self._id = self._client._get_id("track", track_url)
     self._data: dict[str, Any] | None = data
     if self._data and self._data["id"] != self._id:
@@ -90,9 +96,11 @@ def __init__(
 
 **Notes**:
 - `client=` is keyword-only (placed after `*`).
+- Raises `ValueError` immediately when `client is None`; no silent fallback to `get_spotify_client()`.
 - `self._client._get_id(...)` replaces `SpotifyAPI.get_instance()._get_id(...)`.
 - `data` property uses `self._client.track(self._id)` instead of
   `SpotifyAPI.get_instance().track(self._id)`.
+- `spotipy` is imported under `TYPE_CHECKING` only (no runtime import).
 
 ---
 
@@ -108,7 +116,9 @@ def __init__(
     *,
     client: spotipy.Spotify | None = None,
 ) -> None:
-    self._client: spotipy.Spotify = client or get_spotify_client()
+    if client is None:
+        raise ValueError("client must be provided")
+    self._client: spotipy.Spotify = client
     self._id = self._client._get_id("playlist", playlist_url)
     ...
 ```
@@ -124,10 +134,11 @@ def create(
     *,
     client: spotipy.Spotify | None = None,
 ) -> "SpotifyPlaylist":
-    resolved_client = client or get_spotify_client()
-    user_id = resolved_client.current_user()["id"]
-    playlist_resp = resolved_client.user_playlist_create(user_id, playlist_name, public=public)
-    return cls(playlist_resp["id"], client=resolved_client)
+    if client is None:
+        raise ValueError("client must be provided")
+    user_id = client.current_user()["id"]
+    playlist_resp = client.user_playlist_create(user_id, playlist_name, public=public)
+    return cls(playlist_resp["id"], client=client)
 ```
 
 ### Classmethod: `create_from_another_playlist`
@@ -142,7 +153,7 @@ def create_from_another_playlist(
     autopilot: bool = False,
     embed_matches: bool = False,
     *,
-    client: spotipy.Spotify | None = None,
+    client: spotipy.Spotify,  # required — no default
 ) -> "SpotifyPlaylist":
     sp_tracks = SpotifyPlaylist.track_matcher().match_list(
         source_playlist.tracks, autopilot=autopilot, embed_matches=embed_matches
@@ -225,5 +236,8 @@ Existing `@pytest.mark.integration` tests in the file are untouched.
 |------|---------------|--------------|
 | `api/spotify.py` | — | `import functools` |
 | `matchers/spotify_matcher.py` | `from api.spotify import SpotifyAPI` | `from api.spotify import get_spotify_client` |
-| `tracks/spotify_track.py` | `from api.spotify import SpotifyAPI` | `from api.spotify import get_spotify_client` |
-| `playlists/spotify_playlist.py` | `from api.spotify import SpotifyAPI` | `from api.spotify import get_spotify_client` |
+| `tracks/spotify_track.py` | `from api.spotify import SpotifyAPI` | (none — `spotipy` imported under `TYPE_CHECKING` only) |
+| `playlists/spotify_playlist.py` | `from api.spotify import SpotifyAPI` | `import spotipy` |
+| `main.py` | — | `from api.spotify import get_spotify_client` |
+| `cleanup.py` | — | `from api.spotify import get_spotify_client` |
+| `playlists/compare.py` | — | `from api.spotify import get_spotify_client` |

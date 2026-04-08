@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 from unittest import TestCase
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 import spotipy
@@ -209,4 +209,23 @@ class TestSpotifyPlaylistUnit:
         playlist = SpotifyPlaylist.create(PLAYLIST_NAME, client=mock_client)
 
         mock_client.current_user.assert_called_once()
+        assert playlist.playlist_id == PLAYLIST_ID
+
+    def test_create_from_another_playlist_uses_injected_client(self, mock_client: MagicMock) -> None:
+        mock_client.current_user.return_value = {"id": "user1"}
+        mock_client.user_playlist_create.return_value = {"id": PLAYLIST_ID}
+
+        mock_track = MagicMock()
+        mock_track.track_id = TRACK_ID_1
+        source_playlist = MagicMock()
+        source_playlist.tracks = [mock_track]
+
+        mock_matcher = MagicMock()
+        mock_matcher.match_list.return_value = [mock_track]
+
+        with patch.object(SpotifyPlaylist, "track_matcher", return_value=mock_matcher):
+            playlist = SpotifyPlaylist.create_from_another_playlist(PLAYLIST_NAME, source_playlist, client=mock_client)
+
+        mock_client.current_user.assert_called_once()
+        mock_client.playlist_add_items.assert_called_once()
         assert playlist.playlist_id == PLAYLIST_ID
