@@ -55,19 +55,21 @@ A developer writing a unit test for `SpotifyTrack` constructs the track with a m
 
 ---
 
-### User Story 4 - Inject client into SpotifyPlaylist (Priority: P3)
+### User Story 4 - Inject client into SpotifyPlaylist and add unit tests (Priority: P3)
 
-A developer writing a unit test for `SpotifyPlaylist` constructs the playlist with a mock client, so all API calls (load data, add tracks, remove tracks) are intercepted without patching.
+A developer writing a unit test for `SpotifyPlaylist` constructs the playlist with a mock client, so all API calls (load data, add tracks, remove tracks, create) are intercepted without patching. Because `SpotifyPlaylist` currently has zero unit tests (all tests are integration), this refactor introduces a full unit test suite for the class using the newly injected client.
 
-**Why this priority**: Same testability improvement as SpotifyTrack; both are P3 because they are parallel work and neither blocks the other.
+**Why this priority**: Same testability improvement as SpotifyTrack; both are P3 because they are parallel work and neither blocks the other. The testing instructions require every public class to have unit tests — this refactor is the natural moment to remedy the gap.
 
 **Independent Test**: A unit test constructs `SpotifyPlaylist(playlist_id, client=mock_client)`, calls `.tracks`, and asserts that `mock_client.playlist()` was called — no `patch()` needed.
 
 **Acceptance Scenarios**:
 
-1. **Given** a `SpotifyPlaylist` constructed with a mock client, **When** `.tracks` is accessed, **Then** the mock client's `.playlist()` and `.next()` are called and the returned tracks are constructed with the same mock client.
+1. **Given** a `SpotifyPlaylist` constructed with a mock client, **When** `.tracks` is accessed, **Then** the mock client's `.playlist()` and `.next()` are called and the returned `SpotifyTrack` objects are constructed with the same mock client.
 2. **Given** a `SpotifyPlaylist` constructed with a mock client, **When** `add_tracks()` is called, **Then** the mock client's `.playlist_add_items()` is invoked in 100-track batches.
-3. **Given** a `SpotifyPlaylist` constructed with no client argument, **When** used in production, **Then** it transparently uses the shared cached client.
+3. **Given** a `SpotifyPlaylist` constructed with a mock client, **When** `remove_track()` is called, **Then** the mock client's `.playlist_remove_all_occurrences_of_items()` is invoked in 100-track batches.
+4. **Given** a mock client passed to `SpotifyPlaylist.create()`, **When** the classmethod is called, **Then** it uses the provided client (not the global) to look up the current user and create the playlist.
+5. **Given** a `SpotifyPlaylist` constructed with no client argument, **When** used in production, **Then** it transparently uses the shared cached client.
 
 ---
 
@@ -91,6 +93,7 @@ A developer writing a unit test for `SpotifyPlaylist` constructs the playlist wi
 - **FR-006**: All existing unit tests that previously used `patch("...SpotifyAPI")` or `SpotifyTrack.__new__` must be rewritten to use constructor injection with a mock client.
 - **FR-007**: All `@pytest.mark.integration` tests must continue to pass without modification; they must resolve the client through `get_spotify_client()` transparently.
 - **FR-008**: The refactored codebase must pass `ruff check`, `ruff format`, and `mypy` (strict mode) with zero errors.
+- **FR-009**: New unit tests must be added for `SpotifyPlaylist` covering at minimum: `tracks` property (with pagination), `add_tracks()`, `remove_track()`, `create()`, and `create_from_another_playlist()` — all using a mock client injected via constructor or classmethod parameter.
 
 ### Key Entities
 
@@ -104,7 +107,7 @@ A developer writing a unit test for `SpotifyPlaylist` constructs the playlist wi
 - **SC-001**: Zero occurrences of `SpotifyAPI` in any `.py` file after the refactor.
 - **SC-002**: Zero uses of `SpotifyTrack.__new__` or `Matcher._Matcher__instance` manipulation in any test file.
 - **SC-003**: Zero `patch()` calls targeting `SpotifyAPI` in unit tests; all mocking is achieved via constructor injection.
-- **SC-004**: All non-integration unit tests pass without a live Spotify connection.
+- **SC-004**: All non-integration unit tests pass without a live Spotify connection, including the newly added `SpotifyPlaylist` unit tests.
 - **SC-005**: `ruff check .`, `ruff format .`, and `mypy .` each exit with zero errors or warnings.
 - **SC-006**: The number of `patch()` calls across unit test files decreases compared to before the refactor.
 
@@ -114,6 +117,7 @@ A developer writing a unit test for `SpotifyPlaylist` constructs the playlist wi
 
 - Q: Should `SpotifyPlaylist.create()` and `create_from_another_playlist()` also accept a `client=` keyword parameter? → A: Yes — add `client: spotipy.Spotify | None = None` to both classmethods; they default to `get_spotify_client()` when `None`.
 - Q: How should `get_spotify_client()` be tested? → A: No unit test; it is a pure infrastructure function covered implicitly by integration tests.
+- Q: Should new `SpotifyPlaylist` unit tests be written as part of this refactor? → A: Yes — add unit tests covering `tracks`, `add_tracks()`, `remove_track()`, `create()`, and `create_from_another_playlist()` using a mock client.
 
 ## Assumptions
 
