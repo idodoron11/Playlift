@@ -29,9 +29,9 @@ other files will still import `SpotifyAPI` and must be updated in Phases 2–4 i
 ## Phase 2: Foundational — Remove `Matcher.__init__` guard (blocks US2)
 
 **Purpose**: Allow `SpotifyMatcher` to be constructed directly in tests without acquiring
-the singleton slot. Must complete before Phase 3 (US2).
+the singleton slot. Must complete before Phase 4 (T006, US2 tests).
 
-**⚠️ CRITICAL**: US2 unit tests require direct construction of `SpotifyMatcher`.
+**⚠️ CRITICAL**: US2 unit tests (T006) require direct construction of `SpotifyMatcher`.
 
 - [ ] T002 Modify `matchers/__init__.py`: remove `if Matcher.__instance is not None: raise TypeError(...)` body from `Matcher.__init__`; leave `__init__` signature and `get_instance()` unchanged
 
@@ -75,7 +75,8 @@ pytest fixtures and constructor injection. Zero `patch()` calls targeting `Spoti
   - Rewrite each test in `TestPrefetchIsrcData` and `TestMatchListBatchPrefetch`: replace `patch("matchers.spotify_matcher.SpotifyAPI")` blocks with direct access to `matcher._client` (which is already `mock_client` from the fixture); assert `mock_client.tracks.assert_called_once_with(...)` directly
   - Keep `patch.object(SpotifyMatcher, "_search")` patches in `TestMatchIsrc` unchanged (R-006: these work on instance methods identically)
   - Keep all `@pytest.mark.integration` tests in `TestSpotifyMatcher` completely unchanged
-  - Rename test classes from `unittest.TestCase` subclasses to plain classes; remove `TestCase` import if it becomes unused
+  - Convert `_build_matcher_with_suggestions()` instance method to a standalone helper function `_build_matcher_with_suggestions(mock_client: MagicMock, sp_tracks: list[SpotifyTrack]) -> SpotifyMatcher` that calls `SpotifyMatcher(client=mock_client)` and monkeypatches `_match_list`
+  - Rename test classes from `unittest.TestCase` subclasses to plain classes; do **not** remove the `TestCase` import — it is still required by `TestSpotifyMatcher` (the integration class, which is kept unchanged)
 
 **Checkpoint**: `uv run pytest tests/matchers/test_spotify_matcher.py -m "not integration" -v` — all unit tests green. `grep "SpotifyAPI\|__new__\|Matcher__instance" tests/matchers/test_spotify_matcher.py` — zero results.
 
@@ -130,6 +131,8 @@ tests. All new tests use the injectable `client=` constructor and classmethod pa
 - [ ] T013 Verify SC-001: `grep -r "SpotifyAPI" . --include="*.py"` — zero results
 - [ ] T014 Verify SC-002: `grep -r "SpotifyTrack.__new__\|Matcher__instance" . --include="*.py"` — zero results
 - [ ] T015 Verify SC-003: `grep -r 'patch.*SpotifyAPI' . --include="*.py"` — zero results
+- [ ] T016 Verify FR-007: `uv run pytest tests/ -m "integration" -v` — must exit with the same pass/fail result as before the refactor (skip if no live Spotify config is available; document skip with reason)
+- [ ] T017 Verify SC-006: run `grep -rc 'patch(' tests/ --include="*.py"` and confirm the total count is lower than the pre-refactor baseline; record both counts in a commit message or PR description
 
 ---
 
