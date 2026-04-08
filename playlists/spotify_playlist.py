@@ -59,8 +59,10 @@ class SpotifyPlaylist(Playlist):
         autopilot: bool = False,
         embed_matches: bool = False,
         *,
-        client: spotipy.Spotify | None = None,
+        client: spotipy.Spotify,
     ) -> "SpotifyPlaylist":
+        if client is None:
+            raise ValueError("client must be provided")
         sp_tracks: list[Track] = SpotifyPlaylist.track_matcher().match_list(
             source_playlist.tracks, autopilot=autopilot, embed_matches=embed_matches
         )

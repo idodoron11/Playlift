@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 
 class SpotifyPlaylistSpy(SpotifyPlaylist):
-    def __init__(self, playlist_url: str | None = None) -> None:
+    def __init__(self, playlist_url: str | None = None, **kwargs: object) -> None:
         self._id = playlist_url or ""
         self._data: dict[str, Any] | None = {}
         self._tracks: list[SpotifyTrack] = []

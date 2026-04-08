@@ -76,7 +76,9 @@ class TestSpotifyPlaylist(TestCase):
             )
         ]
         source_playlist = PlaylistMock(source_tracks)
-        target_playlist = SpotifyPlaylistSpy.create_from_another_playlist(SOURCE_PLAYLIST_NAME, source_playlist)
+        target_playlist = SpotifyPlaylistSpy.create_from_another_playlist(
+            SOURCE_PLAYLIST_NAME, source_playlist, client=get_spotify_client()
+        )
         assert len(target_playlist.tracks) == 1
         assert target_playlist.tracks[0].title == source_playlist.tracks[0].title
         assert target_playlist.tracks[0].display_artist == source_playlist.tracks[0].display_artist

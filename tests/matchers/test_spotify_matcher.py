@@ -106,7 +106,12 @@ class TestIsValidIsrc(TestCase):
 
 
 def _make_spotify_track_no_data(track_id: str = "abc123") -> SpotifyTrack:
-    """Build a SpotifyTrack with _data=None (ISRC not yet loaded)."""
+    """Build a SpotifyTrack with _data=None (ISRC not yet loaded).
+
+    Uses its own isolated mock client intentionally — tests using this helper
+    should NOT assert on the fixture's mock_client.track() calls, as the track's
+    client is a separate anonymous mock.
+    """
     mock = MagicMock(spec=spotipy.Spotify)
     mock._get_id.return_value = track_id
     return SpotifyTrack(track_id, client=mock)
@@ -297,7 +302,7 @@ class TestMatchIsrc:
     def test_match_uses_isrc_lookup_when_valid_isrc_present(self, matcher: SpotifyMatcher) -> None:
         """T008: valid ISRC triggers isrc: query; no fuzzy query."""
         mock_search = MagicMock(return_value=[_make_spotify_track("abc123", "USRC17607839")])
-        with patch.object(SpotifyMatcher, "_search", mock_search):
+        with patch.object(matcher, "_search", mock_search):
             track = TrackMock("1", ["Artist"], "Album", "Title", 200, 1, isrc="USRC17607839")
             matcher.match(track)
 
@@ -309,7 +314,7 @@ class TestMatchIsrc:
         """T009: ISRC lookup returns a SpotifyTrack which is used as the match."""
         expected = _make_spotify_track("abc123")
         mock_search = MagicMock(return_value=[expected])
-        with patch.object(SpotifyMatcher, "_search", mock_search):
+        with patch.object(matcher, "_search", mock_search):
             track = TrackMock("1", ["Artist"], "Album", "Title", 200, 1, isrc="USRC17607839")
             result = matcher.match(track)
 
@@ -318,7 +323,7 @@ class TestMatchIsrc:
     def test_match_skips_isrc_lookup_for_malformed_isrc(self, matcher: SpotifyMatcher) -> None:
         """T010: malformed ISRC never triggers isrc: query."""
         mock_search = MagicMock(return_value=[_make_spotify_track("abc123")])
-        with patch.object(SpotifyMatcher, "_search", mock_search):
+        with patch.object(matcher, "_search", mock_search):
             track = TrackMock("1", ["Artist"], "Album", "Title", 200, 1, isrc="NOTVALID")
             matcher.match(track)
 
@@ -328,7 +333,7 @@ class TestMatchIsrc:
     def test_match_skips_isrc_lookup_when_no_isrc_tag(self, matcher: SpotifyMatcher) -> None:
         """T011: track with isrc=None never triggers isrc: query."""
         mock_search = MagicMock(return_value=[_make_spotify_track("abc123")])
-        with patch.object(SpotifyMatcher, "_search", mock_search):
+        with patch.object(matcher, "_search", mock_search):
             track = TrackMock("1", ["Artist"], "Album", "Title", 200, 1, isrc=None)
             matcher.match(track)
 
@@ -339,7 +344,7 @@ class TestMatchIsrc:
         """T031: Cyrillic/CJK track with valid ISRC matches via ISRC, not fuzzy."""
         expected = _make_spotify_track("abc123")
         mock_search = MagicMock(return_value=[expected])
-        with patch.object(SpotifyMatcher, "_search", mock_search):
+        with patch.object(matcher, "_search", mock_search):
             track = TrackMock("1", ["Земфира"], "Вендетта", "Хочешь", 200, 1, isrc="USRC17607839")
             result = matcher.match(track)
 
@@ -353,7 +358,7 @@ class TestMatchIsrc:
         """T032: log indicates match was via ISRC."""
         expected = _make_spotify_track("abc123")
         mock_search = MagicMock(return_value=[expected])
-        with patch.object(SpotifyMatcher, "_search", mock_search):
+        with patch.object(matcher, "_search", mock_search):
             track = TrackMock("1", ["Artist"], "Album", "Title", 200, 1, isrc="USRC17607839")
             with caplog.at_level(logging.INFO, logger="matchers.spotify_matcher"):
                 matcher.match(track)
@@ -378,7 +383,7 @@ class TestMatchFuzzyFallback:
             return [fuzzy_result]
 
         mock_search = MagicMock(side_effect=_search_side_effect)
-        with patch.object(SpotifyMatcher, "_search", mock_search):
+        with patch.object(matcher, "_search", mock_search):
             track = TrackMock("1", ["Artist"], "Album", "Title", 200, 1, isrc="USRC17607839")
             result = matcher.match(track)
 
@@ -399,7 +404,7 @@ class TestMatchFuzzyFallback:
             return [fuzzy_result]
 
         mock_search = MagicMock(side_effect=_search_side_effect)
-        with patch.object(SpotifyMatcher, "_search", mock_search):
+        with patch.object(matcher, "_search", mock_search):
             track = TrackMock("1", ["Artist"], "Album", "Title", 200, 1, isrc="USRC17607839")
             with caplog.at_level(logging.WARNING, logger="matchers.spotify_matcher"):
                 result = matcher.match(track)
@@ -411,7 +416,7 @@ class TestMatchFuzzyFallback:
         """T019: track with isrc=None → only fuzzy queries, no isrc: prefix."""
         fuzzy_result = _make_spotify_track("def456")
         mock_search = MagicMock(return_value=[fuzzy_result])
-        with patch.object(SpotifyMatcher, "_search", mock_search):
+        with patch.object(matcher, "_search", mock_search):
             track = TrackMock("1", ["Artist"], "Album", "Title", 200, 1, isrc=None)
             result = matcher.match(track)
 
@@ -426,7 +431,7 @@ class TestMatchFuzzyFallback:
         """T033: fuzzy match logs the method used."""
         fuzzy_result = _make_spotify_track("def456")
         mock_search = MagicMock(return_value=[fuzzy_result])
-        with patch.object(SpotifyMatcher, "_search", mock_search):
+        with patch.object(matcher, "_search", mock_search):
             track = TrackMock("1", ["Artist"], "Album", "Title", 200, 1, isrc=None)
             with caplog.at_level(logging.INFO, logger="matchers.spotify_matcher"):
                 matcher.match(track)
@@ -443,7 +448,7 @@ class TestMatchFuzzyFallback:
             return [fuzzy_result]
 
         mock_search = MagicMock(side_effect=_search_side_effect)
-        with patch.object(SpotifyMatcher, "_search", mock_search):
+        with patch.object(matcher, "_search", mock_search):
             track_isrc = TrackMock("1", ["A"], "B", "C", 200, 1, isrc="USRC17607839")
             track_no_isrc = TrackMock("2", ["D"], "E", "F", 200, 2, isrc=None)
             # SKIP tracks are covered by test_embed_isrc_skipped_for_skip_track;
@@ -533,7 +538,7 @@ class TestEmbedIsrc:
         matched = _make_spotify_track("abc123", "USRC17607839")
         mock_search_fn = MagicMock(return_value=[matched])
 
-        with patch.object(SpotifyMatcher, "_search", mock_search_fn):
+        with patch.object(matcher, "_search", mock_search_fn):
             mock_local = Mock(spec=LocalTrack)
             mock_local.spotify_ref = None
             mock_local.artists = ["Artist"]
