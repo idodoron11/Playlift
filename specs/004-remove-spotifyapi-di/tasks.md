@@ -19,7 +19,7 @@ composition root that all downstream classes depend on. Must complete before Pha
 **⚠️ CRITICAL**: All user story phases depend on this phase. No other implementation can
 begin until T001 is complete.
 
-- [ ] T001 Rewrite `api/spotify.py`: delete `SpotifyAPI` class; add `@functools.cache def get_spotify_client() -> spotipy.Spotify` with Google docstring; add `import functools`; keep `SpotifyOAuth` scopes and `retries=0` comment unchanged
+- [X] T001 Rewrite `api/spotify.py`: delete `SpotifyAPI` class; add `@functools.cache def get_spotify_client() -> spotipy.Spotify` with Google docstring; add `import functools`; keep `SpotifyOAuth` scopes and `retries=0` comment unchanged
 
 **Checkpoint**: `api/spotify.py` exports `get_spotify_client`; `SpotifyAPI` is gone. All
 other files will still import `SpotifyAPI` and must be updated in Phases 2–4 in parallel.
@@ -33,7 +33,7 @@ the singleton slot. Must complete before Phase 4 (T006, US2 tests).
 
 **⚠️ CRITICAL**: US2 unit tests (T006) require direct construction of `SpotifyMatcher`.
 
-- [ ] T002 Modify `matchers/__init__.py`: remove `if Matcher.__instance is not None: raise TypeError(...)` body from `Matcher.__init__`; leave `__init__` signature and `get_instance()` unchanged
+- [X] T002 Modify `matchers/__init__.py`: remove `if Matcher.__instance is not None: raise TypeError(...)` body from `Matcher.__init__`; leave `__init__` signature and `get_instance()` unchanged
 
 **Checkpoint**: `SpotifyMatcher()` can be constructed directly without raising. `get_instance()` continues to protect the singleton slot.
 
@@ -49,9 +49,9 @@ constructor (Phases 4–6). After this phase, zero `SpotifyAPI` references remai
 
 ### Implementation for User Story 1
 
-- [ ] T003 [P] [US1] Modify `matchers/spotify_matcher.py`: replace `from api.spotify import SpotifyAPI` with `from api.spotify import get_spotify_client`; add `__init__(self, client: spotipy.Spotify | None = None) -> None` storing `self._client`; replace 2 `SpotifyAPI.get_instance()` calls in `_prefetch_isrc_data` with `self._client`; convert `@staticmethod def _search` to instance method `def _search(self, query: str)`; update 3 `SpotifyMatcher._search(q)` call sites to `self._search(q)`; pass `client=self._client` to every `SpotifyTrack(...)` created inside `_search`
-- [ ] T004 [P] [US1] Modify `tracks/spotify_track.py`: replace `from api.spotify import SpotifyAPI` with `from api.spotify import get_spotify_client`; add keyword-only `*, client: spotipy.Spotify | None = None` param to `__init__`; store `self._client = client or get_spotify_client()`; replace `SpotifyAPI.get_instance()._get_id(...)` with `self._client._get_id(...)`; replace `SpotifyAPI.get_instance().track(...)` in `data` property with `self._client.track(...)`
-- [ ] T005 [P] [US1] Modify `playlists/spotify_playlist.py`: replace `from api.spotify import SpotifyAPI` with `from api.spotify import get_spotify_client`; add keyword-only `*, client: spotipy.Spotify | None = None` to `__init__`; store `self._client`; replace all 6 `SpotifyAPI.get_instance()` call sites with `self._client`; pass `client=self._client` to every `SpotifyTrack(...)` in `_load_data`; add `*, client: spotipy.Spotify | None = None` to `create()` (resolve via `client or get_spotify_client()`, forward to `cls(...)` call); add `*, client: spotipy.Spotify | None = None` to `create_from_another_playlist()` and forward to `cls.create(..., client=client)`
+- [X] T003 [P] [US1] Modify `matchers/spotify_matcher.py`: replace `from api.spotify import SpotifyAPI` with `from api.spotify import get_spotify_client`; add `__init__(self, client: spotipy.Spotify | None = None) -> None` storing `self._client`; replace 2 `SpotifyAPI.get_instance()` calls in `_prefetch_isrc_data` with `self._client`; convert `@staticmethod def _search` to instance method `def _search(self, query: str)`; update 3 `SpotifyMatcher._search(q)` call sites to `self._search(q)`; pass `client=self._client` to every `SpotifyTrack(...)` created inside `_search`
+- [X] T004 [P] [US1] Modify `tracks/spotify_track.py`: replace `from api.spotify import SpotifyAPI` with `from api.spotify import get_spotify_client`; add keyword-only `*, client: spotipy.Spotify | None = None` param to `__init__`; store `self._client = client or get_spotify_client()`; replace `SpotifyAPI.get_instance()._get_id(...)` with `self._client._get_id(...)`; replace `SpotifyAPI.get_instance().track(...)` in `data` property with `self._client.track(...)`
+- [X] T005 [P] [US1] Modify `playlists/spotify_playlist.py`: replace `from api.spotify import SpotifyAPI` with `from api.spotify import get_spotify_client`; add keyword-only `*, client: spotipy.Spotify | None = None` to `__init__`; store `self._client`; replace all 6 `SpotifyAPI.get_instance()` call sites with `self._client`; pass `client=self._client` to every `SpotifyTrack(...)` in `_load_data`; add `*, client: spotipy.Spotify | None = None` to `create()` (resolve via `client or get_spotify_client()`, forward to `cls(...)` call); add `*, client: spotipy.Spotify | None = None` to `create_from_another_playlist()` and forward to `cls.create(..., client=client)`
 
 **Checkpoint**: `grep -r "SpotifyAPI" . --include="*.py"` returns zero results. `uv run python -c "from api.spotify import get_spotify_client"` exits cleanly (no network call).
 
@@ -66,7 +66,7 @@ pytest fixtures and constructor injection. Zero `patch()` calls targeting `Spoti
 
 ### Tests for User Story 2
 
-- [ ] T006 [US2] Rewrite `tests/matchers/test_spotify_matcher.py` unit tests:
+- [X] T006 [US2] Rewrite `tests/matchers/test_spotify_matcher.py` unit tests:
   - Add `@pytest.fixture def mock_client() -> MagicMock` using `spec=spotipy.Spotify`
   - Add `@pytest.fixture def matcher(mock_client) -> SpotifyMatcher` returning `SpotifyMatcher(client=mock_client)`
   - Rewrite `_make_spotify_track(track_id, isrc)` helper: drop `SpotifyTrack.__new__`; use `SpotifyTrack(track_id, data=data, client=MagicMock(spec=spotipy.Spotify))` where the mock's `_get_id` returns `track_id`
@@ -90,7 +90,7 @@ pytest fixtures and constructor injection. Zero `patch()` calls targeting `Spoti
 
 ### Tests for User Story 3
 
-- [ ] T007 [P] [US3] Rewrite test helpers in `tests/tracks/test_spotify_track.py`: replace any `SpotifyTrack.__new__` usage with `SpotifyTrack(track_id, data=data, client=mock_client)` where `mock_client = MagicMock(spec=spotipy.Spotify)` and `mock_client._get_id.return_value = track_id`; add `@pytest.fixture def mock_client()` if not already present; update all affected test functions to use the fixture
+- [X] T007 [P] [US3] Rewrite test helpers in `tests/tracks/test_spotify_track.py`: replace any `SpotifyTrack.__new__` usage with `SpotifyTrack(track_id, data=data, client=mock_client)` where `mock_client = MagicMock(spec=spotipy.Spotify)` and `mock_client._get_id.return_value = track_id`; add `@pytest.fixture def mock_client()` if not already present; update all affected test functions to use the fixture
 
 **Checkpoint**: `uv run pytest tests/tracks/test_spotify_track.py -m "not integration" -v` passes. `grep "SpotifyTrack.__new__" tests/tracks/test_spotify_track.py` returns zero results.
 
@@ -105,7 +105,7 @@ tests. All new tests use the injectable `client=` constructor and classmethod pa
 
 ### Tests for User Story 4
 
-- [ ] T008 [P] [US4] Add unit test class `TestSpotifyPlaylistUnit` to `tests/playlists/test_spotify_playlist.py`:
+- [X] T008 [P] [US4] Add unit test class `TestSpotifyPlaylistUnit` to `tests/playlists/test_spotify_playlist.py`:
   - Add module-level constants: `PLAYLIST_ID`, `PLAYLIST_NAME`, `TRACK_ID_1`, `TRACK_ID_2`
   - Add `@pytest.fixture def mock_client() -> MagicMock` with `spec=spotipy.Spotify`; configure `mock_client._get_id.side_effect = lambda type_, url: url` (pass-through for IDs already in ID form)
   - Add `@pytest.fixture def spotify_playlist(mock_client) -> SpotifyPlaylist` returning `SpotifyPlaylist(PLAYLIST_ID, client=mock_client)`
@@ -124,15 +124,15 @@ tests. All new tests use the injectable `client=` constructor and classmethod pa
 
 **Purpose**: Run all quality gates and confirm all success criteria from the spec.
 
-- [ ] T009 [P] Run `uv run ruff format .` — must produce no changes (exit 0)
-- [ ] T010 [P] Run `uv run ruff check .` — must produce zero violations
-- [ ] T011 [P] Run `uv run mypy .` — must produce zero errors in strict mode
-- [ ] T012 Run `uv run pytest tests/ -m "not integration" -v` — all unit tests must pass
-- [ ] T013 Verify SC-001: `grep -r "SpotifyAPI" . --include="*.py"` — zero results
-- [ ] T014 Verify SC-002: `grep -r "SpotifyTrack.__new__\|Matcher__instance" . --include="*.py"` — zero results
-- [ ] T015 Verify SC-003: `grep -r 'patch.*SpotifyAPI' . --include="*.py"` — zero results
-- [ ] T016 Verify FR-007: `uv run pytest tests/ -m "integration" -v` — must exit with the same pass/fail result as before the refactor (skip if no live Spotify config is available; document skip with reason)
-- [ ] T017 Verify SC-006: run `grep -rc 'patch(' tests/ --include="*.py"` and confirm the total count is lower than the pre-refactor baseline; record both counts in a commit message or PR description
+- [X] T009 [P] Run `uv run ruff format .` — must produce no changes (exit 0)
+- [X] T010 [P] Run `uv run ruff check .` — must produce zero violations
+- [X] T011 [P] Run `uv run mypy .` — must produce zero errors in strict mode
+- [X] T012 Run `uv run pytest tests/ -m "not integration" -v` — all unit tests must pass
+- [X] T013 Verify SC-001: `grep -r "SpotifyAPI" . --include="*.py"` — zero results
+- [X] T014 Verify SC-002: `grep -r "SpotifyTrack.__new__\|Matcher__instance" . --include="*.py"` — zero results
+- [X] T015 Verify SC-003: `grep -r 'patch.*SpotifyAPI' . --include="*.py"` — zero results
+- [X] T016 Verify FR-007: `uv run pytest tests/ -m "integration" -v` — must exit with the same pass/fail result as before the refactor (skip if no live Spotify config is available; document skip with reason)
+- [X] T017 Verify SC-006: run `grep -rc 'patch(' tests/ --include="*.py"` and confirm the total count is lower than the pre-refactor baseline; record both counts in a commit message or PR description
 
 ---
 
