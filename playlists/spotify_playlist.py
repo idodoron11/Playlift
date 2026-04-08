@@ -1,7 +1,8 @@
 from collections.abc import Iterable
 from typing import Any
 
-from api.spotify import SpotifyAPI
+import spotipy
+
 from matchers.spotify_matcher import SpotifyMatcher
 from playlists import Playlist, TrackCollection
 from tracks import Track
@@ -9,42 +10,63 @@ from tracks.spotify_track import SpotifyTrack
 
 
 class SpotifyPlaylist(Playlist):
-    def __init__(self, playlist_url: str | None = None, data: dict[str, Any] | None = None):
-        self._id = SpotifyAPI.get_instance()._get_id("playlist", playlist_url)
+    def __init__(  # type: ignore[no-any-unimported]  # spotipy ships no type stubs
+        self,
+        playlist_url: str | None = None,
+        data: dict[str, Any] | None = None,
+        *,
+        client: spotipy.Spotify | None = None,
+    ):
+        if client is None:
+            raise ValueError("client must be provided")
+        self._client = client
+        self._id = self._client._get_id("playlist", playlist_url)
         self._data: dict[str, Any] | None = data
         if self._data and self._data["id"] != self._id:
             raise ValueError("The data object does not match the track id")
         self._tracks: list[SpotifyTrack] = []
 
     def _load_data(self) -> None:
-        self._data = SpotifyAPI.get_instance().playlist(self.playlist_id)
+        self._data = self._client.playlist(self.playlist_id)
         self._tracks = []
         api_tracks = self._data["tracks"]
         while api_tracks:
             for api_track in api_tracks["items"]:
-                self._tracks.append(SpotifyTrack(api_track["track"]["id"], data=api_track["track"]))
-            api_tracks = SpotifyAPI.get_instance().next(api_tracks)
+                self._tracks.append(
+                    SpotifyTrack(api_track["track"]["id"], data=api_track["track"], client=self._client)
+                )
+            if not api_tracks.get("next"):
+                break
+            api_tracks = self._client.next(api_tracks)
 
     @classmethod
-    def create(cls, playlist_name: str, public: bool = False) -> "SpotifyPlaylist":
-        user_id = SpotifyAPI.get_instance().current_user()["id"]
-        playlist_resp = SpotifyAPI.get_instance().user_playlist_create(user_id, playlist_name, public=public)
+    def create(  # type: ignore[no-any-unimported]  # spotipy ships no type stubs
+        cls, playlist_name: str, public: bool = False, *, client: spotipy.Spotify | None = None
+    ) -> "SpotifyPlaylist":
+        if client is None:
+            raise ValueError("client must be provided")
+        user_id = client.current_user()["id"]
+        playlist_resp = client.user_playlist_create(user_id, playlist_name, public=public)
         playlist_id = playlist_resp["id"]
-        return cls(playlist_id)
+        return cls(playlist_id, client=client)
 
     @classmethod
-    def create_from_another_playlist(
+    def create_from_another_playlist(  # type: ignore[no-any-unimported]  # spotipy ships no type stubs
         cls,
         playlist_name: str,
         source_playlist: TrackCollection,
         public: bool = False,
         autopilot: bool = False,
         embed_matches: bool = False,
+        *,
+        client: spotipy.Spotify,
     ) -> "SpotifyPlaylist":
+        if client is None:
+            raise ValueError("client must be provided")
         sp_tracks: list[Track] = SpotifyPlaylist.track_matcher().match_list(
             source_playlist.tracks, autopilot=autopilot, embed_matches=embed_matches
         )
-        new_playlist = cls.create(playlist_name, public=public)
+        new_playlist = cls.create(playlist_name, public=public, client=client)
         new_playlist.add_tracks(sp_tracks)  # type: ignore[arg-type]  # list[Track] contains SpotifyTrack instances at runtime
         return new_playlist
 
@@ -83,7 +105,7 @@ class SpotifyPlaylist(Playlist):
             for start in range(0, len(tracks), 100):
                 end = min(len(tracks), start + 100)
                 chunk = (track.track_id for track in tracks[start:end])
-                SpotifyAPI.get_instance().playlist_remove_all_occurrences_of_items(self.playlist_id, chunk)
+                self._client.playlist_remove_all_occurrences_of_items(self.playlist_id, chunk)
         finally:
             self._data = None
 
@@ -92,7 +114,7 @@ class SpotifyPlaylist(Playlist):
             for start in range(0, len(tracks), 100):
                 end = min(len(tracks), start + 100)
                 chunk = (track.track_id for track in tracks[start:end])
-                SpotifyAPI.get_instance().playlist_add_items(self.playlist_id, chunk)
+                self._client.playlist_add_items(self.playlist_id, chunk)
         finally:
             self._data = None
 

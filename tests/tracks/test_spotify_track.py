@@ -1,42 +1,45 @@
 from unittest import TestCase
+from unittest.mock import MagicMock
 
 import pytest
+import spotipy
 
+from api.spotify import get_spotify_client
 from tracks.spotify_track import SpotifyTrack
 
 
 @pytest.mark.integration
 class TestSpotifyTrack(TestCase):
     def test_track_id(self) -> None:
-        track = SpotifyTrack("6kyxQuFD38mo4S3urD2Wkw")
+        track = SpotifyTrack("6kyxQuFD38mo4S3urD2Wkw", client=get_spotify_client())
         assert track.track_id == "6kyxQuFD38mo4S3urD2Wkw"
 
     def test_artists(self) -> None:
-        track = SpotifyTrack("6kyxQuFD38mo4S3urD2Wkw")
+        track = SpotifyTrack("6kyxQuFD38mo4S3urD2Wkw", client=get_spotify_client())
         assert track.artists == ["Muse"]
 
     def test_display_artist(self) -> None:
-        track = SpotifyTrack("6kyxQuFD38mo4S3urD2Wkw")
+        track = SpotifyTrack("6kyxQuFD38mo4S3urD2Wkw", client=get_spotify_client())
         assert track.display_artist == "Muse"
 
     def test_title(self) -> None:
-        track = SpotifyTrack("6kyxQuFD38mo4S3urD2Wkw")
+        track = SpotifyTrack("6kyxQuFD38mo4S3urD2Wkw", client=get_spotify_client())
         assert track.title == "Unintended"
 
     def test_album(self) -> None:
-        track = SpotifyTrack("6kyxQuFD38mo4S3urD2Wkw")
+        track = SpotifyTrack("6kyxQuFD38mo4S3urD2Wkw", client=get_spotify_client())
         assert track.album == "Showbiz"
 
     def test_duration(self) -> None:
-        track = SpotifyTrack("6kyxQuFD38mo4S3urD2Wkw")
+        track = SpotifyTrack("6kyxQuFD38mo4S3urD2Wkw", client=get_spotify_client())
         assert (abs(track.duration - (3 * 60 + 57))) <= 1
 
     def test_track_number(self) -> None:
-        track = SpotifyTrack("6kyxQuFD38mo4S3urD2Wkw")
+        track = SpotifyTrack("6kyxQuFD38mo4S3urD2Wkw", client=get_spotify_client())
         assert track.track_number <= 7
 
     def test_isrc_returns_valid_isrc(self) -> None:
-        track = SpotifyTrack("0IFfrFeXFt0sO36KaFtL3b")
+        track = SpotifyTrack("0IFfrFeXFt0sO36KaFtL3b", client=get_spotify_client())
         assert track.isrc == "USSM19701400"
 
 
@@ -47,10 +50,9 @@ class TestSpotifyTrack(TestCase):
 
 def _make_spotify_track(data: dict) -> SpotifyTrack:  # type: ignore[type-arg]
     """Build a SpotifyTrack without a real Spotify API connection."""
-    track = SpotifyTrack.__new__(SpotifyTrack)
-    track._id = data["id"]
-    track._data = data
-    return track
+    mock_client = MagicMock(spec=spotipy.Spotify)
+    mock_client._get_id.return_value = data["id"]
+    return SpotifyTrack(data["id"], data=data, client=mock_client)
 
 
 class TestSpotifyTrackIsrc(TestCase):

@@ -5,6 +5,7 @@ from spotipy import SpotifyException
 from tabulate import tabulate
 from tqdm import tqdm
 
+from api.spotify import get_spotify_client
 from matchers.spotify_matcher import SpotifyMatcher
 from playlists.local_playlist import LocalPlaylist
 from tracks.local_track import LocalTrack
@@ -34,7 +35,7 @@ def rematch(track: LocalTrack) -> None:
         except ValueError:
             pass
         try:
-            sp_track = SpotifyTrack(choice)
+            sp_track = SpotifyTrack(choice, client=get_spotify_client())
             break
         except SpotifyException:
             print("Invalid input")
@@ -49,7 +50,7 @@ for _index, track in enumerate(tqdm(playlist.tracks)):
     spotify_ref = track.spotify_ref
     if not spotify_ref or spotify_ref == "SKIP":
         continue
-    spotify_track = SpotifyTrack(spotify_ref)
+    spotify_track = SpotifyTrack(spotify_ref, client=get_spotify_client())
     simplified_track_title = track.title.lower().replace(" - ", " ").replace("(", "").replace(")", "")
     simplified_spotify_track_title = spotify_track.title.lower().replace(" - ", " ").replace("(", "").replace(")", "")
     if SequenceMatcher(None, simplified_track_title, simplified_spotify_track_title).ratio() < 0.9:

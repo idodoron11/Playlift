@@ -1,3 +1,4 @@
+from api.spotify import get_spotify_client
 from playlists.local_playlist import LocalPlaylist
 from playlists.path_mapper import PathMapper
 from playlists.spotify_playlist import SpotifyPlaylist
@@ -26,7 +27,7 @@ def compare_playlists(
         id to `SpotifyTrack.track_id`.
     """
     local_playlist = LocalPlaylist(local_playlist_path, path_mapper=path_mapper)
-    spotify_playlist = SpotifyPlaylist(spotify_playlist_id_or_url)
+    spotify_playlist = SpotifyPlaylist(spotify_playlist_id_or_url, client=get_spotify_client())
 
     # Build a set/map of spotify ids referenced by local tracks
     local_id_set: set[str] = set()
