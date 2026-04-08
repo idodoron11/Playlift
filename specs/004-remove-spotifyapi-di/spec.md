@@ -113,6 +113,7 @@ A developer writing a unit test for `SpotifyPlaylist` constructs the playlist wi
 ### Session 2026-04-08
 
 - Q: Should `SpotifyPlaylist.create()` and `create_from_another_playlist()` also accept a `client=` keyword parameter? → A: Yes — add `client: spotipy.Spotify | None = None` to both classmethods; they default to `get_spotify_client()` when `None`.
+- Q: How should `get_spotify_client()` be tested? → A: No unit test; it is a pure infrastructure function covered implicitly by integration tests.
 
 ## Assumptions
 
@@ -120,3 +121,4 @@ A developer writing a unit test for `SpotifyPlaylist` constructs the playlist wi
 - Integration tests (marked `@pytest.mark.integration`) require a live Spotify connection and valid config; they are out of scope for unit test improvements.
 - No changes are needed in `main.py`, `sync_exported_playlists.py`, or `cleanup.py` — they call `SpotifyMatcher.get_instance()` or `SpotifyPlaylist(url)` which continue to work through the default-client path.
 - Thread safety of the cached client is not a concern; the application is single-threaded.
+- `get_spotify_client()` is excluded from unit test coverage; it is a pure infrastructure boundary function (analogous to `CONFIG` loading) and is exercised by integration tests.
