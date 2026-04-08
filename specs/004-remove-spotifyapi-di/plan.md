@@ -22,7 +22,7 @@ unit test suite — the class currently has zero unit tests.
 **Project Type**: CLI tool  
 **Performance Goals**: N/A — no hot paths introduced  
 **Constraints**: Zero breaking changes to production entry points; all existing integration tests must pass unchanged; `mypy` strict mode (spotipy under `ignore_missing_imports = true`)  
-**Scale/Scope**: 5 source files modified, 1 test file rewritten, 1 new test file added
+**Scale/Scope**: 9 source files modified, 1 test file rewritten, 1 new test class added
 
 ## Constitution Check
 
@@ -36,8 +36,8 @@ unit test suite — the class currently has zero unit tests.
   constructor injection. SRP is preserved; `api/spotify.py` still has a single concern
   (providing the authenticated client). No new inheritance violations.
 - [x] **Principle III (DRY)**: `get_spotify_client()` becomes the single authoritative source
-  for the Spotify client. The three call sites each reference it once via a `client or
-  get_spotify_client()` pattern. No logic duplication introduced.
+  for the Spotify client. Every call site supplies it explicitly at construction time — no
+  hidden global look-up inside classes. No logic duplication introduced.
 - [x] **Principle IV (Readability First)**: `@functools.cache` is idiomatic and stdlib.
   No premature optimization. One comment explaining the `retries=0` workaround is preserved
   from the original code.
@@ -47,9 +47,10 @@ unit test suite — the class currently has zero unit tests.
   isolated from the real Spotify API.
 - [x] **Principle VI (Type Safety)**: All new public API (`get_spotify_client()`, new
   constructor `client=` params, classmethod `client=` params) carry complete type hints.
-  `spotipy.Spotify | None` syntax used throughout. `mypy` strict mode passes; `spotipy` is
-  already under `ignore_missing_imports = true` and `api/spotify.py` has
-  `disallow_any_unimported = false`.
+  `SpotifyTrack` and `SpotifyPlaylist` use `*, client: spotipy.Spotify | None = None` with an
+  explicit `ValueError` guard; `create_from_another_playlist()` uses `*, client: spotipy.Spotify`
+  (required, no default). `mypy` strict mode passes; `spotipy` is already under
+  `ignore_missing_imports = true` and `api/spotify.py` has `disallow_any_unimported = false`.
 - [x] **Quality Gates**: `ruff format .`, `ruff check .`, `mypy .`, `pytest tests/` are
   all required to pass (SC-005).
 
@@ -75,14 +76,18 @@ api/
 └── spotify.py           # REWRITE: SpotifyAPI class → get_spotify_client() function
 
 matchers/
-├── __init__.py          # MODIFY: remove TypeError guard from Matcher.__init__
+├── __init__.py          # MODIFY: remove TypeError guard from Matcher.__init__; pass client= in get_instance()
 └── spotify_matcher.py   # MODIFY: add __init__(client=), convert _search to instance method
 
 playlists/
+├── compare.py           # MODIFY: import get_spotify_client; pass client= to SpotifyPlaylist()
 └── spotify_playlist.py  # MODIFY: add client= to __init__, create(), create_from_another_playlist()
 
 tracks/
 └── spotify_track.py     # MODIFY: add client= keyword param to __init__
+
+main.py                  # MODIFY: import get_spotify_client; pass client= at each construction site
+cleanup.py               # MODIFY: import get_spotify_client; pass client= to SpotifyTrack() calls
 
 tests/
 ├── matchers/
