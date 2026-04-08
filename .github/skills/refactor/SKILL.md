@@ -49,297 +49,263 @@ Use this skill when:
 
 ```diff
 # BAD: 200-line function that does everything
-- async function processOrder(orderId) {
--   // 50 lines: fetch order
--   // 30 lines: validate order
--   // 40 lines: calculate pricing
--   // 30 lines: update inventory
--   // 20 lines: create shipment
--   // 30 lines: send notifications
-- }
+- async def process_order(order_id):
+-     # 50 lines: fetch order
+-     # 30 lines: validate order
+-     # 40 lines: calculate pricing
+-     # 30 lines: update inventory
+-     # 20 lines: create shipment
+-     # 30 lines: send notifications
 
 # GOOD: Broken into focused functions
-+ async function processOrder(orderId) {
-+   const order = await fetchOrder(orderId);
-+   validateOrder(order);
-+   const pricing = calculatePricing(order);
-+   await updateInventory(order);
-+   const shipment = await createShipment(order);
-+   await sendNotifications(order, pricing, shipment);
-+   return { order, pricing, shipment };
-+ }
++ async def process_order(order_id: str) -> dict:
++     order = await fetch_order(order_id)
++     validate_order(order)
++     pricing = calculate_pricing(order)
++     await update_inventory(order)
++     shipment = await create_shipment(order)
++     await send_notifications(order, pricing, shipment)
++     return {"order": order, "pricing": pricing, "shipment": shipment}
 ```
 
 ### 2. Duplicated Code
 
 ```diff
 # BAD: Same logic in multiple places
-- function calculateUserDiscount(user) {
--   if (user.membership === 'gold') return user.total * 0.2;
--   if (user.membership === 'silver') return user.total * 0.1;
--   return 0;
-- }
+- def calculate_user_discount(user):
+-     if user.membership == "gold":
+-         return user.total * 0.2
+-     if user.membership == "silver":
+-         return user.total * 0.1
+-     return 0
 -
-- function calculateOrderDiscount(order) {
--   if (order.user.membership === 'gold') return order.total * 0.2;
--   if (order.user.membership === 'silver') return order.total * 0.1;
--   return 0;
-- }
+- def calculate_order_discount(order):
+-     if order.user.membership == "gold":
+-         return order.total * 0.2
+-     if order.user.membership == "silver":
+-         return order.total * 0.1
+-     return 0
 
 # GOOD: Extract common logic
-+ function getMembershipDiscountRate(membership) {
-+   const rates = { gold: 0.2, silver: 0.1 };
-+   return rates[membership] || 0;
-+ }
++ MEMBERSHIP_DISCOUNT_RATES: dict[str, float] = {"gold": 0.2, "silver": 0.1}
 +
-+ function calculateUserDiscount(user) {
-+   return user.total * getMembershipDiscountRate(user.membership);
-+ }
++ def get_membership_discount_rate(membership: str) -> float:
++     return MEMBERSHIP_DISCOUNT_RATES.get(membership, 0.0)
 +
-+ function calculateOrderDiscount(order) {
-+   return order.total * getMembershipDiscountRate(order.user.membership);
-+ }
++ def calculate_user_discount(user) -> float:
++     return user.total * get_membership_discount_rate(user.membership)
++
++ def calculate_order_discount(order) -> float:
++     return order.total * get_membership_discount_rate(order.user.membership)
 ```
 
 ### 3. Large Class/Module
 
 ```diff
 # BAD: God object that knows too much
-- class UserManager {
--   createUser() { /* ... */ }
--   updateUser() { /* ... */ }
--   deleteUser() { /* ... */ }
--   sendEmail() { /* ... */ }
--   generateReport() { /* ... */ }
--   handlePayment() { /* ... */ }
--   validateAddress() { /* ... */ }
--   // 50 more methods...
-- }
+- class UserManager:
+-     def create_user(self): ...
+-     def update_user(self): ...
+-     def delete_user(self): ...
+-     def send_email(self): ...
+-     def generate_report(self): ...
+-     def handle_payment(self): ...
+-     def validate_address(self): ...
+-     # 50 more methods...
 
 # GOOD: Single responsibility per class
-+ class UserService {
-+   create(data) { /* ... */ }
-+   update(id, data) { /* ... */ }
-+   delete(id) { /* ... */ }
-+ }
++ class UserService:
++     def create(self, data): ...
++     def update(self, user_id, data): ...
++     def delete(self, user_id): ...
 +
-+ class EmailService {
-+   send(to, subject, body) { /* ... */ }
-+ }
++ class EmailService:
++     def send(self, to, subject, body): ...
 +
-+ class ReportService {
-+   generate(type, params) { /* ... */ }
-+ }
++ class ReportService:
++     def generate(self, report_type, params): ...
 +
-+ class PaymentService {
-+   process(amount, method) { /* ... */ }
-+ }
++ class PaymentService:
++     def process(self, amount, method): ...
 ```
 
 ### 4. Long Parameter List
 
 ```diff
 # BAD: Too many parameters
-- function createUser(email, password, name, age, address, city, country, phone) {
--   /* ... */
-- }
+- def create_user(email, password, name, age, address, city, country, phone):
+-     ...
 
 # GOOD: Group related parameters
-+ interface UserData {
-+   email: string;
-+   password: string;
-+   name: string;
-+   age?: number;
-+   address?: Address;
-+   phone?: string;
-+ }
++ from dataclasses import dataclass
 +
-+ function createUser(data: UserData) {
-+   /* ... */
-+ }
-
-# EVEN BETTER: Use builder pattern for complex construction
-+ const user = UserBuilder
-+   .email('test@example.com')
-+   .password('secure123')
-+   .name('Test User')
-+   .address(address)
-+   .build();
++ @dataclass
++ class UserData:
++     email: str
++     password: str
++     name: str
++     age: int | None = None
++     address: str | None = None
++     phone: str | None = None
++
++ def create_user(data: UserData) -> None:
++     ...
 ```
 
 ### 5. Feature Envy
 
 ```diff
 # BAD: Method that uses another object's data more than its own
-- class Order {
--   calculateDiscount(user) {
--     if (user.membershipLevel === 'gold') {
-+       return this.total * 0.2;
-+     }
-+     if (user.accountAge > 365) {
-+       return this.total * 0.1;
-+     }
-+     return 0;
-+   }
-+ }
+- class Order:
+-     def calculate_discount(self, user):
+-         if user.membership_level == "gold":
+-             return self.total * 0.2
+-         if user.account_age > 365:
+-             return self.total * 0.1
+-         return 0
 
 # GOOD: Move logic to the object that owns the data
-+ class User {
-+   getDiscountRate(orderTotal) {
-+     if (this.membershipLevel === 'gold') return 0.2;
-+     if (this.accountAge > 365) return 0.1;
-+     return 0;
-+   }
-+ }
++ class User:
++     def get_discount_rate(self) -> float:
++         if self.membership_level == "gold":
++             return 0.2
++         if self.account_age > 365:
++             return 0.1
++         return 0.0
 +
-+ class Order {
-+   calculateDiscount(user) {
-+     return this.total * user.getDiscountRate(this.total);
-+   }
-+ }
++ class Order:
++     def calculate_discount(self, user: User) -> float:
++         return self.total * user.get_discount_rate()
 ```
 
 ### 6. Primitive Obsession
 
 ```diff
 # BAD: Using primitives for domain concepts
-- function sendEmail(to, subject, body) { /* ... */ }
-- sendEmail('user@example.com', 'Hello', '...');
-
-- function createPhone(country, number) {
--   return `${country}-${number}`;
-- }
+- def send_email(to, subject, body): ...
+- send_email("user@example.com", "Hello", "...")
+-
+- def create_phone(country, number):
+-     return f"{country}-{number}"
 
 # GOOD: Use domain types
-+ class Email {
-+   private constructor(public readonly value: string) {
-+     if (!Email.isValid(value)) throw new Error('Invalid email');
-+   }
-+   static create(value: string) { return new Email(value); }
-+   static isValid(email: string) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email); }
-+ }
++ import re
++ from dataclasses import dataclass
 +
-+ class PhoneNumber {
-+   constructor(
-+     public readonly country: string,
-+     public readonly number: string
-+   ) {
-+     if (!PhoneNumber.isValid(country, number)) throw new Error('Invalid phone');
-+   }
-+   toString() { return `${this.country}-${this.number}`; }
-+   static isValid(country: string, number: string) { /* ... */ }
-+ }
++ @dataclass(frozen=True)
++ class Email:
++     value: str
 +
-+ // Usage
-+ const email = Email.create('user@example.com');
-+ const phone = new PhoneNumber('1', '555-1234');
++     def __post_init__(self) -> None:
++         if not re.match(r"^[^\s@]+@[^\s@]+\.[^\s@]+$", self.value):
++             raise ValueError(f"Invalid email: {self.value}")
++
++ @dataclass(frozen=True)
++ class PhoneNumber:
++     country: str
++     number: str
++
++     def __post_init__(self) -> None:
++         if not self.country or not self.number:
++             raise ValueError("Invalid phone number")
++
++     def __str__(self) -> str:
++         return f"{self.country}-{self.number}"
++
++ # Usage
++ email = Email("user@example.com")
++ phone = PhoneNumber("1", "555-1234")
 ```
 
 ### 7. Magic Numbers/Strings
 
 ```diff
 # BAD: Unexplained values
-- if (user.status === 2) { /* ... */ }
-- const discount = total * 0.15;
-- setTimeout(callback, 86400000);
+- if user.status == 2: ...
+- discount = total * 0.15
+- time.sleep(86400)
 
 # GOOD: Named constants
-+ const UserStatus = {
-+   ACTIVE: 1,
-+   INACTIVE: 2,
-+   SUSPENDED: 3
-+ } as const;
++ from enum import IntEnum, StrEnum
 +
-+ const DISCOUNT_RATES = {
-+   STANDARD: 0.1,
-+   PREMIUM: 0.15,
-+   VIP: 0.2
-+ } as const;
++ class UserStatus(IntEnum):
++     ACTIVE = 1
++     INACTIVE = 2
++     SUSPENDED = 3
 +
-+ const ONE_DAY_MS = 24 * 60 * 60 * 1000;
++ class DiscountRate(float, StrEnum):
++     STANDARD = "0.1"
++     PREMIUM = "0.15"
++     VIP = "0.2"
 +
-+ if (user.status === UserStatus.INACTIVE) { /* ... */ }
-+ const discount = total * DISCOUNT_RATES.PREMIUM;
-+ setTimeout(callback, ONE_DAY_MS);
++ ONE_DAY_SECONDS: int = 24 * 60 * 60
++
++ if user.status == UserStatus.INACTIVE: ...
++ discount = total * float(DiscountRate.PREMIUM)
++ time.sleep(ONE_DAY_SECONDS)
 ```
 
 ### 8. Nested Conditionals
 
 ```diff
 # BAD: Arrow code
-- function process(order) {
--   if (order) {
--     if (order.user) {
--       if (order.user.isActive) {
--         if (order.total > 0) {
--           return processOrder(order);
-+         } else {
-+           return { error: 'Invalid total' };
-+         }
-+       } else {
-+         return { error: 'User inactive' };
-+       }
-+     } else {
-+       return { error: 'No user' };
-+     }
-+   } else {
-+     return { error: 'No order' };
-+   }
-+ }
+- def process(order):
+-     if order:
+-         if order.user:
+-             if order.user.is_active:
+-                 if order.total > 0:
+-                     return process_order(order)
+-                 else:
+-                     return {"error": "Invalid total"}
+-             else:
+-                 return {"error": "User inactive"}
+-         else:
+-             return {"error": "No user"}
+-     else:
+-         return {"error": "No order"}
 
 # GOOD: Guard clauses / early returns
-+ function process(order) {
-+   if (!order) return { error: 'No order' };
-+   if (!order.user) return { error: 'No user' };
-+   if (!order.user.isActive) return { error: 'User inactive' };
-+   if (order.total <= 0) return { error: 'Invalid total' };
-+   return processOrder(order);
-+ }
-
-# EVEN BETTER: Using Result type
-+ function process(order): Result<ProcessedOrder, Error> {
-+   return Result.combine([
-+     validateOrderExists(order),
-+     validateUserExists(order),
-+     validateUserActive(order.user),
-+     validateOrderTotal(order)
-+   ]).flatMap(() => processOrder(order));
-+ }
++ def process(order):
++     if not order:
++         return {"error": "No order"}
++     if not order.user:
++         return {"error": "No user"}
++     if not order.user.is_active:
++         return {"error": "User inactive"}
++     if order.total <= 0:
++         return {"error": "Invalid total"}
++     return process_order(order)
 ```
 
 ### 9. Dead Code
 
 ```diff
 # BAD: Unused code lingers
-- function oldImplementation() { /* ... */ }
-- const DEPRECATED_VALUE = 5;
-- import { unusedThing } from './somewhere';
-- // Commented out code
-- // function oldCode() { /* ... */ }
+- def old_implementation(): ...
+- DEPRECATED_VALUE = 5
+- from somewhere import unused_thing
+- # Commented out code
+- # def old_code(): ...
 
 # GOOD: Remove it
-+ // Delete unused functions, imports, and commented code
-+ // If you need it again, git history has it
++ # Delete unused functions, imports, and commented code
++ # If you need it again, git history has it
 ```
 
 ### 10. Inappropriate Intimacy
 
 ```diff
 # BAD: One class reaches deep into another
-- class OrderProcessor {
--   process(order) {
--     order.user.profile.address.street;  // Too intimate
--     order.repository.connection.config;  // Breaking encapsulation
-+   }
-+ }
+- class OrderProcessor:
+-     def process(self, order):
+-         order.user.profile.address.street  # Too intimate
+-         order.repository.connection.config  # Breaking encapsulation
 
 # GOOD: Ask, don't tell
-+ class OrderProcessor {
-+   process(order) {
-+     order.getShippingAddress();  // Order knows how to get it
-+     order.save();  // Order knows how to save itself
-+   }
-+ }
++ class OrderProcessor:
++     def process(self, order) -> None:
++         order.get_shipping_address()  # Order knows how to get it
++         order.save()  # Order knows how to save itself
 ```
 
 ---
@@ -350,54 +316,48 @@ Use this skill when:
 
 ```diff
 # Before: One long function
-- function printReport(users) {
--   console.log('USER REPORT');
--   console.log('============');
--   console.log('');
--   console.log(`Total users: ${users.length}`);
--   console.log('');
--   console.log('ACTIVE USERS');
--   console.log('------------');
--   const active = users.filter(u => u.isActive);
--   active.forEach(u => {
--     console.log(`- ${u.name} (${u.email})`);
--   });
--   console.log('');
--   console.log(`Active: ${active.length}`);
--   console.log('');
--   console.log('INACTIVE USERS');
--   console.log('--------------');
--   const inactive = users.filter(u => !u.isActive);
--   inactive.forEach(u => {
--     console.log(`- ${u.name} (${u.email})`);
--   });
--   console.log('');
--   console.log(`Inactive: ${inactive.length}`);
-- }
+- def print_report(users):
+-     print("USER REPORT")
+-     print("===========")
+-     print("")
+-     print(f"Total users: {len(users)}")
+-     print("")
+-     print("ACTIVE USERS")
+-     print("------------")
+-     active = [u for u in users if u.is_active]
+-     for u in active:
+-         print(f"- {u.name} ({u.email})")
+-     print("")
+-     print(f"Active: {len(active)}")
+-     print("")
+-     print("INACTIVE USERS")
+-     print("--------------")
+-     inactive = [u for u in users if not u.is_active]
+-     for u in inactive:
+-         print(f"- {u.name} ({u.email})")
+-     print("")
+-     print(f"Inactive: {len(inactive)}")
 
 # After: Extracted methods
-+ function printReport(users) {
-+   printHeader('USER REPORT');
-+   console.log(`Total users: ${users.length}\n`);
-+   printUserSection('ACTIVE USERS', users.filter(u => u.isActive));
-+   printUserSection('INACTIVE USERS', users.filter(u => !u.isActive));
-+ }
++ def print_report(users: list) -> None:
++     _print_header("USER REPORT")
++     print(f"Total users: {len(users)}\n")
++     _print_user_section("ACTIVE USERS", [u for u in users if u.is_active])
++     _print_user_section("INACTIVE USERS", [u for u in users if not u.is_active])
 +
-+ function printHeader(title) {
-+   const line = '='.repeat(title.length);
-+   console.log(title);
-+   console.log(line);
-+   console.log('');
-+ }
++ def _print_header(title: str) -> None:
++     print(title)
++     print("=" * len(title))
++     print("")
 +
-+ function printUserSection(title, users) {
-+   console.log(title);
-+   console.log('-'.repeat(title.length));
-+   users.forEach(u => console.log(`- ${u.name} (${u.email})`));
-+   console.log('');
-+   console.log(`${title.split(' ')[0]}: ${users.length}`);
-+   console.log('');
-+ }
++ def _print_user_section(title: str, users: list) -> None:
++     print(title)
++     print("-" * len(title))
++     for u in users:
++         print(f"- {u.name} ({u.email})")
++     print("")
++     print(f"{title.split()[0]}: {len(users)}")
++     print("")
 ```
 
 ---
@@ -408,56 +368,58 @@ Use this skill when:
 
 ```diff
 # Before: No types
-- function calculateDiscount(user, total, membership, date) {
--   if (membership === 'gold' && date.getDay() === 5) {
--     return total * 0.25;
--   }
--   if (membership === 'gold') return total * 0.2;
--   return total * 0.1;
-- }
+- def calculate_discount(user, total, membership, date):
+-     if membership == "gold" and date.weekday() == 4:  # Friday
+-         return total * 0.25
+-     if membership == "gold":
+-         return total * 0.2
+-     return total * 0.1
 
 # After: Full type safety
-+ type Membership = 'bronze' | 'silver' | 'gold';
++ from dataclasses import dataclass
++ from datetime import date as Date
++ from enum import StrEnum
 +
-+ interface User {
-+   id: string;
-+   name: string;
-+   membership: Membership;
-+ }
++ class Membership(StrEnum):
++     BRONZE = "bronze"
++     SILVER = "silver"
++     GOLD = "gold"
 +
-+ interface DiscountResult {
-+   original: number;
-+   discount: number;
-+   final: number;
-+   rate: number;
-+ }
++ @dataclass
++ class User:
++     id: str
++     name: str
++     membership: Membership
 +
-+ function calculateDiscount(
-+   user: User,
-+   total: number,
-+   date: Date = new Date()
-+ ): DiscountResult {
-+   if (total < 0) throw new Error('Total cannot be negative');
++ @dataclass
++ class DiscountResult:
++     original: float
++     discount: float
++     final: float
++     rate: float
 +
-+   let rate = 0.1; // Default bronze
++ def calculate_discount(
++     user: User,
++     total: float,
++     today: Date | None = None,
++ ) -> DiscountResult:
++     if total < 0:
++         raise ValueError("Total cannot be negative")
 +
-+   if (user.membership === 'gold' && date.getDay() === 5) {
-+     rate = 0.25; // Friday bonus for gold
-+   } else if (user.membership === 'gold') {
-+     rate = 0.2;
-+   } else if (user.membership === 'silver') {
-+     rate = 0.15;
-+   }
++     if today is None:
++         today = Date.today()
 +
-+   const discount = total * rate;
++     rate = 0.1  # Default bronze
 +
-+   return {
-+     original: total,
-+     discount,
-+     final: total - discount,
-+     rate
-+   };
-+ }
++     if user.membership == Membership.GOLD and today.weekday() == 4:  # Friday
++         rate = 0.25  # Friday bonus for gold
++     elif user.membership == Membership.GOLD:
++         rate = 0.2
++     elif user.membership == Membership.SILVER:
++         rate = 0.15
++
++     discount = total * rate
++     return DiscountResult(original=total, discount=discount, final=total - discount, rate=rate)
 ```
 
 ---
@@ -468,90 +430,92 @@ Use this skill when:
 
 ```diff
 # Before: Conditional logic
-- function calculateShipping(order, method) {
--   if (method === 'standard') {
--     return order.total > 50 ? 0 : 5.99;
--   } else if (method === 'express') {
--     return order.total > 100 ? 9.99 : 14.99;
-+   } else if (method === 'overnight') {
-+     return 29.99;
-+   }
-+ }
+- def calculate_shipping(order, method: str) -> float:
+-     if method == "standard":
+-         return 0.0 if order.total > 50 else 5.99
+-     elif method == "express":
+-         return 9.99 if order.total > 100 else 14.99
+-     elif method == "overnight":
+-         return 29.99
 
 # After: Strategy pattern
-+ interface ShippingStrategy {
-+   calculate(order: Order): number;
-+ }
++ from abc import ABC, abstractmethod
 +
-+ class StandardShipping implements ShippingStrategy {
-+   calculate(order: Order) {
-+     return order.total > 50 ? 0 : 5.99;
-+   }
-+ }
++ class ShippingStrategy(ABC):
++     @abstractmethod
++     def calculate(self, order) -> float: ...
 +
-+ class ExpressShipping implements ShippingStrategy {
-+   calculate(order: Order) {
-+     return order.total > 100 ? 9.99 : 14.99;
-+   }
-+ }
++ class StandardShipping(ShippingStrategy):
++     def calculate(self, order) -> float:
++         return 0.0 if order.total > 50 else 5.99
 +
-+ class OvernightShipping implements ShippingStrategy {
-+   calculate(order: Order) {
-+     return 29.99;
-+   }
-+ }
++ class ExpressShipping(ShippingStrategy):
++     def calculate(self, order) -> float:
++         return 9.99 if order.total > 100 else 14.99
 +
-+ function calculateShipping(order: Order, strategy: ShippingStrategy) {
-+   return strategy.calculate(order);
-+ }
++ class OvernightShipping(ShippingStrategy):
++     def calculate(self, order) -> float:
++         return 29.99
++
++ def calculate_shipping(order, strategy: ShippingStrategy) -> float:
++     return strategy.calculate(order)
 ```
 
 ### Chain of Responsibility
 
 ```diff
 # Before: Nested validation
-- function validate(user) {
--   const errors = [];
--   if (!user.email) errors.push('Email required');
-+   else if (!isValidEmail(user.email)) errors.push('Invalid email');
-+   if (!user.name) errors.push('Name required');
-+   if (user.age < 18) errors.push('Must be 18+');
-+   if (user.country === 'blocked') errors.push('Country not supported');
-+   return errors;
-+ }
+- def validate(user) -> list[str]:
+-     errors = []
+-     if not user.email:
+-         errors.append("Email required")
+-     elif not is_valid_email(user.email):
+-         errors.append("Invalid email")
+-     if not user.name:
+-         errors.append("Name required")
+-     if user.age < 18:
+-         errors.append("Must be 18+")
+-     if user.country == "blocked":
+-         errors.append("Country not supported")
+-     return errors
 
 # After: Chain of responsibility
-+ abstract class Validator {
-+   abstract validate(user: User): string | null;
-+   setNext(validator: Validator): Validator {
-+     this.next = validator;
-+     return validator;
-+   }
-+   validate(user: User): string | null {
-+     const error = this.doValidate(user);
-+     if (error) return error;
-+     return this.next?.validate(user) ?? null;
-+   }
-+ }
++ from abc import ABC, abstractmethod
 +
-+ class EmailRequiredValidator extends Validator {
-+   doValidate(user: User) {
-+     return !user.email ? 'Email required' : null;
-+   }
-+ }
++ class Validator(ABC):
++     def __init__(self) -> None:
++         self._next: Validator | None = None
 +
-+ class EmailFormatValidator extends Validator {
-+   doValidate(user: User) {
-+     return user.email && !isValidEmail(user.email) ? 'Invalid email' : null;
-+   }
-+ }
++     def set_next(self, validator: "Validator") -> "Validator":
++         self._next = validator
++         return validator
 +
-+ // Build the chain
-+ const validator = new EmailRequiredValidator()
-+   .setNext(new EmailFormatValidator())
-+   .setNext(new NameRequiredValidator())
-+   .setNext(new AgeValidator())
-+   .setNext(new CountryValidator());
++     def validate(self, user) -> str | None:
++         error = self._do_validate(user)
++         if error:
++             return error
++         return self._next.validate(user) if self._next else None
++
++     @abstractmethod
++     def _do_validate(self, user) -> str | None: ...
++
++ class EmailRequiredValidator(Validator):
++     def _do_validate(self, user) -> str | None:
++         return "Email required" if not user.email else None
++
++ class EmailFormatValidator(Validator):
++     def _do_validate(self, user) -> str | None:
++         if user.email and not is_valid_email(user.email):
++             return "Invalid email"
++         return None
++
++ # Build the chain
++ validator = EmailRequiredValidator()
++ (validator
++     .set_next(EmailFormatValidator())
++     .set_next(NameRequiredValidator())
++     .set_next(AgeValidator())
++     .set_next(CountryValidator()))
 ```
 
 ---
