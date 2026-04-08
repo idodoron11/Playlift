@@ -25,7 +25,7 @@ A developer accessing the Spotify client calls a plain function — `get_spotify
 
 ### User Story 2 - Inject client into SpotifyMatcher (Priority: P2)
 
-A developer writing a unit test for `SpotifyMatcher` constructs the matcher with a mock client passed directly to the constructor. No `patch()` context manager or singleton reset is needed. The existing `get_instance()` factory still works in production — it just constructs a `SpotifyMatcher()` with no argument, which defaults to the cached client.
+A developer writing a unit test for `SpotifyMatcher` constructs the matcher with a mock client passed directly to the constructor. No `patch()` context manager or singleton reset is needed. The existing `get_instance()` factory still works in production — it explicitly passes `client=get_spotify_client()` when constructing the singleton instance.
 
 **Why this priority**: `SpotifyMatcher` is the most-tested class. Removing patching from its tests has the highest payoff in test clarity and removes the manual `Matcher._Matcher__instance = None` reset hack.
 
@@ -34,7 +34,7 @@ A developer writing a unit test for `SpotifyMatcher` constructs the matcher with
 **Acceptance Scenarios**:
 
 1. **Given** a `SpotifyMatcher` constructed with a mock client, **When** `match()` is called, **Then** the mock client's methods are invoked and the result is based solely on the mock's return values.
-2. **Given** a `SpotifyMatcher` constructed with no argument, **When** the matcher is used in production, **Then** it transparently uses the shared cached client.
+2. **Given** the production path via `Matcher.get_instance()`, **When** the singleton is first constructed, **Then** `get_spotify_client()` is passed explicitly as `client=` — no silent global look-up inside the class.
 3. **Given** the `Matcher` base class, **When** `SpotifyMatcher()` is constructed directly in a test, **Then** no `TypeError` is raised (the "already exists" guard is absent).
 
 ---
@@ -51,7 +51,7 @@ A developer writing a unit test for `SpotifyTrack` constructs the track with a m
 
 1. **Given** a `SpotifyTrack` constructed with a mock client and pre-loaded data, **When** properties such as `title`, `artists`, `isrc` are accessed, **Then** the correct values are returned without any network call.
 2. **Given** a `SpotifyTrack` constructed with a mock client and no data, **When** `data` is accessed, **Then** the mock client's `.track()` method is called exactly once and the result is cached.
-3. **Given** a `SpotifyTrack` constructed with no client argument, **When** used in production, **Then** it transparently uses the shared cached client.
+3. **Given** a `SpotifyTrack` constructed with no client argument, **When** the constructor is called, **Then** a `ValueError` is raised immediately — all call sites must supply the client explicitly (typically `get_spotify_client()` in production).
 
 ---
 
@@ -69,7 +69,7 @@ A developer writing a unit test for `SpotifyPlaylist` constructs the playlist wi
 2. **Given** a `SpotifyPlaylist` constructed with a mock client, **When** `add_tracks()` is called, **Then** the mock client's `.playlist_add_items()` is invoked in 100-track batches.
 3. **Given** a `SpotifyPlaylist` constructed with a mock client, **When** `remove_track()` is called, **Then** the mock client's `.playlist_remove_all_occurrences_of_items()` is invoked in 100-track batches.
 4. **Given** a mock client passed to `SpotifyPlaylist.create()`, **When** the classmethod is called, **Then** it uses the provided client (not the global) to look up the current user and create the playlist.
-5. **Given** a `SpotifyPlaylist` constructed with no client argument, **When** used in production, **Then** it transparently uses the shared cached client.
+5. **Given** a `SpotifyPlaylist` constructed with no client argument, **When** the constructor is called, **Then** a `ValueError` is raised immediately — all call sites must supply the client explicitly (typically `get_spotify_client()` in production).
 
 ---
 
@@ -87,7 +87,7 @@ A developer writing a unit test for `SpotifyPlaylist` constructs the playlist wi
 
 - **FR-001**: The `SpotifyAPI` class must be removed entirely; no file in the codebase may reference it after the refactor.
 - **FR-002**: A public `get_spotify_client()` function must replace `SpotifyAPI.get_instance()`, returning the same cached client on repeated calls with no network activity before the first call.
-- **FR-003**: `SpotifyMatcher`, `SpotifyTrack`, and `SpotifyPlaylist` must each accept an optional `client` parameter in their constructors; when omitted, they must default to the cached client from `get_spotify_client()`. The two `SpotifyPlaylist` classmethods — `create()` and `create_from_another_playlist()` — must also accept an optional `client` keyword parameter for the same reason; they default to `get_spotify_client()` when `None`.
+- **FR-003**: `SpotifyMatcher`, `SpotifyTrack`, and `SpotifyPlaylist` must each accept a `client` keyword-only parameter in their constructors; passing `None` (or omitting it) raises `ValueError` at runtime — all callers must supply a real client explicitly. `SpotifyPlaylist.create()` follows the same pattern (`*, client: spotipy.Spotify | None = None`, raises on `None`). `SpotifyPlaylist.create_from_another_playlist()` declares `client` as a required keyword argument (`*, client: spotipy.Spotify`). In production, all call sites in `main.py`, `cleanup.py`, and `playlists/compare.py` pass `client=get_spotify_client()` explicitly; `Matcher.get_instance()` does the same when constructing the singleton.
 - **FR-004**: `SpotifyPlaylist._load_data()` must propagate its own client instance to every `SpotifyTrack` it constructs, so the full object graph is injectable in tests.
 - **FR-005**: The `Matcher` base class must allow direct construction (i.e., the "already exists" guard in `__init__` must be removed); `get_instance()` remains the recommended path in production.
 - **FR-006**: All existing unit tests that previously used `patch("...SpotifyAPI")` or `SpotifyTrack.__new__` must be rewritten to use constructor injection with a mock client.
@@ -115,7 +115,7 @@ A developer writing a unit test for `SpotifyPlaylist` constructs the playlist wi
 
 ### Session 2026-04-08
 
-- Q: Should `SpotifyPlaylist.create()` and `create_from_another_playlist()` also accept a `client=` keyword parameter? → A: Yes — add `client: spotipy.Spotify | None = None` to both classmethods; they default to `get_spotify_client()` when `None`.
+- Q: Should `SpotifyPlaylist.create()` and `create_from_another_playlist()` also accept a `client=` keyword parameter? → A: Yes. `create()` uses `*, client: spotipy.Spotify | None = None` and raises `ValueError` when `None`. `create_from_another_playlist()` declares `client` as a required keyword argument (`*, client: spotipy.Spotify`).
 - Q: How should `get_spotify_client()` be tested? → A: No unit test; it is a pure infrastructure function covered implicitly by integration tests.
 - Q: Should new `SpotifyPlaylist` unit tests be written as part of this refactor? → A: Yes — add unit tests covering `tracks`, `add_tracks()`, `remove_track()`, `create()`, and `create_from_another_playlist()` using a mock client.
 
@@ -123,6 +123,6 @@ A developer writing a unit test for `SpotifyPlaylist` constructs the playlist wi
 
 - The `Singleton` metaclass in `singleton.py` is not used by `SpotifyAPI` and is unrelated to this refactor; it will not be modified.
 - Integration tests (marked `@pytest.mark.integration`) require a live Spotify connection and valid config; they are out of scope for unit test improvements.
-- No changes are needed in `main.py`, `sync_exported_playlists.py`, or `cleanup.py` — they call `SpotifyMatcher.get_instance()` or `SpotifyPlaylist(url)` which continue to work through the default-client path.
+- `main.py` and `cleanup.py` were updated to import `get_spotify_client` and pass `client=get_spotify_client()` at each `SpotifyPlaylist` and `SpotifyTrack` construction site. `sync_exported_playlists.py` was not modified because it delegates entirely through `SpotifyMatcher.get_instance()` and `SpotifyPlaylist.create_from_another_playlist()` which are called with the client through other paths.
 - Thread safety of the cached client is not a concern; the application is single-threaded.
 - `get_spotify_client()` is excluded from unit test coverage; it is a pure infrastructure boundary function (analogous to `CONFIG` loading) and is exercised by integration tests.
