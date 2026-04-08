@@ -1,14 +1,19 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from api.spotify import SpotifyAPI
+if TYPE_CHECKING:
+    import spotipy
+
 from tracks import Track
 
 
 class SpotifyTrack(Track):
-    def __init__(self, track_url: str, data: dict[str, Any] | None = None):
-        self._id = SpotifyAPI.get_instance()._get_id("track", track_url)
+    def __init__(self, track_url: str, data: dict[str, Any] | None = None, *, client: spotipy.Spotify | None = None):
+        if client is None:
+            raise ValueError("client must be provided")
+        self._client = client
+        self._id = self._client._get_id("track", track_url)
         self._data: dict[str, Any] | None = data
         if self._data and self._data["id"] != self._id:
             raise ValueError("The data object does not match the track id")
@@ -16,7 +21,7 @@ class SpotifyTrack(Track):
     @property
     def data(self) -> dict[str, Any]:
         if not self._data:
-            self._data = SpotifyAPI.get_instance().track(self._id)
+            self._data = self._client.track(self._id)
         return self._data
 
     @property

@@ -2,6 +2,7 @@ import os
 
 import click
 
+from api.spotify import get_spotify_client
 from playlists.compare import compare_playlists
 from playlists.local_library import LocalLibrary
 from playlists.local_playlist import LocalPlaylist
@@ -51,7 +52,7 @@ def cli_spotify_import(
     for src, dst in inputs:
         playlist = get_playlist(src, path_mapper=path_mapper)
         SpotifyPlaylist.create_from_another_playlist(
-            dst, playlist, autopilot=autopilot, embed_matches=embed_matches, public=public
+            dst, playlist, autopilot=autopilot, embed_matches=embed_matches, public=public, client=get_spotify_client()
         )
 
 
@@ -80,7 +81,7 @@ def cli_spotify_sync(
         raise click.BadParameter("Both --from-path and --to-path must be provided together")
 
     source_playlist = get_playlist(source, path_mapper=path_mapper)
-    destination_playlist = SpotifyPlaylist(destination)
+    destination_playlist = SpotifyPlaylist(destination, client=get_spotify_client())
     destination_playlist.clear()
     if sort_tracks:
         sorted_tracks = sorted(source_playlist.tracks, key=lambda track: track.track_id)

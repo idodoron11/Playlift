@@ -100,5 +100,5 @@ module = ["spotipy", "spotipy.*", "music_tag"]
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
-module = ["api.spotify", "tracks.local_track"]
+module = ["api.spotify", "tracks.local_track", "tracks.spotify_track", "matchers.spotify_matcher", "playlists.spotify_playlist", "tests.playlists.spotify_playlist_spy"]
 disallow_any_unimported = false

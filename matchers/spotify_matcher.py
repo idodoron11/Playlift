@@ -2,9 +2,9 @@ import logging
 import re
 from collections.abc import Iterable
 
+import spotipy
 from tqdm import tqdm
 
-from api.spotify import SpotifyAPI
 from exceptions import SkipTrackError
 from matchers import Matcher
 from tracks import Track
@@ -25,6 +25,12 @@ def _is_valid_isrc(isrc: str | None) -> bool:
 
 
 class SpotifyMatcher(Matcher):
+    def __init__(self, client: spotipy.Spotify | None = None) -> None:
+        super().__init__()
+        if client is None:
+            raise ValueError("client must be provided")
+        self._client = client
+
     def _prefetch_isrc_data(self, matches: list[SpotifyTrack]) -> None:
         """Batch-fetch full track data for SpotifyTrack objects that lack ISRC.
 
@@ -45,7 +51,7 @@ class SpotifyMatcher(Matcher):
         for i in range(0, len(track_ids), SPOTIFY_BATCH_SIZE):
             batch = track_ids[i : i + SPOTIFY_BATCH_SIZE]
             try:
-                response = SpotifyAPI.get_instance().tracks(batch)
+                response = self._client.tracks(batch)
             except Exception:
                 logger.warning(
                     "Batch ISRC prefetch failed for %d track(s); ISRC will not be embedded for this batch",
@@ -80,7 +86,7 @@ class SpotifyMatcher(Matcher):
         if ref == "SKIP":
             raise SkipTrackError
         elif ref:
-            return SpotifyTrack(ref)
+            return SpotifyTrack(ref, client=self._client)
 
         return self._match_by_isrc(track) or self._match_by_fuzzy_search(track)
 
@@ -90,7 +96,7 @@ class SpotifyMatcher(Matcher):
             logger.debug("No valid ISRC for '%s', skipping ISRC lookup", track.title)
             return None
         try:
-            results = SpotifyMatcher._search(f"isrc:{track.isrc}")
+            results = self._search(f"isrc:{track.isrc}")
             if results:
                 logger.info("Matched '%s' via ISRC %s", track.title, track.isrc)
                 return results[0]
@@ -111,7 +117,7 @@ class SpotifyMatcher(Matcher):
             explicit_search_string = " ".join((artist_component, album_component, title_component))
             if not explicit_search_string.strip():
                 return None
-            results = SpotifyMatcher._search(explicit_search_string)
+            results = self._search(explicit_search_string)
             if results:
                 logger.info("Matched '%s' via fuzzy search", track.title)
                 return results[0]
@@ -147,7 +153,7 @@ class SpotifyMatcher(Matcher):
         results_set: set[SpotifyTrack] = set()
         for artist in track.artists:
             search_string = f"{artist} {track.title}"
-            results_set.update(SpotifyMatcher._search(search_string))
+            results_set.update(self._search(search_string))
 
         results: list[SpotifyTrack] = list(
             filter(lambda result: SpotifyMatcher._match_constraints(track, result), results_set)
@@ -164,12 +170,11 @@ class SpotifyMatcher(Matcher):
 
         return results
 
-    @staticmethod
-    def _search(query: str) -> list[SpotifyTrack]:
-        response = SpotifyAPI.get_instance().search(query, limit=None)
-        if not response["tracks"] or response["tracks"]["total"] == 0:
+    def _search(self, query: str) -> list[SpotifyTrack]:
+        response = self._client.search(query, limit=50)
+        if not response["tracks"] or not response["tracks"]["items"]:
             return []
-        return [SpotifyTrack(track["id"], data=track) for track in response["tracks"]["items"]]
+        return [SpotifyTrack(track["id"], data=track, client=self._client) for track in response["tracks"]["items"]]
 
     def _match_list(self, tracks: Iterable[Track]) -> list[list[SpotifyTrack]]:
         tracks = list(tracks)

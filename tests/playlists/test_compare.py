@@ -57,7 +57,7 @@ def test_compare_simple(monkeypatch: Any) -> None:
     spotify_tracks = [FakeSpotifyTrack("S1"), FakeSpotifyTrack("S2")]
 
     class FakeSpotifyPlaylist:
-        def __init__(self, pid: str) -> None:
+        def __init__(self, pid: str, **kwargs: object) -> None:
             self._tracks = spotify_tracks
 
         @property

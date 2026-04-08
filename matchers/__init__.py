@@ -5,20 +5,17 @@ from difflib import SequenceMatcher
 import click
 from tabulate import tabulate
 
+from api.spotify import get_spotify_client
 from tracks import Track
 
 
 class Matcher(ABC):
     __instance: "Matcher | None" = None
 
-    def __init__(self) -> None:
-        if Matcher.__instance is not None:
-            raise TypeError("An instance of this class already exists")
-
     @classmethod
     def get_instance(cls) -> "Matcher":
         if cls.__instance is None:
-            cls.__instance = cls()
+            cls.__instance = cls(client=get_spotify_client())  # type: ignore[call-arg]
         return cls.__instance
 
     @abstractmethod
