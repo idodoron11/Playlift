@@ -25,7 +25,9 @@ def _is_valid_isrc(isrc: str | None) -> bool:
 
 
 class SpotifyMatcher(Matcher):
-    def __init__(self, client: spotipy.Spotify | None = None) -> None:
+    def __init__(  # type: ignore[no-any-unimported]  # spotipy ships no type stubs
+        self, client: spotipy.Spotify | None = None
+    ) -> None:
         super().__init__()
         if client is None:
             raise ValueError("client must be provided")

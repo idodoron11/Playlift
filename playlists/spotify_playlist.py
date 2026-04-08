@@ -10,7 +10,7 @@ from tracks.spotify_track import SpotifyTrack
 
 
 class SpotifyPlaylist(Playlist):
-    def __init__(
+    def __init__(  # type: ignore[no-any-unimported]  # spotipy ships no type stubs
         self,
         playlist_url: str | None = None,
         data: dict[str, Any] | None = None,
@@ -40,7 +40,7 @@ class SpotifyPlaylist(Playlist):
             api_tracks = self._client.next(api_tracks)
 
     @classmethod
-    def create(
+    def create(  # type: ignore[no-any-unimported]  # spotipy ships no type stubs
         cls, playlist_name: str, public: bool = False, *, client: spotipy.Spotify | None = None
     ) -> "SpotifyPlaylist":
         if client is None:
@@ -51,7 +51,7 @@ class SpotifyPlaylist(Playlist):
         return cls(playlist_id, client=client)
 
     @classmethod
-    def create_from_another_playlist(
+    def create_from_another_playlist(  # type: ignore[no-any-unimported]  # spotipy ships no type stubs
         cls,
         playlist_name: str,
         source_playlist: TrackCollection,

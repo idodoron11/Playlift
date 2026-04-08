@@ -34,7 +34,7 @@ def _normalize_isrc(raw: str) -> str:
 class LocalTrack(Track):
     def __init__(self, file_path: str):
         self._file_path = file_path
-        self._audio: AudioFile | None = None
+        self._audio: AudioFile | None = None  # type: ignore[no-any-unimported]  # music_tag ships no type stubs
         self._mutagen_file: MutagenFileType | None = None
         self.reload_metadata()
 

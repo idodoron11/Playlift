@@ -17,7 +17,7 @@ class SpotifyPlaylistSpy(SpotifyPlaylist):
         self._tracks: list[SpotifyTrack] = []
 
     @classmethod
-    def create(
+    def create(  # type: ignore[no-any-unimported]  # spotipy ships no type stubs
         cls, playlist_name: str, public: bool = False, *, client: spotipy.Spotify | None = None
     ) -> SpotifyPlaylistSpy:
         return cls("dummy playlist id")

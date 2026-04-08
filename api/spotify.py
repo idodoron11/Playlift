@@ -9,7 +9,7 @@ scopes = ["user-library-read", "playlist-modify-public", "playlist-modify-privat
 
 
 @functools.cache
-def get_spotify_client() -> spotipy.Spotify:
+def get_spotify_client() -> spotipy.Spotify:  # type: ignore[no-any-unimported]  # spotipy ships no type stubs
     """Return the singleton authenticated Spotify client.
 
     Creates and caches a single spotipy.Spotify instance on first call using

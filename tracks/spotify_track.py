@@ -9,7 +9,9 @@ from tracks import Track
 
 
 class SpotifyTrack(Track):
-    def __init__(self, track_url: str, data: dict[str, Any] | None = None, *, client: spotipy.Spotify | None = None):
+    def __init__(  # type: ignore[no-any-unimported]  # spotipy ships no type stubs
+        self, track_url: str, data: dict[str, Any] | None = None, *, client: spotipy.Spotify | None = None
+    ):
         if client is None:
             raise ValueError("client must be provided")
         self._client = client
