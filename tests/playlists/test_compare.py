@@ -66,6 +66,7 @@ def test_compare_simple(monkeypatch: Any) -> None:
 
     monkeypatch.setattr(compare_module, "LocalPlaylist", FakeLocalPlaylist)
     monkeypatch.setattr(compare_module, "SpotifyPlaylist", FakeSpotifyPlaylist)
+    monkeypatch.setattr(compare_module, "get_spotify_client", lambda: None)
 
     local_only, spotify_only = compare_module.compare_playlists("dummy.m3u", "spotify:playlist:pid")
 
