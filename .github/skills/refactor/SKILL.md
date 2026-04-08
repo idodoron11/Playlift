@@ -10,6 +10,8 @@ license: MIT
 
 Improve code structure and readability without changing external behavior. Refactoring is gradual evolution, not revolution. Use this for improving existing code, not rewriting from scratch.
 
+> **Before you begin**: Take a deep breath, and review all coding guidelines in `.github/instructions/*.md` and `.github/copilot-instructions.md`, then review all the code carefully and make refactorings if needed.
+
 ## When to Use
 
 Use this skill when:
