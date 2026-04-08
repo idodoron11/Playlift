@@ -77,6 +77,7 @@ A developer writing a unit test for `SpotifyPlaylist` constructs the playlist wi
 - What happens when a `SpotifyTrack` is created by the playlist loader? It must receive the same client instance the playlist was constructed with.
 - What happens when `SpotifyMatcher.get_instance()` is called after a test constructed a `SpotifyMatcher(client=mock)` directly? The singleton is independent of direct construction; `get_instance()` manages its own instance.
 - What happens with the `Matcher.__init__` guard that raises `TypeError` if an instance already exists? It must be removed so direct construction in tests is possible without the singleton being set.
+- What happens with `SpotifyPlaylist.create()` and `SpotifyPlaylist.create_from_another_playlist()` in unit tests? Both classmethods must accept `client=` so they can be tested without patching `get_spotify_client()`.
 
 ## Requirements *(mandatory)*
 
@@ -84,7 +85,7 @@ A developer writing a unit test for `SpotifyPlaylist` constructs the playlist wi
 
 - **FR-001**: The `SpotifyAPI` class must be removed entirely; no file in the codebase may reference it after the refactor.
 - **FR-002**: A public `get_spotify_client()` function must replace `SpotifyAPI.get_instance()`, returning the same cached client on repeated calls with no network activity before the first call.
-- **FR-003**: `SpotifyMatcher`, `SpotifyTrack`, and `SpotifyPlaylist` must each accept an optional client parameter in their constructors; when omitted, they must default to the cached client from `get_spotify_client()`.
+- **FR-003**: `SpotifyMatcher`, `SpotifyTrack`, and `SpotifyPlaylist` must each accept an optional `client` parameter in their constructors; when omitted, they must default to the cached client from `get_spotify_client()`. The two `SpotifyPlaylist` classmethods — `create()` and `create_from_another_playlist()` — must also accept an optional `client` keyword parameter for the same reason; they default to `get_spotify_client()` when `None`.
 - **FR-004**: `SpotifyPlaylist._load_data()` must propagate its own client instance to every `SpotifyTrack` it constructs, so the full object graph is injectable in tests.
 - **FR-005**: The `Matcher` base class must allow direct construction (i.e., the "already exists" guard in `__init__` must be removed); `get_instance()` remains the recommended path in production.
 - **FR-006**: All existing unit tests that previously used `patch("...SpotifyAPI")` or `SpotifyTrack.__new__` must be rewritten to use constructor injection with a mock client.
@@ -106,6 +107,12 @@ A developer writing a unit test for `SpotifyPlaylist` constructs the playlist wi
 - **SC-004**: All non-integration unit tests pass without a live Spotify connection.
 - **SC-005**: `ruff check .`, `ruff format .`, and `mypy .` each exit with zero errors or warnings.
 - **SC-006**: The number of `patch()` calls across unit test files decreases compared to before the refactor.
+
+## Clarifications
+
+### Session 2026-04-08
+
+- Q: Should `SpotifyPlaylist.create()` and `create_from_another_playlist()` also accept a `client=` keyword parameter? → A: Yes — add `client: spotipy.Spotify | None = None` to both classmethods; they default to `get_spotify_client()` when `None`.
 
 ## Assumptions
 
