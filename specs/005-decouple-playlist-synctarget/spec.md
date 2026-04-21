@@ -108,14 +108,15 @@ The `spotify import`, `spotify sync`, and playlist comparison commands continue 
 - **SC-003**: All existing tests pass without modifying any test assertion (`uv run pytest tests/` exits with code 0).
 - **SC-004**: `LocalPlaylist` source file contains zero references to `Matcher`, `MatcherMock`, or `track_matcher`.
 - **SC-005**: `SyncTarget` is importable from `playlists` and is an abstract base class with exactly one abstract method (`track_matcher`).
-- **SC-006**: `SpotifyPlaylist`'s MRO includes both `Playlist` and `SyncTarget` as direct base classes.
-- **SC-007**: No new test files are required — the refactoring is fully validated by the existing test suite plus the type checker and linter.
+- **SC-006**: `SpotifyPlaylist`'s class declaration includes both `Playlist` and `SyncTarget` as base classes — verified by mypy and code inspection; no new test assertion required.
+- **SC-007**: No new test files are required and no existing test assertions are modified — the refactoring is fully validated by the existing test suite plus the type checker and linter.
 
 ## Clarifications
 
 ### Session 2026-04-21
 
 - Q: Should `SyncTarget` be fully orthogonal to `Playlist`/`TrackCollection`, or should it extend one of them? → A: Fully orthogonal — `SyncTarget` is a standalone ABC with no inheritance relationship to `Playlist` or `TrackCollection`.
+- Q: Should the `SyncTarget` type relationship be verified by an automated test assertion, or is mypy + code inspection sufficient? → A: mypy + code inspection sufficient — no new test assertions required.
 
 ## Assumptions
 
