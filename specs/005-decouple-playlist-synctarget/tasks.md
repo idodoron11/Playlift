@@ -21,8 +21,8 @@
 
 **Independent Test**: After T001 + T002, `uv run mypy .` exits with code 0 and `SyncTarget` is importable from `playlists`. `SpotifyPlaylist` inherits both `Playlist` and `SyncTarget`.
 
-- [ ] T001 [US2] Add `class SyncTarget(ABC)` with `@staticmethod @abstractmethod track_matcher() -> Matcher` and remove `track_matcher()` from `class Playlist` in `playlists/__init__.py`
-- [ ] T002 [US2] Change `class SpotifyPlaylist(Playlist)` to `class SpotifyPlaylist(Playlist, SyncTarget)` and add `SyncTarget` to the import from `playlists` in `playlists/spotify_playlist.py`
+- [X] T001 [US2] Add `class SyncTarget(ABC)` with `@staticmethod @abstractmethod track_matcher() -> Matcher` and remove `track_matcher()` from `class Playlist` in `playlists/__init__.py`
+- [X] T002 [US2] Change `class SpotifyPlaylist(Playlist)` to `class SpotifyPlaylist(Playlist, SyncTarget)` and add `SyncTarget` to the import from `playlists` in `playlists/spotify_playlist.py`
 
 **Checkpoint**: `playlists` module exports `SyncTarget`; `SpotifyPlaylist` declares both base classes; `mypy` confirms zero errors on `playlists/` and `playlists/spotify_playlist.py`.
 
@@ -34,7 +34,7 @@
 
 **Independent Test**: `LocalPlaylist` source file contains zero references to `Matcher` or `track_matcher` (SC-004). `mypy` reports `LocalPlaylist` as a valid concrete `Playlist` with no unimplemented abstract methods.
 
-- [ ] T003 [P] [US1] Remove `track_matcher()` static method and `from matchers import Matcher` import from `playlists/local_playlist.py`
+- [X] T003 [P] [US1] Remove `track_matcher()` static method and `from matchers import Matcher` import from `playlists/local_playlist.py`
 
 **Checkpoint**: `LocalPlaylist` implements only `Playlist`; no `track_matcher` attribute; `mypy` reports no LSP violations.
 
@@ -46,7 +46,7 @@
 
 **Independent Test**: `tests/playlists/playlist_mock.py` contains no `track_matcher()` method, no `Matcher` import, and no `MatcherMock` import (spec US4 acceptance scenario 1).
 
-- [ ] T004 [P] [US4] Remove `track_matcher()` static method, `from matchers import Matcher`, and `from tests.matchers.matcher_mock import MatcherMock` from `tests/playlists/playlist_mock.py`
+- [X] T004 [P] [US4] Remove `track_matcher()` static method, `from matchers import Matcher`, and `from tests.matchers.matcher_mock import MatcherMock` from `tests/playlists/playlist_mock.py`
 
 **Checkpoint**: `PlaylistMock` is a clean `Playlist`-only test double; no orphaned imports; existing tests that use it continue to compile.
 
@@ -60,9 +60,9 @@
 
 **Independent Test**: All four commands exit with code 0.
 
-- [ ] T005 Run `uv run mypy .` and confirm zero errors — validates SC-001 and SC-005/SC-006
-- [ ] T006 [P] Run `uv run ruff check .` and confirm zero lint errors — validates SC-002
-- [ ] T007 [P] Run `uv run pytest tests/` and confirm all existing tests pass without modification — validates SC-003 and SC-007
+- [X] T005 Run `uv run mypy .` and confirm zero errors — validates SC-001 and SC-005/SC-006
+- [X] T006 [P] Run `uv run ruff check .` and confirm zero lint errors — validates SC-002
+- [X] T007 [P] Run `uv run pytest tests/` and confirm all existing tests pass without modification — validates SC-003 and SC-007
 
 **Checkpoint**: Feature complete. All success criteria SC-001 through SC-007 verified.
 

@@ -14,12 +14,14 @@ class TrackCollection(ABC):
         pass
 
 
-class Playlist(TrackCollection, ABC):
+class SyncTarget(ABC):
     @staticmethod
     @abstractmethod
     def track_matcher() -> Matcher:
         pass
 
+
+class Playlist(TrackCollection, ABC):
     @abstractmethod
     def remove_track(self, tracks: list[Track]) -> None:
         pass

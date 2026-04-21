@@ -1,6 +1,4 @@
-from matchers import Matcher
 from playlists import Playlist
-from tests.matchers.matcher_mock import MatcherMock
 from tracks import Track
 
 
@@ -11,10 +9,6 @@ class PlaylistMock(Playlist):
     @property
     def tracks(self) -> list[Track]:
         return self._tracks
-
-    @staticmethod
-    def track_matcher() -> Matcher:
-        return MatcherMock.get_instance()
 
     def remove_track(self, tracks: list[Track]) -> None:
         for track in tracks:

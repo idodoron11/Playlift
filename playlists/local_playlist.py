@@ -3,7 +3,6 @@ from collections.abc import Iterable
 import mutagen
 from tqdm import tqdm
 
-from matchers import Matcher
 from playlists import Playlist
 from playlists.path_mapper import PathMapper
 from tracks.local_track import LocalTrack
@@ -46,6 +45,4 @@ class LocalPlaylist(Playlist):
         with open(self._source_filepath, "w", encoding="utf-8") as f:
             f.write("\n".join(files))
 
-    @staticmethod
-    def track_matcher() -> Matcher:
-        raise TypeError("Local playlists don't have a track matcher")
+
