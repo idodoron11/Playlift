@@ -15,10 +15,17 @@ class TrackCollection(ABC):
 
 
 class SyncTarget(ABC):
+    """Contract for a platform that tracks can be matched and synced into.
+
+    A class implementing ``SyncTarget`` must provide a ``track_matcher()`` that
+    returns the platform-specific ``Matcher`` used to resolve local tracks to
+    their remote equivalents.
+    """
+
     @staticmethod
     @abstractmethod
     def track_matcher() -> Matcher:
-        pass
+        """Return the Matcher instance for this sync-target platform."""
 
 
 class Playlist(TrackCollection, ABC):
