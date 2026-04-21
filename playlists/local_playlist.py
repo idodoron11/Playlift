@@ -44,5 +44,3 @@ class LocalPlaylist(Playlist):
         files = [track.file_path for track in self._tracks]
         with open(self._source_filepath, "w", encoding="utf-8") as f:
             f.write("\n".join(files))
-
-
