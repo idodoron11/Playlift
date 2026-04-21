@@ -4,12 +4,12 @@ from typing import Any
 import spotipy
 
 from matchers.spotify_matcher import SpotifyMatcher
-from playlists import Playlist, TrackCollection
+from playlists import Playlist, SyncTarget, TrackCollection
 from tracks import Track
 from tracks.spotify_track import SpotifyTrack
 
 
-class SpotifyPlaylist(Playlist):
+class SpotifyPlaylist(Playlist, SyncTarget):
     def __init__(  # type: ignore[no-any-unimported]  # spotipy ships no type stubs
         self,
         playlist_url: str | None = None,
