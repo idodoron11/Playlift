@@ -94,7 +94,7 @@ The `spotify import`, `spotify sync`, and playlist comparison commands continue 
 ### Key Entities
 
 - **`Playlist` (ABC)**: Represents any ordered collection of tracks with add/remove capabilities. Does not know about matching or sync destinations.
-- **`SyncTarget` (ABC)**: Represents a platform that tracks can be matched and synced *into*. Declares `track_matcher()` as the single point of entry for match resolution.
+- **`SyncTarget` (ABC)**: Represents a platform that tracks can be matched and synced *into*. Declares `track_matcher()` as the single point of entry for match resolution. **Fully orthogonal to `Playlist` and `TrackCollection`** — no inheritance relationship between them.
 - **`SpotifyPlaylist`**: Implements both `Playlist` (track collection) and `SyncTarget` (matchable Spotify destination).
 - **`LocalPlaylist`**: Implements `Playlist` only — a read/write local m3u file; no sync destination concept.
 - **`PlaylistMock`**: Test double for `Playlist` only — must reflect the trimmed `Playlist` contract, not `SyncTarget`.
@@ -110,6 +110,12 @@ The `spotify import`, `spotify sync`, and playlist comparison commands continue 
 - **SC-005**: `SyncTarget` is importable from `playlists` and is an abstract base class with exactly one abstract method (`track_matcher`).
 - **SC-006**: `SpotifyPlaylist`'s MRO includes both `Playlist` and `SyncTarget` as direct base classes.
 - **SC-007**: No new test files are required — the refactoring is fully validated by the existing test suite plus the type checker and linter.
+
+## Clarifications
+
+### Session 2026-04-21
+
+- Q: Should `SyncTarget` be fully orthogonal to `Playlist`/`TrackCollection`, or should it extend one of them? → A: Fully orthogonal — `SyncTarget` is a standalone ABC with no inheritance relationship to `Playlist` or `TrackCollection`.
 
 ## Assumptions
 
