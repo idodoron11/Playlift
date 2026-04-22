@@ -10,6 +10,7 @@
 ### Session 2026-04-22
 
 - Q: Where should the service identifier key live so the matcher can call `service_ref(key)` without hardcoding strings in method bodies? → A: The `Matcher` ABC declares an abstract `service_name` property; each concrete matcher overrides it (e.g. `SpotifyMatcher.service_name = "SPOTIFY"`).
+- Q: When the local track already has a different ISRC from the matched streaming track, should the stored ISRC be overwritten? → A: Always overwrite when different — the matched track's ISRC is considered authoritative.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -63,7 +64,7 @@ Streaming service tracks (e.g. Spotify, Deezer) expose two queryable properties:
 ### Edge Cases
 
 - What happens when the matched streaming track has no ISRC? → Only the service reference is written; the ISRC tag is left unchanged.
-- What happens when the source track already has a different ISRC from another service? → The ISRC from the new match overwrites the existing one (ISRC is a universal identifier, not service-specific).
+- What happens when the source track already has a different ISRC from the matched track? → The matched track's ISRC always overwrites the stored one — it is considered authoritative. ISRC is a universal, service-agnostic identifier so a single value applies regardless of which service provided it.
 - What happens when the canonical URL for a match is identical to what is already stored? → No write occurs; the embed operation is idempotent.
 - What happens when two different streaming service tracks return different ISRCs for the same song? → The ISRC from the most recently embedded match wins; no conflict resolution is applied.
 
@@ -75,7 +76,7 @@ Streaming service tracks (e.g. Spotify, Deezer) expose two queryable properties:
 - **FR-002**: The system MUST provide an embeddable track contract, orthogonal to the streaming service contract, that defines how a track stores external match data; only local audio tracks implement this contract.
 - **FR-003**: The matcher MUST request match persistence through the embeddable track contract only — it MUST NOT reference any concrete track type or any private symbol from the tracks layer.
 - **FR-004**: When embedding a match, the embeddable track MUST write the service reference under a key derived from the matched track's service identifier.
-- **FR-005**: When embedding a match, the embeddable track MUST write the ISRC from the matched track if — and only if — the matched track carries an ISRC that differs from the value already stored.
+- **FR-005**: When embedding a match, the embeddable track MUST write the ISRC from the matched track if the matched track carries an ISRC that differs from the value already stored; the matched track's ISRC is always considered authoritative and MUST overwrite any previously stored value.
 - **FR-006**: Multiple service references for different streaming services MUST coexist independently in the same audio file; embedding one service's match MUST NOT affect any other service's stored reference.
 - **FR-007**: If a source track does not implement the embeddable track contract, the matcher MUST skip the embed step silently.
 - **FR-008**: Reading a stored service reference by service identifier MUST be supported on any embeddable track; an absent reference MUST return a null/absent value rather than an error.
