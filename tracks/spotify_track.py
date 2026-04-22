@@ -5,10 +5,12 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     import spotipy
 
-from tracks import Track
+from tracks import ServiceTrack
 
 
-class SpotifyTrack(Track):
+class SpotifyTrack(ServiceTrack):
+    service_name: str = "SPOTIFY"  # class-level constant; satisfies ServiceTrack.service_name
+
     def __init__(  # type: ignore[no-any-unimported]  # spotipy ships no type stubs
         self, track_url: str, data: dict[str, Any] | None = None, *, client: spotipy.Spotify | None = None
     ):
@@ -50,6 +52,15 @@ class SpotifyTrack(Track):
     @property
     def track_url(self) -> str:
         return f"https://open.spotify.com/track/{self.track_id}"
+
+    @property
+    def permalink(self) -> str:
+        """Canonical URL for this track on Spotify.
+
+        Returns:
+            A non-empty URL string (e.g. 'https://open.spotify.com/track/abc123').
+        """
+        return self.track_url
 
     @property
     def track_number(self) -> int:
