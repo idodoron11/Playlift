@@ -19,13 +19,19 @@ Produces a structured diff between the current branch and a target branch, givin
 
 ## Procedure
 
-### Step 1 — Ask for the Target Branch
+### Step 1 — Ask for the Target Branch and Work Item
 
 **You MUST ask the user for the target branch first.** Do not assume.
 
-Use the ask-questions tool with pre-filled options `origin/main` and `origin/master` (mark `origin/main` as recommended), but allow freeform input for other branches (e.g., `develop`, `release/1.0`).
+Use the ask-questions tool with **two questions in the same call**:
 
-> "What is the target branch to compare against?"
+1. **Target branch** — pre-filled options `origin/main` and `origin/master` (mark `origin/main` as recommended), allow freeform input for other branches (e.g., `develop`, `release/1.0`).
+2. **Related work item / issue** — freeform text, optional. Format depends on platform:
+   - GitHub: `#123`
+   - Azure DevOps: `AB#12345`
+   - Leave blank if there is no related work item
+
+Store both answers; the work item ID is used in the **Related Work** section of the PR description.
 
 ### Step 2 — Run the Diff Script
 
@@ -72,9 +78,26 @@ You MUST run the following command to retrieve the full diff content:
 git diff <target-branch>...HEAD
 ```
 
-The agent MUST read the diff from the terminal output. 
+The agent MUST read the diff from the terminal output.
 
-### Step 5 — Perform the Requested Action
+### Step 5 — Read Full File Contents for Key Changed Files
+
+**This is a mandatory step for all workflows.**
+
+After reading the diff, use `read_file` to load the **complete contents** of key changed files — not just the lines that appear in the diff. This provides crucial context: imports, class structure, surrounding logic, and existing patterns that the diff alone cannot convey.
+
+**Prioritize reading:**
+- Files with substantial logic changes (not just formatting)
+- Files with changed interfaces, function signatures, or class definitions
+
+**Skip:**
+- Files that are purely added (the diff already shows all content)
+- Lock files (e.g., `uv.lock`, `package-lock.json`)
+- Files with only formatting changes (e.g., whitespace, line breaks)
+- Files with only comment changes
+
+
+### Step 6 — Perform the Requested Action
 
 Based on the user's intent, proceed with one of these actions after reading the diff:
 
@@ -82,11 +105,46 @@ Based on the user's intent, proceed with one of these actions after reading the 
 Perform a thorough code review following the project's code review instructions. Address security, correctness, test coverage, and style — grouped by severity (Critical / Important / Suggestion).
 
 #### PR Summarization (title + description)
-Draft a concise PR title (conventional commit format: `type(scope): summary`) and a structured description covering:
-- **What**: What was changed and why
-- **How**: Key implementation decisions
-- **Testing**: How changes were or should be tested
-- **Breaking changes** (if any)
+Draft a PR title (conventional commit format: `type(scope): summary`, 50-72 characters, imperative mood) and a full structured description. Output the entire block inside a **raw markdown code fence** for easy copy-paste:
+
+````markdown
+```markdown
+# <type(scope): concise imperative summary — 50-72 chars>
+
+## Summary
+2-3 sentence overview: what this PR does and why.
+
+## Changes
+- **Component / File:** Description of the change and its rationale
+- **Component / File:** …
+
+## Technical Details
+- Key implementation decisions
+- Algorithm or architecture changes
+- Performance considerations
+- Breaking changes (if any)
+
+## Testing
+- How changes were tested
+- Test coverage impact
+- Manual testing performed
+
+## Related Work
+- Closes #<issue> / AB#<work-item-id>
+```
+````
+
+**Work item handling:**
+- If the user provided a work item ID in Step 1, include it using the platform-specific keyword:
+  - **GitHub:** `Closes #123`, `Fixes #123`, or `Resolves #123` (auto-closes the issue on merge)
+  - **Azure DevOps:** `AB#12345`
+- If **no** work item was provided, omit the **Related Work** section entirely.
+- Remove any placeholder lines that have no real content.
+
+**Title guidelines:**
+- Use imperative mood: "Add feature" not "Added feature"
+- Be specific: ✅ "Add OAuth2 authentication to API layer" — ❌ "Bug fixes"
+- Follow conventional-commit format: `type(scope): summary`
 
 #### Create PR
 After drafting the title and description (see Summarization above), use the `mcp_io_github_git_create_pull_request` tool to open the PR against the target branch. Confirm the title and description with the user before submitting.

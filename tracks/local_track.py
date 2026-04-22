@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from mutagen._file import FileType as MutagenFileType
 
 from api.spotify_utils import parse_spotify_id
-from tracks import Track
+from tracks import EmbeddableTrack, ServiceTrack, Track
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +31,7 @@ def _normalize_isrc(raw: str) -> str:
     return raw.upper().strip().replace("-", "")
 
 
-class LocalTrack(Track):
+class LocalTrack(Track, EmbeddableTrack):
     def __init__(self, file_path: str):
         self._file_path = file_path
         self._audio: AudioFile | None = None  # type: ignore[no-any-unimported]  # music_tag ships no type stubs
@@ -190,6 +190,38 @@ class LocalTrack(Track):
             self.reload_metadata()
         except (mutagen.MutagenError, OSError, AttributeError) as e:  # type: ignore[attr-defined]
             logger.warning("Could not write ISRC for %s: %s", self.track_id, e)
+
+    def service_ref(self, service_name: str) -> str | None:
+        """Return the stored service reference for the given streaming service.
+
+        Delegates to the audio file's custom tag storage. The tag key is
+        normalized to uppercase internally, so ``service_ref("SPOTIFY")``
+        reads the same tag as the ``spotify_ref`` property.
+
+        Args:
+            service_name: Uppercased service identifier (e.g. ``"SPOTIFY"``).
+
+        Returns:
+            The stored service reference string, or None if absent.
+        """
+        return self._get_custom_tag(service_name)
+
+    def embed_match(self, match: ServiceTrack) -> None:
+        """Persist match data from a streaming service track into this track's tags.
+
+        Writes the service reference (``match.permalink``) under the tag key
+        ``match.service_name`` if the stored value differs. Writes the ISRC
+        from ``match`` if it differs from the stored value and is not None.
+        The operation is idempotent — tags that already match are not rewritten.
+        Only the tag for ``match.service_name`` is affected.
+
+        Args:
+            match: The streaming service track whose data should be embedded.
+        """
+        if self.service_ref(match.service_name) != match.permalink:
+            self._set_custom_tag(match.service_name, match.permalink)
+        if match.isrc is not None and self.isrc != _normalize_isrc(match.isrc):
+            self.isrc = _normalize_isrc(match.isrc)
 
     @property
     def spotify_ref(self) -> str | None:

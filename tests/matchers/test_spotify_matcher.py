@@ -1,7 +1,7 @@
 import logging
 from typing import ClassVar
 from unittest import TestCase
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 import spotipy
@@ -476,63 +476,41 @@ class TestEmbedIsrc:
     """Tests for ISRC embedding after match."""
 
     def test_embed_isrc_writes_isrc_to_local_track_after_match(self, matcher: SpotifyMatcher) -> None:
-        """T021: track has no ISRC, match found, embed_matches=True → ISRC written."""
-        from unittest.mock import Mock, PropertyMock
-
-        from tracks.local_track import LocalTrack
+        """T021: source is EmbeddableTrack → embed_match delegated."""
+        from tracks import EmbeddableTrack
 
         matched = _make_spotify_track("abc123", "USRC17607839")
-        mock_local = Mock(spec=LocalTrack)
-        mock_local.spotify_ref = None
-        isrc_prop = PropertyMock(return_value=None)
-        type(mock_local).isrc = isrc_prop
+        source = Mock(spec=EmbeddableTrack)
 
-        matcher._update_spotify_match_in_source_track(mock_local, matched)
+        matcher._update_spotify_match_in_source_track(source, matched)
 
-        # PropertyMock records gets as call() and sets as call(value)
-        set_calls = [c for c in isrc_prop.call_args_list if c[0]]
-        assert len(set_calls) == 1
-        assert set_calls[0][0][0] == "USRC17607839"
+        source.embed_match.assert_called_once_with(matched)
 
-    def test_embed_isrc_does_not_rewrite_when_isrc_already_matches(self, matcher: SpotifyMatcher) -> None:
-        """T022: track already has the same ISRC as Spotify → setter not called."""
-        from unittest.mock import Mock, PropertyMock
-
-        from tracks.local_track import LocalTrack
+    def test_embed_isrc_delegates_to_embed_match(self, matcher: SpotifyMatcher) -> None:
+        """T022: source is EmbeddableTrack → embed_match delegated; idempotency is LocalTrack's responsibility."""
+        from tracks import EmbeddableTrack
 
         matched = _make_spotify_track("abc123", "USRC17607839")
-        mock_local = Mock(spec=LocalTrack)
-        mock_local.spotify_ref = None
-        isrc_prop = PropertyMock(return_value="USRC17607839")
-        type(mock_local).isrc = isrc_prop
+        source = Mock(spec=EmbeddableTrack)
 
-        matcher._update_spotify_match_in_source_track(mock_local, matched)
+        matcher._update_spotify_match_in_source_track(source, matched)
 
-        set_calls = [c for c in isrc_prop.call_args_list if c[0]]
-        assert len(set_calls) == 0
+        source.embed_match.assert_called_once_with(matched)
 
     def test_embed_isrc_updates_when_spotify_isrc_differs(self, matcher: SpotifyMatcher) -> None:
-        """T022b: track has a different ISRC from Spotify → setter called with normalized Spotify ISRC."""
-        from unittest.mock import Mock, PropertyMock
-
-        from tracks.local_track import LocalTrack
+        """T022b: source is EmbeddableTrack → embed_match delegated."""
+        from tracks import EmbeddableTrack
 
         matched = _make_spotify_track("abc123", "USRC17607839")
-        mock_local = Mock(spec=LocalTrack)
-        mock_local.spotify_ref = None
-        isrc_prop = PropertyMock(return_value="GBAYE0100538")
-        type(mock_local).isrc = isrc_prop
+        source = Mock(spec=EmbeddableTrack)
 
-        matcher._update_spotify_match_in_source_track(mock_local, matched)
+        matcher._update_spotify_match_in_source_track(source, matched)
 
-        set_calls = [c for c in isrc_prop.call_args_list if c[0]]
-        assert len(set_calls) == 1
-        assert set_calls[0][0][0] == "USRC17607839"
+        source.embed_match.assert_called_once_with(matched)
 
     def test_embed_isrc_skipped_when_embed_matches_false(self, matcher: SpotifyMatcher) -> None:
-        """T023: embed_matches=False → isrc setter never called during match_list."""
-        from unittest.mock import Mock, PropertyMock
-
+        """T023: embed_matches=False → embed_match never called during match_list."""
+        from tracks import EmbeddableTrack  # noqa: F401  # imported for documentation
         from tracks.local_track import LocalTrack
 
         matched = _make_spotify_track("abc123", "USRC17607839")
@@ -540,62 +518,51 @@ class TestEmbedIsrc:
 
         with patch.object(matcher, "_search", mock_search_fn):
             mock_local = Mock(spec=LocalTrack)
-            mock_local.spotify_ref = None
+            mock_local.service_ref.return_value = None
             mock_local.artists = ["Artist"]
             mock_local.title = "Title"
             mock_local.album = "Album"
-            isrc_prop = PropertyMock(return_value=None)
-            type(mock_local).isrc = isrc_prop
+            mock_local.isrc = None
 
             matcher.match_list([mock_local], autopilot=True, embed_matches=False)
 
-            set_calls = [c for c in isrc_prop.call_args_list if c[0]]
-            assert len(set_calls) == 0
+            mock_local.embed_match.assert_not_called()
 
     def test_embed_isrc_skipped_when_spotify_track_has_no_isrc(self, matcher: SpotifyMatcher) -> None:
-        """T024: matched SpotifyTrack.isrc is None → no write."""
-        from unittest.mock import Mock, PropertyMock
-
-        from tracks.local_track import LocalTrack
+        """T024: source is EmbeddableTrack → embed_match delegated regardless of match ISRC."""
+        from tracks import EmbeddableTrack
 
         matched = _make_spotify_track("abc123", None)
-        mock_local = Mock(spec=LocalTrack)
-        mock_local.spotify_ref = None
-        isrc_prop = PropertyMock(return_value=None)
-        type(mock_local).isrc = isrc_prop
+        source = Mock(spec=EmbeddableTrack)
 
-        matcher._update_spotify_match_in_source_track(mock_local, matched)
+        matcher._update_spotify_match_in_source_track(source, matched)
 
-        set_calls = [c for c in isrc_prop.call_args_list if c[0]]
-        assert len(set_calls) == 0
+        source.embed_match.assert_called_once_with(matched)
 
     def test_embed_isrc_skipped_for_skip_track(self, matcher: SpotifyMatcher) -> None:
-        """T025: non-LocalTrack (TrackMock) passed to _update → no crash, no ISRC write."""
+        """T025: non-EmbeddableTrack source → no embed_match call, no crash."""
         matched = _make_spotify_track("abc123", "USRC17607839")
         track = TrackMock("1", ["A"], "B", "C", 200, 1, isrc=None)
-        # TrackMock is not a LocalTrack, so the isinstance guard skips ISRC writing
+        # TrackMock is not an EmbeddableTrack, so the isinstance guard skips embedding
         matcher._update_spotify_match_in_source_track(track, matched)
 
     def test_embed_isrc_skipped_for_non_local_track(self, matcher: SpotifyMatcher) -> None:
-        """T027 sub-test: non-LocalTrack source → no AttributeError, no write."""
+        """T027 sub-test: EmbeddableTrack source → embed_match called."""
+        from tracks import EmbeddableTrack
+
         matched = _make_spotify_track("abc123", "USRC17607839")
-        track = TrackMock("1", ["A"], "B", "C", 200, 1, isrc=None)
-        matcher._update_spotify_match_in_source_track(track, matched)
+        source = Mock(spec=EmbeddableTrack)
+        matcher._update_spotify_match_in_source_track(source, matched)
+
+        source.embed_match.assert_called_once_with(matched)
 
     def test_update_match_skips_isrc_write_when_normalized_values_match(self, matcher: SpotifyMatcher) -> None:
-        """T006/Bug3: hyphenated Spotify ISRC must not trigger a write when local ISRC already has the same value."""
-        from unittest.mock import Mock, PropertyMock
+        """T006/Bug3: matcher delegates to embed_match; normalization logic is in LocalTrack.embed_match."""
+        from tracks import EmbeddableTrack
 
-        from tracks.local_track import LocalTrack
-
-        # Local ISRC is normalized (no hyphens), Spotify returns same ISRC with a hyphen
         matched = _make_spotify_track("abc123", "USSM1-9604431")
-        mock_local = Mock(spec=LocalTrack)
-        mock_local.spotify_ref = None
-        isrc_prop = PropertyMock(return_value="USSM19604431")
-        type(mock_local).isrc = isrc_prop
+        source = Mock(spec=EmbeddableTrack)
 
-        matcher._update_spotify_match_in_source_track(mock_local, matched)
+        matcher._update_spotify_match_in_source_track(source, matched)
 
-        set_calls = [c for c in isrc_prop.call_args_list if c[0]]
-        assert len(set_calls) == 0
+        source.embed_match.assert_called_once_with(matched)

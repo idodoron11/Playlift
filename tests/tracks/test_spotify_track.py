@@ -95,3 +95,40 @@ class TestSpotifyTrackIsrc(TestCase):
         }
         track = _make_spotify_track(data)
         assert track.isrc is None
+
+
+# ---------------------------------------------------------------------------
+# T008: TestSpotifyTrackServiceContract — ServiceTrack contract
+# ---------------------------------------------------------------------------
+
+
+def _make_minimal_spotify_track() -> "SpotifyTrack":
+    """Build a minimal SpotifyTrack for contract assertions."""
+    data = {
+        "id": "abc123",
+        "name": "Test",
+        "artists": [{"name": "A"}],
+        "album": {"name": "B"},
+        "duration_ms": 200000,
+        "track_number": 1,
+        "external_ids": {},
+    }
+    return _make_spotify_track(data)
+
+
+class TestSpotifyTrackServiceContract(TestCase):
+    """Verify SpotifyTrack satisfies the ServiceTrack contract."""
+
+    def test_permalink_returns_track_url(self) -> None:
+        track = _make_minimal_spotify_track()
+        assert track.permalink == track.track_url
+
+    def test_service_name_returns_spotify(self) -> None:
+        track = _make_minimal_spotify_track()
+        assert track.service_name == "SPOTIFY"
+
+    def test_spotify_track_is_service_track(self) -> None:
+        from tracks import ServiceTrack
+
+        track = _make_minimal_spotify_track()
+        assert isinstance(track, ServiceTrack)
