@@ -25,8 +25,8 @@ No new project structure, files, or dependencies required — this is an in-plac
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T001 Add `ServiceTrack(Track, ABC)` and `EmbeddableTrack(ABC)` to `tracks/__init__.py`; add concrete `service_ref(service_name: str) -> str | None` method to `Track` returning `None` by default
-- [ ] T002 [P] Update `SpotifyTrack` to extend `ServiceTrack`; add `permalink` property returning `self.track_url` and `service_name` property returning `"SPOTIFY"` in `tracks/spotify_track.py`
+- [ ] T001 Add `ServiceTrack(Track, ABC)` and `EmbeddableTrack(ABC)` to `tracks/__init__.py`; add concrete `service_ref(service_name: str) -> str | None` method to `Track` returning `None` by default; declare `ServiceTrack` **before** `EmbeddableTrack` (its `embed_match` signature references `ServiceTrack`); add Google-style docstrings to all three new/modified public symbols (`ServiceTrack`, `EmbeddableTrack`, `Track.service_ref`)
+- [ ] T002 Update `SpotifyTrack` to extend `ServiceTrack`; add `permalink` property returning `self.track_url` and `service_name` property returning `"SPOTIFY"` in `tracks/spotify_track.py`; add Google-style docstrings to both new properties (depends on T001 — `ServiceTrack` must exist first)
 
 **Checkpoint**: `ServiceTrack`, `EmbeddableTrack`, and `Track.service_ref` exist; `SpotifyTrack` satisfies `ServiceTrack`. All user story phases can now begin.
 
@@ -55,9 +55,12 @@ No new project structure, files, or dependencies required — this is an in-plac
 
 ### Implementation for User Story 1
 
-- [ ] T004 [US1] Add `service_ref(self, service_name: str) -> str | None` override (delegates to `self._get_custom_tag(service_name)`) and `embed_match(self, match: ServiceTrack) -> None` method to `LocalTrack` in `tracks/local_track.py`; add `EmbeddableTrack` to `LocalTrack` base classes (depends on T001, T002, T003 tests failing)
+- [ ] T004 [US1] Add `service_ref(self, service_name: str) -> str | None` override (delegates to `self._get_custom_tag(service_name)`) and `embed_match(self, match: ServiceTrack) -> None` method to `LocalTrack` in `tracks/local_track.py`; add `EmbeddableTrack` to `LocalTrack` base classes; add Google-style docstrings to both new methods — Note: `_get_custom_tag` normalizes tag names to uppercase internally, so `service_ref("SPOTIFY")` and the existing `spotify_ref` property read the same underlying tag key (depends on T001, T002, T003 tests failing)
 - [ ] T005 [US1] Update `matchers/spotify_matcher.py`: remove `from tracks.local_track import LocalTrack, _normalize_isrc`; add `from tracks import EmbeddableTrack`; replace `_find_spotify_match_in_source_track` body with `return track.service_ref(SpotifyTrack.service_name)`; replace `_update_spotify_match_in_source_track` body with `if isinstance(source_track, EmbeddableTrack): source_track.embed_match(match)` (depends on T001, T002, T004)
-- [ ] T006 [US1] Update `TestEmbedIsrc` in `tests/matchers/test_spotify_matcher.py`: replace `Mock(spec=LocalTrack)` + `PropertyMock` chains with `Mock(spec=EmbeddableTrack)`; update assertions to `source.embed_match.assert_called_once_with(matched)`; remove per-test `from tracks.local_track import LocalTrack` imports; add T025 non-`EmbeddableTrack` silent-skip assertion (depends on T004, T005)
+- [ ] T006 [US1] Update `TestEmbedIsrc` in `tests/matchers/test_spotify_matcher.py` (depends on T004, T005):
+  - **T021, T022, T022b, T024, T027 sub-test** (call `_update_spotify_match_in_source_track` directly): replace `Mock(spec=LocalTrack)` + `PropertyMock` chains with `Mock(spec=EmbeddableTrack)`; assert `source.embed_match.assert_called_once_with(matched)` or `source.embed_match.assert_not_called()` as appropriate; remove per-test `from tracks.local_track import LocalTrack` imports
+  - **T023** (`test_embed_isrc_skipped_when_embed_matches_false` — calls `match_list()`): keep `Mock(spec=LocalTrack)` (post-refactor `LocalTrack` IS-A `EmbeddableTrack`; using `EmbeddableTrack` spec would hide `service_ref` which the matcher calls on the read path inside `match_list`); remove `from tracks.local_track import LocalTrack` and replace with `from tracks import EmbeddableTrack; from tracks.local_track import LocalTrack` — keeping the LocalTrack import only for T023
+  - **T025** (`test_embed_isrc_skipped_for_skip_track`): update comment from "isinstance guard" to "non-EmbeddableTrack source"; no mock spec change needed (uses `TrackMock`)
 
 **Checkpoint**: `pytest tests/matchers/test_spotify_matcher.py -k "Embed"` and `pytest tests/tracks/test_local_track.py -k "EmbedMatch"` both pass. `grep -r "LocalTrack\|_normalize_isrc" matchers/` returns no matches.
 
@@ -133,7 +136,7 @@ No new project structure, files, or dependencies required — this is an in-plac
 
 ### Parallel Opportunities
 
-- T002 runs in parallel with T001 (different files, no dependency)
+- T002 follows T001 (different file; `ServiceTrack` must be defined before `SpotifyTrack` can extend it)
 - T003 (write failing tests) runs in parallel with T001+T002 (test file is independent)
 - T007 runs in parallel with T005/T006 (different test file, only needs T004)
 - T008 runs in parallel with T003/T004 (only needs T002)

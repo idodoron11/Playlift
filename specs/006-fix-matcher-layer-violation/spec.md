@@ -83,7 +83,7 @@ Streaming service tracks (e.g. Spotify, Deezer) expose two queryable properties:
 - **FR-006**: Multiple service references for different streaming services MUST coexist independently in the same audio file; embedding one service's match MUST NOT affect any other service's stored reference.
 - **FR-007**: If a source track does not implement the embeddable track contract, the matcher MUST skip the embed step silently.
 - **FR-008**: Reading a stored service reference by service identifier MUST be supported on **any `Track`** via a concrete `service_ref(service_name)` method; the base implementation returns `None`; embeddable tracks override it to read from durable storage.
-- **FR-009**: The matcher MUST read the stored service reference by calling `track.service_ref(ServiceTrack.service_name)` directly on any `Track` — no `isinstance` check is needed on the read path; a non-embeddable source track simply returns `None` and is treated as unmatched.
+- **FR-009**: The matcher MUST read the stored service reference by calling `track.service_ref(SpotifyTrack.service_name)` directly on any `Track` — no `isinstance` check is needed on the read path; a non-embeddable source track simply returns `None` and is treated as unmatched.
 
 ### Key Entities
 
