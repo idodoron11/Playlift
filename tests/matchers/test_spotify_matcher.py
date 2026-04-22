@@ -486,8 +486,8 @@ class TestEmbedIsrc:
 
         source.embed_match.assert_called_once_with(matched)
 
-    def test_embed_isrc_does_not_rewrite_when_isrc_already_matches(self, matcher: SpotifyMatcher) -> None:
-        """T022: source is EmbeddableTrack → embed_match delegated (idempotency in embed_match)."""
+    def test_embed_isrc_delegates_to_embed_match(self, matcher: SpotifyMatcher) -> None:
+        """T022: source is EmbeddableTrack → embed_match delegated; idempotency is LocalTrack's responsibility."""
         from tracks import EmbeddableTrack
 
         matched = _make_spotify_track("abc123", "USRC17607839")
