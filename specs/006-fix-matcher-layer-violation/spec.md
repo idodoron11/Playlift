@@ -3,7 +3,13 @@
 **Feature Branch**: `006-fix-matcher-layer-violation`  
 **Created**: 2026-04-22  
 **Status**: Draft  
-**Input**: Fix DIP and SRP violation in SpotifyMatcher: introduce ServiceTrack and EmbeddableTrack abstractions
+**Input**: Fix DIP and SRC violation in SpotifyMatcher: introduce ServiceTrack and EmbeddableTrack abstractions
+
+## Clarifications
+
+### Session 2026-04-22
+
+- Q: Where should the service identifier key live so the matcher can call `service_ref(key)` without hardcoding strings in method bodies? → A: The `Matcher` ABC declares an abstract `service_name` property; each concrete matcher overrides it (e.g. `SpotifyMatcher.service_name = "SPOTIFY"`).
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -74,6 +80,7 @@ Streaming service tracks (e.g. Spotify, Deezer) expose two queryable properties:
 - **FR-007**: If a source track does not implement the embeddable track contract, the matcher MUST skip the embed step silently.
 - **FR-008**: Reading a stored service reference by service identifier MUST be supported on any embeddable track; an absent reference MUST return a null/absent value rather than an error.
 - **FR-009**: The matcher MUST use the stored service reference (read via the embeddable contract) to detect already-matched tracks, replacing the current concrete type check.
+- **FR-010**: The `Matcher` ABC MUST declare an abstract `service_name` property returning the service identifier string; each concrete matcher MUST provide its own value (e.g. `SpotifyMatcher` returns `"SPOTIFY"`).
 
 ### Key Entities
 
@@ -81,6 +88,7 @@ Streaming service tracks (e.g. Spotify, Deezer) expose two queryable properties:
 - **Streaming Service Track**: A specialisation of Track for tracks sourced from a streaming service. Adds a canonical URL and a service identifier. Implemented by each streaming service's track type.
 - **Embeddable Track**: An orthogonal contract for tracks that can persist external match data (service references and ISRC) into durable storage. Implemented only by local audio tracks.
 - **Service Reference**: A stored association between a local audio file and a specific streaming service track, identified by service name and value (the canonical URL).
+- **Matcher service_name**: An abstract property on the `Matcher` ABC that each concrete matcher overrides to declare its own service identifier. Used by the matcher to read the correct stored service reference when checking for already-matched tracks.
 
 ## Success Criteria *(mandatory)*
 
