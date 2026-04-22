@@ -6,25 +6,14 @@
 
 ## Purpose
 
-A track that can persist match data from streaming services into durable storage (audio file tags). This contract is **orthogonal** to `Track` — not all tracks are embeddable. Only local audio tracks implement it. Streaming service tracks (`SpotifyTrack`) do NOT.
+A single-method write contract for tracks that can persist match data from streaming services into durable storage (audio file tags). This contract is **orthogonal** to `Track` — not all tracks are embeddable. Only local audio tracks implement it. Streaming service tracks (`SpotifyTrack`) do NOT.
+
+Note: reading a stored service reference (`service_ref`) is a query on **any** `Track` via its concrete default method — it is not part of this contract.
 
 ## Abstract Interface
 
 ```python
 class EmbeddableTrack(ABC):
-
-    @abstractmethod
-    def service_ref(self, service_name: str) -> str | None:
-        """Read the stored service reference for the given service.
-
-        Args:
-            service_name: Uppercased service identifier (e.g. 'SPOTIFY', 'DEEZER').
-
-        Returns:
-            The stored reference string (e.g. a canonical URL), or None if absent.
-            MUST NOT raise on an absent key.
-        """
-        ...
 
     @abstractmethod
     def embed_match(self, match: ServiceTrack) -> None:
@@ -45,7 +34,6 @@ class EmbeddableTrack(ABC):
 
 ## Invariants
 
-- `service_ref` MUST return `None` (not raise) when the tag is absent
 - `embed_match` MUST be idempotent — calling it twice with the same `match` produces at most one write per tag
 - `embed_match` MUST only write the `match.service_name` service tag; it MUST NOT alter tags for other services
 - The matched track's ISRC is authoritative — if it differs from the stored value, `embed_match` MUST overwrite it
@@ -53,15 +41,17 @@ class EmbeddableTrack(ABC):
 
 ## Known Implementations
 
-| Class | `service_ref` | `embed_match` |
-|-------|---------------|---------------|
-| `LocalTrack` | `self._get_custom_tag(service_name)` | writes permalink + ISRC when changed |
+| Class | `embed_match` |
+|-------|---------------|
+| `LocalTrack` | writes permalink + ISRC when changed |
 
 ## Extension Guide
 
 To make a hypothetical `CachedLocalTrack` embeddable:
 ```python
 class CachedLocalTrack(Track, EmbeddableTrack):
+    # service_ref is inherited from Track (returns None by default)
+    # Override it to read from the cache:
     def service_ref(self, service_name: str) -> str | None:
         return self._cache.get(service_name)
 

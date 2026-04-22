@@ -7,7 +7,7 @@
 
 ## Summary
 
-Introduce two new ABCs — `ServiceTrack(Track)` and `EmbeddableTrack` — to remove the DIP and SRP violations in `SpotifyMatcher`. `SpotifyMatcher` currently imports the concrete `LocalTrack` class and private `_normalize_isrc` symbol from the tracks layer, then writes metadata directly onto the source track using `isinstance` checks. After this refactor: `SpotifyTrack` extends `ServiceTrack` (adding `permalink` + `service_name`); `LocalTrack` implements `EmbeddableTrack` (adding `service_ref` + `embed_match`); the matcher imports only `EmbeddableTrack` from the tracks layer and delegates all persistence to `source_track.embed_match(match)`. The `Matcher` ABC gains an abstract `service_name` property so the matcher can look up already-matched tracks without hardcoding any service string. No behavioral changes.
+Introduce two new ABCs — `ServiceTrack(Track)` and `EmbeddableTrack` — to remove the DIP and SRP violations in `SpotifyMatcher`. After this refactor: `SpotifyTrack` extends `ServiceTrack` (adding `permalink` + `service_name`); `Track` gains a concrete `service_ref(service_name) -> str | None` method (default `return None`); `LocalTrack` implements `EmbeddableTrack` (adding `embed_match`) and overrides `service_ref` to read from audio tags; the matcher calls `track.service_ref(SpotifyTrack.service_name)` directly on any `Track` (no `isinstance` on the read path), and delegates persistence via `source_track.embed_match(match)` guarded by `isinstance(source_track, EmbeddableTrack)`. `Matcher` ABC is unchanged. No behavioral changes.
 
 ## Technical Context
 
@@ -25,8 +25,8 @@ Introduce two new ABCs — `ServiceTrack(Track)` and `EmbeddableTrack` — to re
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-- [x] **Principle I (Clean Code)**: `ServiceTrack`, `EmbeddableTrack`, `service_ref`, `embed_match`, `service_name` are all precise, descriptive identifiers. `embed_match` body ≤ 10 lines. No magic literals — `"SPOTIFY"` is defined as a class-level constant in `SpotifyMatcher`. No nesting changes.
-- [x] **Principle II (SOLID)**: This IS the SOLID fix — eliminates the DIP violation (D) and SRP violation (S). Constitution §II-D: "High-level modules depend on abstractions, not concrete classes." Constitution §II-I: "Spotify-specific methods MUST NOT appear on the base `Track`." `ServiceTrack` and `EmbeddableTrack` are small, focused interfaces. `LocalTrack` and `SpotifyTrack` do not implement each other's contracts.
+- [x] **Principle I (Clean Code)**: `ServiceTrack`, `EmbeddableTrack`, `service_ref`, `embed_match`, `service_name` are all precise, descriptive identifiers. `embed_match` body ≤ 10 lines. No magic literals — `"SPOTIFY"` is defined as a class property on `SpotifyTrack`; `SpotifyMatcher` reads it via `SpotifyTrack.service_name`. No nesting changes.
+- [x] **Principle II (SOLID)**: This IS the SOLID fix — eliminates the DIP violation (D) and SRP violation (S). Constitution §II-D: "High-level modules depend on abstractions, not concrete classes." Constitution §II-I: "Spotify-specific methods MUST NOT appear on the base `Track`." `ServiceTrack` and `EmbeddableTrack` are small, focused interfaces. `EmbeddableTrack` is a single-method write contract. `service_ref` on `Track` removes the read-path `isinstance` entirely.
 - [x] **Principle III (DRY)**: ISRC normalization logic (`_normalize_isrc`) remains in a single place in `local_track.py`. The embed logic previously duplicated in `_update_spotify_match_in_source_track` is removed and lives exclusively in `LocalTrack.embed_match`.
 - [x] **Principle IV (Readability First)**: No performance trade-offs. Delegation via `embed_match` is simpler and more expressive than the existing `isinstance` + raw tag writes.
 - [x] **Principle V (Unit Tests)**: `LocalTrack.embed_match` is a new concrete method — covered by `TestLocalTrackEmbedMatch` in `tests/tracks/test_local_track.py`. Edge cases covered: no ISRC on match, same ISRC already stored, different service tags coexisting. Matcher delegation covered by updated T021–T025.
@@ -45,8 +45,7 @@ specs/006-fix-matcher-layer-violation/
 ├── quickstart.md        # Phase 1 output
 ├── contracts/
 │   ├── service-track.md       # ServiceTrack ABC contract
-│   ├── embeddable-track.md    # EmbeddableTrack ABC contract
-│   └── matcher-service-name.md # Matcher.service_name contract
+│   └── embeddable-track.md    # EmbeddableTrack ABC contract
 └── spec.md              # Feature specification
 ```
 
@@ -54,13 +53,13 @@ specs/006-fix-matcher-layer-violation/
 
 ```text
 tracks/
-├── __init__.py           # Add ServiceTrack(Track, ABC) and EmbeddableTrack(ABC)
-├── local_track.py        # Add EmbeddableTrack to bases; add service_ref, embed_match
+├── __init__.py           # Add ServiceTrack(Track, ABC), EmbeddableTrack(ABC); add concrete service_ref to Track
+├── local_track.py        # Add EmbeddableTrack to bases; override service_ref; add embed_match
 └── spotify_track.py      # Add ServiceTrack to bases; add permalink, service_name
 
 matchers/
-├── __init__.py           # Add abstract service_name property to Matcher ABC
-└── spotify_matcher.py    # Remove LocalTrack/_normalize_isrc imports; use EmbeddableTrack
+└── spotify_matcher.py    # Remove LocalTrack/_normalize_isrc imports; import EmbeddableTrack;
+                         # read path uses track.service_ref(SpotifyTrack.service_name) directly
 
 tests/
 ├── matchers/

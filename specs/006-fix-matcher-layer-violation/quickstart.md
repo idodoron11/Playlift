@@ -7,11 +7,12 @@ Two new ABCs are introduced in `tracks/__init__.py`. Existing classes adopt them
 | Class | Change |
 |-------|--------|
 | `ServiceTrack` | **New** — abstract base for streaming service tracks |
-| `EmbeddableTrack` | **New** — abstract base for tracks that store match data |
+| `EmbeddableTrack` | **New** — single-method write contract for tracks that store match data |
+| `Track` | Gains concrete `service_ref(service_name) -> str \| None` (returns `None` by default) |
 | `SpotifyTrack` | Extends `ServiceTrack`; adds `permalink`, `service_name` |
-| `LocalTrack` | Implements `EmbeddableTrack`; adds `service_ref`, `embed_match` |
-| `Matcher` | Gains abstract `service_name` property |
-| `SpotifyMatcher` | Removes `LocalTrack` import; delegates to `embed_match` |
+| `LocalTrack` | Implements `EmbeddableTrack`; overrides `service_ref`; adds `embed_match` |
+| `Matcher` | **(no change)** |
+| `SpotifyMatcher` | Removes `LocalTrack` import; uses `track.service_ref(SpotifyTrack.service_name)` on read path; delegates write to `embed_match` |
 
 ---
 
@@ -48,10 +49,6 @@ from tracks import Track
 from tracks.deezer_track import DeezerTrack
 
 class DeezerMatcher(Matcher):
-    @property
-    def service_name(self) -> str:
-        return "DEEZER"
-
     def match(self, track: Track) -> DeezerTrack | None:
         # ... matching logic
         pass
@@ -94,10 +91,8 @@ SpotifyMatcher.match_list(source_tracks, embed_matches=True)
 
 ```python
 # Inside SpotifyMatcher._find_spotify_match_in_source_track:
-if isinstance(track, EmbeddableTrack):
-    ref = track.service_ref(self.service_name)   # reads the "SPOTIFY" tag
-    return ref                                    # None if unmatched
-return None                                       # non-embeddable → treat as unmatched
+return track.service_ref(SpotifyTrack.service_name)  # reads the "SPOTIFY" tag, or None
+# Track.service_ref returns None by default — no isinstance guard needed
 ```
 
 ---

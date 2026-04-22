@@ -1,4 +1,6 @@
-# Contract: `Matcher.service_name`
+# Contract: `Matcher.service_name` ~~SUPERSEDED~~
+
+> **SUPERSEDED**: This contract was removed during design review. `SpotifyMatcher` reads `SpotifyTrack.service_name` directly — `"SPOTIFY"` has a single definition on the `SpotifyTrack` class. The `Matcher` ABC does **not** declare `service_name`. This file is retained for history only.
 
 **File**: `matchers/__init__.py`  
 **Kind**: Abstract property added to existing `Matcher` ABC

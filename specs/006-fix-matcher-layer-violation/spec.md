@@ -9,7 +9,8 @@
 
 ### Session 2026-04-22
 
-- Q: Where should the service identifier key live so the matcher can call `service_ref(key)` without hardcoding strings in method bodies? → A: The `Matcher` ABC declares an abstract `service_name` property; each concrete matcher overrides it (e.g. `SpotifyMatcher.service_name = "SPOTIFY"`).
+- Q: Where should the service identifier key live so the matcher can call `service_ref(key)` without hardcoding strings in method bodies? → A (revised): `Matcher` ABC does NOT declare `service_name`. Each concrete matcher reads the service name from its own `ServiceTrack` subclass directly (e.g. `SpotifyMatcher` calls `SpotifyTrack.service_name`). This keeps `"SPOTIFY"` defined in exactly one place.
+- Q: Should `service_ref` live only on `EmbeddableTrack`, or on `Track` itself? → A: On `Track` with a concrete `return None` default. `service_ref` answers the meaningful query "do you have a stored ref for this service?" — `None` is a valid answer for any track. This eliminates the `isinstance` guard on the read path entirely while keeping `EmbeddableTrack` as a focused, single-method write contract.
 - Q: When the local track already has a different ISRC from the matched streaming track, should the stored ISRC be overwritten? → A: Always overwrite when different — the matched track's ISRC is considered authoritative.
 - Q: When the source track is not an EmbeddableTrack (no stored service ref readable), what should the matcher do when checking for an already-matched track? → A: Treat as unmatched and proceed with matching normally — non-embeddable tracks have no persistent state to read.
 
@@ -81,17 +82,15 @@ Streaming service tracks (e.g. Spotify, Deezer) expose two queryable properties:
 - **FR-005**: When embedding a match, the embeddable track MUST write the ISRC from the matched track if the matched track carries an ISRC that differs from the value already stored; the matched track's ISRC is always considered authoritative and MUST overwrite any previously stored value.
 - **FR-006**: Multiple service references for different streaming services MUST coexist independently in the same audio file; embedding one service's match MUST NOT affect any other service's stored reference.
 - **FR-007**: If a source track does not implement the embeddable track contract, the matcher MUST skip the embed step silently.
-- **FR-008**: Reading a stored service reference by service identifier MUST be supported on any embeddable track; an absent reference MUST return a null/absent value rather than an error.
-- **FR-009**: The matcher MUST use the stored service reference (read via the embeddable contract) to detect already-matched tracks, replacing the current concrete type check. If the source track does not implement the embeddable contract, the matcher MUST treat it as unmatched and proceed with the normal matching strategy.
-- **FR-010**: The `Matcher` ABC MUST declare an abstract `service_name` property returning the service identifier string; each concrete matcher MUST provide its own value (e.g. `SpotifyMatcher` returns `"SPOTIFY"`).
+- **FR-008**: Reading a stored service reference by service identifier MUST be supported on **any `Track`** via a concrete `service_ref(service_name)` method; the base implementation returns `None`; embeddable tracks override it to read from durable storage.
+- **FR-009**: The matcher MUST read the stored service reference by calling `track.service_ref(ServiceTrack.service_name)` directly on any `Track` — no `isinstance` check is needed on the read path; a non-embeddable source track simply returns `None` and is treated as unmatched.
 
 ### Key Entities
 
-- **Track**: The base contract for any playable track — local or remote. Carries metadata (title, artists, album, duration, ISRC, track number). Neither permalink nor service identity belong here.
+- **Track**: The base contract for any playable track — local or remote. Carries metadata (title, artists, album, duration, ISRC, track number) and a concrete `service_ref(service_name)` method returning `None` by default.
 - **Streaming Service Track**: A specialisation of Track for tracks sourced from a streaming service. Adds a canonical URL and a service identifier. Implemented by each streaming service's track type.
-- **Embeddable Track**: An orthogonal contract for tracks that can persist external match data (service references and ISRC) into durable storage. Implemented only by local audio tracks.
+- **Embeddable Track**: An orthogonal, single-method contract (`embed_match`) for tracks that can persist match data from streaming services into durable storage. `LocalTrack` overrides both `service_ref` (from `Track`) and `embed_match` (from `EmbeddableTrack`).
 - **Service Reference**: A stored association between a local audio file and a specific streaming service track, identified by service name and value (the canonical URL).
-- **Matcher service_name**: An abstract property on the `Matcher` ABC that each concrete matcher overrides to declare its own service identifier. Used by the matcher to read the correct stored service reference when checking for already-matched tracks.
 
 ## Success Criteria *(mandatory)*
 
