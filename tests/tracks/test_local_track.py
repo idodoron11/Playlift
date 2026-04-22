@@ -3,7 +3,7 @@
 import contextlib
 from typing import Any
 from unittest import TestCase
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import MagicMock, Mock, PropertyMock, patch
 
 from tracks.local_track import LocalTrack, _normalize_isrc
 
@@ -319,3 +319,242 @@ class TestLocalTrackIsrcSetterM4a(_LocalTrackTestBase):
         value = written.get("----:com.apple.iTunes:ISRC")
         assert isinstance(value, list)
         assert all(isinstance(v, MP4FreeForm) for v in value)
+
+
+# ---------------------------------------------------------------------------
+# T003: TestLocalTrackEmbedMatch — write first, must FAIL before T004
+# ---------------------------------------------------------------------------
+
+
+class TestLocalTrackEmbedMatch(_LocalTrackTestBase):
+    """Tests for LocalTrack.embed_match — persists service ref and ISRC."""
+
+    def _make_service_track_mock(
+        self,
+        service_name: str = "SPOTIFY",
+        permalink: str = "https://open.spotify.com/track/abc123",
+        isrc: str | None = "USRC17607839",
+    ) -> Any:
+        from tracks import ServiceTrack
+
+        mock_match = Mock(spec=ServiceTrack)
+        mock_match.service_name = service_name
+        mock_match.permalink = permalink
+        mock_match.isrc = isrc
+        return mock_match
+
+    def test_embed_match_writes_service_ref_when_unset(self) -> None:
+        track = self._make_local_track(MagicMock())
+        match = self._make_service_track_mock(isrc=None)
+
+        with (
+            patch.object(LocalTrack, "service_ref", return_value=None),
+            patch.object(track, "_set_custom_tag") as mock_set,
+        ):
+            track.embed_match(match)
+
+        mock_set.assert_called_once_with("SPOTIFY", "https://open.spotify.com/track/abc123")
+
+    def test_embed_match_skips_service_ref_when_already_matches(self) -> None:
+        track = self._make_local_track(MagicMock())
+        permalink = "https://open.spotify.com/track/abc123"
+        match = self._make_service_track_mock(permalink=permalink, isrc=None)
+
+        with (
+            patch.object(LocalTrack, "service_ref", return_value=permalink),
+            patch.object(track, "_set_custom_tag") as mock_set,
+        ):
+            track.embed_match(match)
+
+        mock_set.assert_not_called()
+
+    def test_embed_match_updates_service_ref_when_differs(self) -> None:
+        track = self._make_local_track(MagicMock())
+        new_permalink = "https://open.spotify.com/track/newid"
+        match = self._make_service_track_mock(permalink=new_permalink, isrc=None)
+
+        with (
+            patch.object(LocalTrack, "service_ref", return_value="https://open.spotify.com/track/oldid"),
+            patch.object(track, "_set_custom_tag") as mock_set,
+        ):
+            track.embed_match(match)
+
+        mock_set.assert_called_once_with("SPOTIFY", new_permalink)
+
+    def test_embed_match_does_not_touch_other_service_ref(self) -> None:
+        track = self._make_local_track(MagicMock())
+        match = self._make_service_track_mock(service_name="SPOTIFY", isrc=None)
+
+        with (
+            patch.object(LocalTrack, "service_ref", return_value=None),
+            patch.object(track, "_set_custom_tag") as mock_set,
+        ):
+            track.embed_match(match)
+
+        for call in mock_set.call_args_list:
+            assert call.args[0] == "SPOTIFY"
+
+    def test_embed_match_writes_isrc_when_missing(self) -> None:
+        track = self._make_local_track(MagicMock())
+        match = self._make_service_track_mock(isrc="USRC17607839")
+        isrc_prop = PropertyMock(return_value=None)
+
+        with (
+            patch.object(LocalTrack, "service_ref", return_value=match.permalink),
+            patch.object(LocalTrack, "isrc", isrc_prop),
+        ):
+            track.embed_match(match)
+
+        set_calls = [c for c in isrc_prop.call_args_list if c.args]
+        assert len(set_calls) == 1
+        assert set_calls[0].args[0] == "USRC17607839"
+
+    def test_embed_match_skips_isrc_when_already_matches(self) -> None:
+        track = self._make_local_track(MagicMock())
+        match = self._make_service_track_mock(isrc="USRC17607839")
+        isrc_prop = PropertyMock(return_value="USRC17607839")
+
+        with (
+            patch.object(LocalTrack, "service_ref", return_value=match.permalink),
+            patch.object(LocalTrack, "isrc", isrc_prop),
+        ):
+            track.embed_match(match)
+
+        set_calls = [c for c in isrc_prop.call_args_list if c.args]
+        assert len(set_calls) == 0
+
+    def test_embed_match_updates_isrc_when_differs(self) -> None:
+        track = self._make_local_track(MagicMock())
+        match = self._make_service_track_mock(isrc="USRC17607839")
+        isrc_prop = PropertyMock(return_value="GBAYE0100538")
+
+        with (
+            patch.object(LocalTrack, "service_ref", return_value=match.permalink),
+            patch.object(LocalTrack, "isrc", isrc_prop),
+        ):
+            track.embed_match(match)
+
+        set_calls = [c for c in isrc_prop.call_args_list if c.args]
+        assert len(set_calls) == 1
+        assert set_calls[0].args[0] == "USRC17607839"
+
+    def test_embed_match_skips_isrc_when_match_has_no_isrc(self) -> None:
+        track = self._make_local_track(MagicMock())
+        match = self._make_service_track_mock(isrc=None)
+        isrc_prop = PropertyMock(return_value=None)
+
+        with (
+            patch.object(LocalTrack, "service_ref", return_value=None),
+            patch.object(track, "_set_custom_tag"),
+            patch.object(LocalTrack, "isrc", isrc_prop),
+        ):
+            track.embed_match(match)
+
+        set_calls = [c for c in isrc_prop.call_args_list if c.args]
+        assert len(set_calls) == 0
+
+    def test_embed_match_normalizes_hyphenated_isrc_from_match(self) -> None:
+        track = self._make_local_track(MagicMock())
+        match = self._make_service_track_mock(isrc="US-RC1-76-07839")
+        isrc_prop = PropertyMock(return_value=None)
+
+        with (
+            patch.object(LocalTrack, "service_ref", return_value=match.permalink),
+            patch.object(LocalTrack, "isrc", isrc_prop),
+        ):
+            track.embed_match(match)
+
+        set_calls = [c for c in isrc_prop.call_args_list if c.args]
+        assert len(set_calls) == 1
+        assert set_calls[0].args[0] == "USRC17607839"
+
+
+# ---------------------------------------------------------------------------
+# T007: TestLocalTrackServiceRefCoexistence — multi-service independence
+# ---------------------------------------------------------------------------
+
+
+class TestLocalTrackServiceRefCoexistence(_LocalTrackTestBase):
+    """Tests that multiple service refs coexist independently in the same track."""
+
+    def test_service_ref_returns_none_for_unknown_service(self) -> None:
+        track = self._make_local_track(MagicMock())
+        with patch.object(LocalTrack, "_get_custom_tag", return_value=None):
+            result = track.service_ref("UNKNOWN_SERVICE")
+        assert result is None
+
+    def test_embed_match_does_not_overwrite_different_service_ref(self) -> None:
+        from tracks import ServiceTrack
+
+        track = self._make_local_track(MagicMock())
+        match = Mock(spec=ServiceTrack)
+        match.service_name = "SPOTIFY"
+        match.permalink = "https://open.spotify.com/track/abc123"
+        match.isrc = None
+
+        written: dict[str, str] = {}
+
+        def fake_set_custom_tag(tag_name: str, value: str) -> None:
+            written[tag_name] = value
+
+        with (
+            patch.object(LocalTrack, "service_ref", return_value=None),
+            patch.object(track, "_set_custom_tag", side_effect=fake_set_custom_tag),
+        ):
+            track.embed_match(match)
+
+        assert "SPOTIFY" in written
+        assert "DEEZER" not in written
+
+    def test_two_service_refs_coexist_independently(self) -> None:
+        from tracks import ServiceTrack
+
+        track = self._make_local_track(MagicMock())
+        stored: dict[str, str] = {}
+
+        def fake_get_custom_tag(tag_name: str) -> str | None:
+            return stored.get(tag_name.upper())
+
+        def fake_set_custom_tag(tag_name: str, value: str) -> None:
+            stored[tag_name.upper()] = value
+
+        spotify_match = Mock(spec=ServiceTrack)
+        spotify_match.service_name = "SPOTIFY"
+        spotify_match.permalink = "https://open.spotify.com/track/sp1"
+        spotify_match.isrc = None
+
+        deezer_match = Mock(spec=ServiceTrack)
+        deezer_match.service_name = "DEEZER"
+        deezer_match.permalink = "https://www.deezer.com/track/dz1"
+        deezer_match.isrc = None
+
+        with (
+            patch.object(track, "_get_custom_tag", side_effect=fake_get_custom_tag),
+            patch.object(track, "_set_custom_tag", side_effect=fake_set_custom_tag),
+        ):
+            track.embed_match(spotify_match)
+            track.embed_match(deezer_match)
+
+        assert stored.get("SPOTIFY") == "https://open.spotify.com/track/sp1"
+        assert stored.get("DEEZER") == "https://www.deezer.com/track/dz1"
+
+
+# ---------------------------------------------------------------------------
+# T009: TestTrackContracts — LocalTrack isinstance checks
+# ---------------------------------------------------------------------------
+
+
+class TestTrackContracts(_LocalTrackTestBase):
+    """Verify LocalTrack satisfies EmbeddableTrack but not ServiceTrack."""
+
+    def test_local_track_is_embeddable_track(self) -> None:
+        from tracks import EmbeddableTrack
+
+        track = self._make_local_track(MagicMock())
+        assert isinstance(track, EmbeddableTrack)
+
+    def test_local_track_is_not_service_track(self) -> None:
+        from tracks import ServiceTrack
+
+        track = self._make_local_track(MagicMock())
+        assert not isinstance(track, ServiceTrack)
