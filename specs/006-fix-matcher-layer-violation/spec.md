@@ -11,6 +11,7 @@
 
 - Q: Where should the service identifier key live so the matcher can call `service_ref(key)` without hardcoding strings in method bodies? → A: The `Matcher` ABC declares an abstract `service_name` property; each concrete matcher overrides it (e.g. `SpotifyMatcher.service_name = "SPOTIFY"`).
 - Q: When the local track already has a different ISRC from the matched streaming track, should the stored ISRC be overwritten? → A: Always overwrite when different — the matched track's ISRC is considered authoritative.
+- Q: When the source track is not an EmbeddableTrack (no stored service ref readable), what should the matcher do when checking for an already-matched track? → A: Treat as unmatched and proceed with matching normally — non-embeddable tracks have no persistent state to read.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -67,6 +68,7 @@ Streaming service tracks (e.g. Spotify, Deezer) expose two queryable properties:
 - What happens when the source track already has a different ISRC from the matched track? → The matched track's ISRC always overwrites the stored one — it is considered authoritative. ISRC is a universal, service-agnostic identifier so a single value applies regardless of which service provided it.
 - What happens when the canonical URL for a match is identical to what is already stored? → No write occurs; the embed operation is idempotent.
 - What happens when two different streaming service tracks return different ISRCs for the same song? → The ISRC from the most recently embedded match wins; no conflict resolution is applied.
+- What happens when the source track is not an EmbeddableTrack (e.g. a streaming service track passed as source)? → The matcher treats it as unmatched and proceeds with the normal matching strategy; there is no stored state to read.
 
 ## Requirements *(mandatory)*
 
@@ -80,7 +82,7 @@ Streaming service tracks (e.g. Spotify, Deezer) expose two queryable properties:
 - **FR-006**: Multiple service references for different streaming services MUST coexist independently in the same audio file; embedding one service's match MUST NOT affect any other service's stored reference.
 - **FR-007**: If a source track does not implement the embeddable track contract, the matcher MUST skip the embed step silently.
 - **FR-008**: Reading a stored service reference by service identifier MUST be supported on any embeddable track; an absent reference MUST return a null/absent value rather than an error.
-- **FR-009**: The matcher MUST use the stored service reference (read via the embeddable contract) to detect already-matched tracks, replacing the current concrete type check.
+- **FR-009**: The matcher MUST use the stored service reference (read via the embeddable contract) to detect already-matched tracks, replacing the current concrete type check. If the source track does not implement the embeddable contract, the matcher MUST treat it as unmatched and proceed with the normal matching strategy.
 - **FR-010**: The `Matcher` ABC MUST declare an abstract `service_name` property returning the service identifier string; each concrete matcher MUST provide its own value (e.g. `SpotifyMatcher` returns `"SPOTIFY"`).
 
 ### Key Entities
