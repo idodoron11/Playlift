@@ -1,6 +1,6 @@
 [project]
 name = "Playlift"
-version = "0.2.2"
+version = "0.2.3"
 description = "One tool to keep your music in sync everywhere: Spotify, Deezer, and your local library."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -80,7 +80,7 @@ markers = [
 ]
 
 [tool.bumpversion]
-current_version = "0.2.2"
+current_version = "0.2.3"
 commit = true
 tag = true
 tag_name = "v{new_version}"
