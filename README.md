@@ -127,7 +127,7 @@ uv run python main.py spotify duplicates \
 ### Batch import all playlists in a directory
 
 ```bash
-uv run python sync_exported_playlists.py /path/to/playlists/
+uv run playlift-batch /path/to/playlists/
 ```
 
 ---

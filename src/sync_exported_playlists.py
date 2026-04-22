@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
+import shutil
 import subprocess
-import sys
 from pathlib import Path
 
 import click
@@ -33,7 +33,10 @@ def sync_playlists(path: Path) -> None:
     destinations = [pf.stem for pf in playlist_files]  # stem is the filename without extension
 
     # Create command line arguments
-    cmd = [sys.executable, "main.py", "spotify", "import"]
+    playlift = shutil.which("playlift")
+    if playlift is None:
+        raise click.ClickException("playlift not found in PATH. Run 'uv sync' to install it.")
+    cmd = [playlift, "spotify", "import"]
     for src, dst in zip(sources, destinations, strict=True):
         cmd.extend(["--source", src, "--destination", dst])
 

@@ -1,6 +1,6 @@
 [project]
 name = "playlist-sync"
-version = "0.1.15"
+version = "0.2.0"
 description = "Sync local playlists to Spotify"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -27,11 +27,20 @@ dev = [
     "types-tqdm>=4.67.3.20260402",
 ]
 
+[project.scripts]
+playlift = "main:cli"
+playlift-batch = "sync_exported_playlists:sync_playlists"
+
 [build-system]
 requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
+[tool.setuptools]
+package-dir = {"" = "src"}
+py-modules = ["main", "exceptions", "sync_exported_playlists"]
+
 [tool.setuptools.packages.find]
+where = ["src"]
 # Explicitly include only the top-level packages that are meant to be distributed
 include = ["api*", "config*", "tracks*", "matchers*", "playlists*"]
 
@@ -64,13 +73,14 @@ line-ending = "lf"
 quote-style = "double"
 
 [tool.pytest.ini_options]
+pythonpath = ["src"]
 addopts = "-m 'not integration'"
 markers = [
     "integration: marks tests that require a live Spotify API connection (deselect with '-m not integration')",
 ]
 
 [tool.bumpversion]
-current_version = "0.1.15"
+current_version = "0.2.0"
 commit = true
 tag = true
 tag_name = "v{new_version}"
@@ -85,6 +95,7 @@ search = 'version = "{current_version}"'
 replace = 'version = "{new_version}"'
 
 [tool.mypy]
+mypy_path = ["src"]
 python_version = "3.11"
 strict = true
 disallow_untyped_defs = true
