@@ -194,13 +194,14 @@ class SpotifyMatcher(Matcher):
         return sp_tracks
 
     def match_list(self, tracks: Iterable[Track], autopilot: bool = False, embed_matches: bool = False) -> list[Track]:
-        suggestions_list: list[list[SpotifyTrack]] = self._match_list(tracks)
+        track_list = list(tracks)
+        suggestions_list: list[list[SpotifyTrack]] = self._match_list(track_list)
         processed: list[list[SpotifyTrack]] = list(map(list, suggestions_list))
         sp_tracks: list[Track] = []
         pairs_to_embed: list[tuple[Track, SpotifyTrack]] = []
 
         print("Reviewing matches")
-        for _index, (track, suggestions) in tqdm(list(enumerate(zip(tracks, processed, strict=True)))):
+        for _index, (track, suggestions) in tqdm(list(enumerate(zip(track_list, processed, strict=True)))):
             if len(suggestions) == 0:
                 continue
             choice = 0
