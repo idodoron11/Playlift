@@ -473,7 +473,7 @@ wheels = [
 ]
 
 [[package]]
-name = "playlist-sync"
+name = "playlift"
 version = "0.2.1"
 source = { editable = "." }
 dependencies = [

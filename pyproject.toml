@@ -1,7 +1,7 @@
 [project]
-name = "playlist-sync"
+name = "Playlift"
 version = "0.2.1"
-description = "Sync local playlists to Spotify"
+description = "One tool to keep your music in sync everywhere: Spotify, Deezer, and your local library."
 readme = "README.md"
 requires-python = ">=3.11"
 authors = [ { name = "Your Name", email = "you@example.com" } ]
