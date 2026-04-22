@@ -69,7 +69,7 @@ All commands live under the `spotify` subcommand group.
 Creates a new Spotify playlist from a local `.m3u` file.
 
 ```bash
-uv run python main.py spotify import \
+uv run playlift spotify import \
   --source  "path/to/playlist.m3u" \
   --destination "My New Playlist"
 ```
@@ -88,7 +88,7 @@ Multiple `--source` / `--destination` pairs can be passed in one invocation.
 Replaces all tracks in an existing Spotify playlist.
 
 ```bash
-uv run python main.py spotify sync \
+uv run playlift spotify sync \
   --source      "path/to/playlist.m3u" \
   --destination "spotify:playlist:<id>"
 ```
@@ -100,7 +100,7 @@ Supports the same flags as `import`, plus `--sort-tracks` (alphabetical sort bef
 Runs the matching pipeline and embeds references into local file tags — no Spotify playlist is created or modified.
 
 ```bash
-uv run python main.py spotify match \
+uv run playlift spotify match \
   --source "path/to/playlist.m3u" \
   --autopilot
 ```
@@ -110,7 +110,7 @@ uv run python main.py spotify match \
 Prints tracks that exist only locally or only on Spotify.
 
 ```bash
-uv run python main.py spotify compare \
+uv run playlift spotify compare \
   --source      "path/to/playlist.m3u" \
   --destination "spotify:playlist:<id>"
 ```
@@ -120,7 +120,7 @@ uv run python main.py spotify compare \
 Lists tracks that map to the same Spotify reference.
 
 ```bash
-uv run python main.py spotify duplicates \
+uv run playlift spotify duplicates \
   --source "path/to/playlist.m3u"
 ```
 
