@@ -1,4 +1,4 @@
-/config/config.ini
+src/config/config.ini
 .cache
 /.idea
 **/__pycache__/
