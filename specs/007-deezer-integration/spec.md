@@ -12,6 +12,7 @@
 - Q: What format should be stored in the `TXXX:DEEZER` tag? → A: Full URL, e.g., `https://www.deezer.com/track/12345`
 - Q: How should transient network errors be handled during matching or playlist operations? → A: Log a warning for the failed track/operation and continue with the rest
 - Q: Should the ARL cookie value appear in log output or error messages? → A: Never — the ARL must not be included in any log, error message, or terminal output
+- Q: When `deezer import` is run for a playlist whose name already exists on Deezer, what should happen? → A: Always create a new playlist; `import` never overwrites an existing one (use `sync` to update)
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -149,6 +150,7 @@ A user's local audio files lack ISRC metadata, or the ISRC produced no result. T
 ### Edge Cases
 
 - What happens when a transient network error (timeout, 5xx response) occurs while resolving a single track? The error is logged as a warning, the track is left unmatched, and processing continues with the remaining tracks.
+- What happens when `deezer import` is run for a playlist name that already exists on Deezer? A new playlist is always created; Deezer allows duplicate names and the existing playlist is never modified by `import`.
 - What happens when the ARL cookie is expired or invalid? The tool must report a clear authentication error (without echoing the ARL value) and exit without making playlist changes.
 - What happens when a Deezer playlist ID does not exist or is inaccessible with the given ARL? A descriptive error is shown and no local tags are modified.
 - What happens when a local audio file cannot be opened for tag writing (e.g., read-only)? The match result is logged as a warning and processing continues for remaining tracks.
@@ -177,7 +179,9 @@ A user's local audio files lack ISRC metadata, or the ISRC produced no result. T
 - **FR-014**: The `sync` command MUST support a `--sort-tracks` flag that reorders the Deezer playlist to match the local `.m3u` track order after syncing.
 - **FR-015**: Non-Latin track and artist names (Cyrillic, CJK, etc.) MUST be forwarded to Deezer search without silent truncation or transliteration; unresolved non-Latin tracks MUST be logged as warnings rather than silently skipped.
 - **FR-016**: The system MUST report a clear, actionable error message when ARL authentication fails and MUST NOT modify any Deezer playlist or local tags in that case.
-- **FR-018**: The ARL cookie value MUST NOT appear in any log output, error message, or terminal output under any circumstances; error messages relating to authentication MUST describe the failure without echoing the credential. When a transient network error occurs while resolving an individual track or performing a single playlist mutation, the system MUST log a warning and continue processing the remaining tracks; it MUST NOT abort the entire command.
+- **FR-017**: When a transient network error occurs while resolving an individual track or performing a single playlist mutation, the system MUST log a warning and continue processing the remaining tracks; it MUST NOT abort the entire command.
+- **FR-018**: The ARL cookie value MUST NOT appear in any log output, error message, or terminal output under any circumstances; error messages relating to authentication MUST describe the failure without echoing the credential.
+- **FR-019**: The `deezer import` command MUST always create a new Deezer playlist regardless of whether a playlist with the same name already exists; it MUST NOT modify or overwrite any existing Deezer playlist.
 
 ### Key Entities
 
