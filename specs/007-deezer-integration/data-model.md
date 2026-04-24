@@ -55,7 +55,7 @@ mutations; tracks are loaded lazily on first access.
 | `add_tracks(tracks)` | Calls `dz.gw.add_songs_to_playlist()`; invalidates `_tracks` cache |
 | `remove_track(tracks)` | Calls `dz.gw.remove_songs_from_playlist()`; invalidates `_tracks` cache |
 | `create(name, public, *, deezer)` | Class method; calls `dz.gw.create_playlist()`; returns new instance |
-| `create_from_another_playlist(...)` | Class method; resolves tracks via `DeezerMatcher`, creates and populates playlist |
+| `create_from_another_playlist(name, source, public, *, deezer, autopilot, embed_matches)` | Class method; highest-level import facade called by the `deezer import` CLI command; orchestrates `create()` → `import_tracks()` in a single call and returns the new `DeezerPlaylist` instance |
 | `import_tracks(tracks, autopilot, embed_matches)` | Resolves and adds tracks using `DeezerMatcher` |
 | `track_matcher()` | Static method; returns `DeezerMatcher.get_instance()` |
 
@@ -68,7 +68,7 @@ mutations; tracks are loaded lazily on first access.
 Encapsulates the four-step track resolution strategy for the Deezer catalog.
 
 **Resolution order** (per FR-008):
-1. **Cached ref**: `LocalTrack.service_ref("DEEZER")` is a well-formed `https://www.deezer.com/track/<id>` URL → return `DeezerTrack` from that URL.
+1. **Cached ref**: `LocalTrack.service_ref("DEEZER")` returns a well-formed Deezer track URL (any variant accepted by the `DeezerRef` acceptance regex) → normalise to canonical form via `_normalise_deezer_url()`, construct `DeezerTrack` from the extracted numeric ID.
 2. **SKIP sentinel**: cached ref is `"SKIP"` → raise `SkipTrackError`.
 3. **ISRC lookup**: call `dz.api.get_track_by_ISRC(track.isrc)` → if found, return `DeezerTrack`.
 4. **Fuzzy search**: call `dz.gw.search("{artist} {title}")` → apply `_match_constraints()` → return best candidate or `None`.
@@ -89,7 +89,7 @@ Encapsulates the four-step track resolution strategy for the Deezer catalog.
 | `_match_by_fuzzy_search(track)` | `(Track) → DeezerTrack \| None` | Step 4; catches network errors → warn, return None |
 | `suggest_match(track)` | `(Track) → list[DeezerTrack]` | Used in interactive mode |
 | `match_list(tracks, autopilot, embed_matches)` | `(Iterable[Track], bool, bool) → list[Track]` | Iterates with progress bar |
-| `_match_constraints(source, suggestion)` | `staticmethod (Track, DeezerTrack) → bool` | Mirrors SpotifyMatcher logic; non-Latin artist bypass |
+| `_match_constraints(source, suggestion)` | `staticmethod (Track, Track) → bool` | **Inherited from `Matcher` base class** (moved from `SpotifyMatcher` per D2 resolution); non-Latin artist bypass included; thresholds match existing Spotify behaviour |
 
 **Inherits from**: `Matcher`
 
@@ -103,6 +103,36 @@ Thin module providing the singleton authenticated `Deezer` facade.
 |--------|------|-------|
 | `get_deezer_client()` | `() → Deezer` | `@functools.cache` singleton; calls `login_via_arl`; raises `DeezerAuthenticationError` on failure |
 | `DeezerAuthenticationError` | `Exception` subclass | Raised when `login_via_arl()` returns `False` or `GWAPIError` indicates auth failure; message never echoes the ARL |
+
+---
+
+### CompareResult
+
+A lightweight value object returned by any two-playlist comparison function. Defined as a plain `@dataclass` in `src/playlists/__init__.py`.
+
+```python
+from dataclasses import dataclass
+from tracks import Track
+
+@dataclass
+class CompareResult:
+    source_only: list[Track]
+    target_only: list[Track]
+```
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `source_only` | `list[Track]` | Tracks present in the source/first playlist but absent from the target |
+| `target_only` | `list[Track]` | Tracks present in the target/second playlist but absent from the source |
+
+Neither side is constrained to `LocalTrack` or any specific subtype. Compare functions accept any two `TrackCollection` instances and return `CompareResult`:
+
+```python
+compare_playlists(...)        -> CompareResult  # source: LocalPlaylist, target: SpotifyPlaylist
+compare_deezer_playlists(...) -> CompareResult  # source: LocalPlaylist, target: DeezerPlaylist
+```
+
+Replaces the `tuple[list[LocalTrack], list[SpotifyTrack]]` return type of the existing `compare_playlists()` function.
 
 ---
 

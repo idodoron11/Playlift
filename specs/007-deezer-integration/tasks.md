@@ -21,6 +21,8 @@
 - [ ] T001 Add `deezer-py==1.3.7` to `pyproject.toml` dependencies and run `uv sync`
 - [ ] T002 [P] Add `[DEEZER]\nARL=` section to `src/config/config_template.ini`
 - [ ] T003 [P] Add `deezer_arl: str` property (reads `[DEEZER] ARL`) to `Config` in `src/config/__init__.py`
+- [ ] T032 [P] Move `_match_constraints(source: Track, suggestion: Track) -> bool` static method from `SpotifyMatcher` to `Matcher` base class in `src/matchers/__init__.py`; update `src/matchers/spotify_matcher.py` to remove the local definition and update all internal references to `Matcher._match_constraints()`; confirm existing `SpotifyMatcher` tests still pass
+- [ ] T033 [P] Define `CompareResult` dataclass (`source_only: list[Track]`, `target_only: list[Track]`) in `src/playlists/__init__.py`; refactor `compare_playlists()` in `src/playlists/compare.py` to return `CompareResult` instead of the bare tuple; confirm existing `tests/playlists/test_compare.py` still passes
 
 ---
 
@@ -31,6 +33,7 @@
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
 - [ ] T004 Implement `DeezerAuthenticationError` and `get_deezer_client()` `@functools.cache` singleton — raises `DeezerAuthenticationError` when `login_via_arl()` returns `False`; ARL value never appears in error message — in `src/api/deezer.py`
+- [ ] T031 [P] Write unit tests for `get_deezer_client()`: returns same instance on repeated calls (singleton); raises `DeezerAuthenticationError` when `login_via_arl()` returns `False`; error message does not contain the ARL value — in `tests/api/test_deezer.py`
 - [ ] T005 [P] Implement `DeezerTrack(ServiceTrack)` — `service_name = "DEEZER"` class constant; `_track_id` (digit-string); all properties from GW dict (all-caps keys: `SNG_ID`, `SNG_TITLE`, `ART_NAME`, `ALB_TITLE`, `DURATION`, `ISRC`, `TRACK_NUMBER`) and public API dict (lowercase keys: `id`, `title`, `artist.name`, `album.title`, `duration`, `isrc`, `track_position`); `permalink` property returning `https://www.deezer.com/track/{_track_id}`; ISRC normalised to uppercase with hyphens stripped — in `src/tracks/deezer_track.py`
 - [ ] T006 [P] Write unit tests for `DeezerTrack` covering: GW data shape, API data shape, all property values, `permalink` canonical form, ISRC normalisation, `track_number` defaults to `0` when absent, raises on empty/non-digit `_track_id` — in `tests/tracks/test_deezer_track.py`
 
@@ -70,9 +73,9 @@
 
 **Independent Test**: Run `deezer import --source <small.m3u> --destination "Test"` with a real ARL; verify a new Deezer playlist is created containing the expected tracks.
 
-- [ ] T011 [P] [US1] Write unit tests for `DeezerPlaylist`: `create()` classmethod creates playlist and returns instance; `tracks` property lazy-loads via `dz.gw.get_playlist_tracks()` and caches; `add_tracks()` calls `dz.gw.add_songs_to_playlist()` and invalidates `_tracks` cache; `import_tracks()` resolves via `track_matcher()` and delegates to `add_tracks()`; `track_matcher()` returns `DeezerMatcher` instance — in `tests/playlists/test_deezer_playlist.py`
-- [ ] T012 [US1] Implement `DeezerPlaylist(Playlist, SyncTarget)` — `create(name, public, *, deezer)` classmethod; lazy `tracks` property; `add_tracks(tracks)`; `import_tracks(tracks, autopilot, embed_matches)`; `track_matcher()` static method returning `DeezerMatcher.get_instance()` — in `src/playlists/deezer_playlist.py`
-- [ ] T013 [US1] Add `deezer` Click group to `src/main.py` and implement `deezer import` subcommand with `--source` (multiple, required), `--destination` (multiple, required), `--autopilot`, `--embed-matches`, `--public`, `--from-path`/`--to-path`; always calls `DeezerPlaylist.create()` — never modifies existing playlist (FR-019); exit codes per `contracts/cli.md`
+- [ ] T011 [P] [US1] Write unit tests for `DeezerPlaylist`: `create()` classmethod creates playlist and returns instance; `tracks` property lazy-loads via `dz.gw.get_playlist_tracks()` and caches; `add_tracks()` calls `dz.gw.add_songs_to_playlist()` and invalidates `_tracks` cache; `import_tracks()` resolves via `track_matcher()` and delegates to `add_tracks()`; `create_from_another_playlist()` creates a new playlist and populates it from a `LocalPlaylist` in one call; `track_matcher()` returns `DeezerMatcher` instance — in `tests/playlists/test_deezer_playlist.py`
+- [ ] T012 [US1] Implement `DeezerPlaylist(Playlist, SyncTarget)` — `create(name, public, *, deezer)` classmethod; lazy `tracks` property; `add_tracks(tracks)`; `import_tracks(tracks, autopilot, embed_matches)`; `create_from_another_playlist(name, source, public, *, deezer, autopilot, embed_matches)` facade (calls `create()` then `import_tracks()`; called by CLI); `track_matcher()` static method returning `DeezerMatcher.get_instance()` — in `src/playlists/deezer_playlist.py`
+- [ ] T013 [US1] Add `deezer` Click group to `src/main.py` and implement `deezer import` subcommand with `--source` (multiple, required), `--destination` (multiple, required), `--autopilot`, `--embed-matches`, `--public`, `--from-path`/`--to-path`; always calls `DeezerPlaylist.create_from_another_playlist()` — never modifies existing playlist (FR-019); exit codes per `contracts/cli.md`
 
 **Checkpoint**: MVP complete — `deezer import` is end-to-end functional for tracks resolvable via cached ref or ISRC.
 
@@ -85,7 +88,7 @@
 **Independent Test**: Provide a local track with no ISRC and no cached `TXXX:DEEZER` tag; verify a `dz.gw.search()` call is issued and the candidate is presented for confirmation (or auto-accepted under `--autopilot`).
 
 - [ ] T014 [P] [US8] Write unit tests for `_match_by_fuzzy_search()`: result above threshold + `--autopilot` auto-accepts; result below threshold without `--autopilot` prompts user; no results logs `logging.warning()` and returns `None`; non-Latin artist/title query string forwarded unchanged to `dz.gw.search()`; network error logs warning and returns `None` — in `tests/matchers/test_deezer_matcher.py`
-- [ ] T015 [US8] Implement `_match_by_fuzzy_search(track)` (step 4) calling `dz.gw.search(f"{artist} {title}")`, applying `_match_constraints()` with non-Latin bypass (mirrors `SpotifyMatcher._match_constraints()` logic), wrapping exceptions with `logging.warning()` and `return None` — in `src/matchers/deezer_matcher.py`
+- [ ] T015 [US8] Implement `_match_by_fuzzy_search(track)` (step 4) calling `dz.gw.search(f"{artist} {title}")`; apply inherited `Matcher._match_constraints()` (defined in base class per T032); wrap exceptions with `logging.warning()` and `return None` — in `src/matchers/deezer_matcher.py`
 - [ ] T016 [US8] Implement `_match_constraints(source, suggestion)` static method, `suggest_match(track) -> list[DeezerTrack]`, and `match_list(tracks, autopilot, embed_matches)` with `tqdm` progress bar — in `src/matchers/deezer_matcher.py`
 
 **Checkpoint**: Full four-step resolution in `DeezerMatcher` is operational; `deezer import` now handles all resolution paths.
@@ -98,7 +101,7 @@
 
 **Independent Test**: Modify a `.m3u` after a prior import; run `deezer sync`; verify the Deezer playlist reflects the additions and removals.
 
-- [ ] T017 [P] [US2] Write unit tests for `DeezerPlaylist` sync operations: `remove_track()` calls `dz.gw.remove_songs_from_playlist()` and invalidates `_tracks` cache; `sync_tracks()` adds missing and removes extra tracks; sort-tracks reorders Deezer playlist to local order — in `tests/playlists/test_deezer_playlist.py`
+- [ ] T017 [P] [US2] Write unit tests for `DeezerPlaylist` sync operations: `remove_track()` calls `dz.gw.remove_songs_from_playlist()` and invalidates `_tracks` cache; `sync_tracks()` adds missing and removes extra tracks; `sync_tracks()` on an already-up-to-date playlist makes zero add/remove calls and exits with success (SC-005); sort-tracks reorders Deezer playlist to local order — in `tests/playlists/test_deezer_playlist.py`
 - [ ] T018 [US2] Implement `DeezerPlaylist.remove_track(tracks)` (calls `dz.gw.remove_songs_from_playlist()`, invalidates cache), sort-tracks logic, and `sync_tracks(local_tracks, autopilot, embed_matches, sort_tracks)` orchestration method — in `src/playlists/deezer_playlist.py`
 - [ ] T019 [US2] Implement `deezer sync` subcommand in `src/main.py` with `--source` (required), `--destination` (required), `--autopilot`, `--embed-matches`, `--sort-tracks`, `--from-path`/`--to-path` flags
 
@@ -125,8 +128,8 @@
 
 **Independent Test**: Add a track to the Deezer playlist that is absent from the local `.m3u`; verify it appears under "Only in Deezer playlist" in compare output.
 
-- [ ] T022 [P] [US4] Write unit tests for `compare_deezer_playlists()`: tracks only in local listed correctly; tracks only in Deezer listed correctly; identical playlists return no differences — in `tests/playlists/test_deezer_compare.py`
-- [ ] T023 [US4] Implement `compare_deezer_playlists(local: LocalPlaylist, deezer: DeezerPlaylist) -> CompareResult` using `TXXX:DEEZER` tag value as the identity key (mirrors `compare.py` pattern for Spotify) — in `src/playlists/deezer_compare.py`
+- [ ] T022 [P] [US4] Write unit tests for `compare_deezer_playlists()`: tracks only in local listed correctly; tracks only in Deezer listed correctly; identical playlists return no differences; return type is `CompareResult` (defined in T033) — in `tests/playlists/test_deezer_compare.py`
+- [ ] T023 [US4] Implement `compare_deezer_playlists(left: TrackCollection, right: TrackCollection) -> CompareResult` using `TXXX:DEEZER` permalink as the identity key (mirrors `compare.py` pattern for Spotify) — in `src/playlists/deezer_compare.py`
 - [ ] T024 [US4] Implement `deezer compare` subcommand in `src/main.py` with `--source` (required), `--destination` (required), `--from-path`/`--to-path`; print diff in format specified in `contracts/cli.md`
 
 **Checkpoint**: `deezer compare` functional and independently testable.
@@ -165,13 +168,13 @@
 |-------|-----------|-------|
 | Phase 1 (Setup) | — | Start immediately |
 | Phase 2 (Foundational) | Phase 1 | **Blocks all user stories** |
-| Phase 3 (US6) | Phase 2 | `DeezerTrack` required |
+| Phase 3 (US6) | Phase 1 (T032), Phase 2 | `DeezerTrack` and `Matcher._match_constraints()` required |
 | Phase 4 (US7) | Phase 3 | `DeezerMatcher` skeleton required |
 | Phase 5 (US1) | Phase 4 | Full P1 matcher + new `DeezerPlaylist` |
 | Phase 6 (US8) | Phase 4 | Extends `DeezerMatcher` (step 4) |
 | Phase 7 (US2) | Phase 5, Phase 6 | `DeezerPlaylist` required; fuzzy recommended |
 | Phase 8 (US3) | Phase 6 | Full four-step matcher required |
-| Phase 9 (US4) | Phase 5 | `DeezerPlaylist.tracks` required |
+| Phase 9 (US4) | Phase 1 (T033), Phase 5 | `CompareResult` definition and `DeezerPlaylist.tracks` required |
 | Phase 10 (US5) | Phase 2 | Reads `TXXX:DEEZER` only; no matcher needed |
 | Phase 11 (Polish) | All desired stories | Final quality gate |
 

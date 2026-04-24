@@ -164,7 +164,7 @@ A user's local audio files lack ISRC metadata, or the ISRC produced no result. T
 ### Functional Requirements
 
 - **FR-001**: The system MUST provide a `deezer` CLI command group with five sub-commands: `import`, `sync`, `match`, `compare`, and `duplicates`.
-- **FR-002**: The system MUST authenticate to Deezer using the ARL cookie stored in the `[deezer]` section of `~/.playlist_sync/config.ini`; no OAuth flow is required.
+- **FR-002**: The system MUST authenticate to Deezer using the ARL cookie stored in the `[DEEZER]` section of `~/.playlist_sync/config.ini`; no OAuth flow is required.
 - **FR-003**: The `deezer import` command MUST accept one or more `.m3u` file paths and create a corresponding Deezer playlist for each, populated with matched tracks.
 - **FR-004**: The `deezer sync` command MUST accept a local `.m3u` file path and a Deezer playlist identifier, then add tracks missing from Deezer and remove tracks absent from the local file.
 - **FR-005**: The `deezer match` command MUST always write resolved Deezer track identifiers to local audio files as `TXXX:DEEZER` ID3 tags (embedding is unconditional for this command); it MUST NOT create or modify any Deezer playlist.
@@ -174,7 +174,7 @@ A user's local audio files lack ISRC metadata, or the ISRC produced no result. T
 - **FR-009**: A `TXXX:DEEZER` tag value of `"SKIP"` MUST cause the track to be excluded from Deezer playlist operations without error or prompt.
 - **FR-010**: The `--autopilot` flag MUST auto-accept matches that meet or exceed a configurable confidence threshold, bypassing interactive prompts.
 - **FR-011**: The `--embed-matches` flag, supported by `deezer import` and `deezer sync`, MUST write the resolved Deezer track identifier back to the local audio file's `TXXX:DEEZER` tag when a match is found. When the flag is absent on these commands, no local tags are written.
-- **FR-012**: The `import` and `sync` commands MUST support `--from-path`/`--to-path` flags for path prefix remapping of local file references.
+- **FR-012**: The `import`, `sync`, and `match` commands MUST support `--from-path`/`--to-path` flags for path prefix remapping of local file references.
 - **FR-013**: The `import` command MUST support a `--public` flag; playlists created without it MUST default to private.
 - **FR-014**: The `sync` command MUST support a `--sort-tracks` flag that reorders the Deezer playlist to match the local `.m3u` track order after syncing.
 - **FR-015**: Non-Latin track and artist names (Cyrillic, CJK, etc.) MUST be forwarded to Deezer search without silent truncation or transliteration; unresolved non-Latin tracks MUST be logged as warnings rather than silently skipped.
