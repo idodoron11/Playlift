@@ -46,7 +46,7 @@ A user has already imported a playlist to Deezer and wants to keep it in sync wi
 1. **Given** a local playlist with new tracks not yet in the Deezer playlist, **When** `deezer sync <playlist.m3u> <deezer-playlist-id>` runs, **Then** the missing tracks are added to the Deezer playlist.
 2. **Given** the Deezer playlist contains tracks that were removed from the local `.m3u`, **When** sync runs, **Then** those tracks are removed from the Deezer playlist.
 3. **Given** `--embed-matches` is passed, **When** a track is resolved during sync, **Then** `TXXX:DEEZER` is written to the local audio file.
-4. **Given** `--sort-tracks` is passed, **When** sync completes, **Then** the Deezer playlist track order matches the local `.m3u` order.
+4. **Given** `--sort-tracks` is passed, **When** sync completes, **Then** the Deezer playlist tracks are ordered alphabetically by Deezer track ID.
 5. **Given** `--from-path`/`--to-path` remapping flags are passed, **When** sync resolves file paths, **Then** the path prefix is substituted before looking up local files.
 
 ---
@@ -176,7 +176,7 @@ A user's local audio files lack ISRC metadata, or the ISRC produced no result. T
 - **FR-011**: The `--embed-matches` flag, supported by `deezer import` and `deezer sync`, MUST write the resolved Deezer track identifier back to the local audio file's `TXXX:DEEZER` tag when a match is found. When the flag is absent on these commands, no local tags are written.
 - **FR-012**: The `import`, `sync`, and `match` commands MUST support `--from-path`/`--to-path` flags for path prefix remapping of local file references.
 - **FR-013**: The `import` command MUST support a `--public` flag; playlists created without it MUST default to private.
-- **FR-014**: The `sync` command MUST support a `--sort-tracks` flag that reorders the Deezer playlist to match the local `.m3u` track order after syncing.
+- **FR-014**: The `sync` command MUST support a `--sort-tracks` flag that sorts the Deezer playlist tracks alphabetically by track ID (ascending) after syncing, consistent with the Spotify `sync --sort-tracks` behaviour.
 - **FR-015**: Non-Latin track and artist names (Cyrillic, CJK, etc.) MUST be forwarded to Deezer search without silent truncation or transliteration; unresolved non-Latin tracks MUST be logged as warnings rather than silently skipped.
 - **FR-016**: The system MUST report a clear, actionable error message when ARL authentication fails and MUST NOT modify any Deezer playlist or local tags in that case.
 - **FR-017**: When a transient network error occurs while resolving an individual track or performing a single playlist mutation, the system MUST log a warning and continue processing the remaining tracks; it MUST NOT abort the entire command.

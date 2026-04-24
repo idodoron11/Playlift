@@ -32,9 +32,10 @@ mirroring the existing `spotify` group. Track resolution follows a four-step ord
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
 - [x] **Principle I (Clean Code)**: All new identifiers are precise and descriptive (`DeezerMatcher`,
-  `DeezerTrack`, `DeezerPlaylist`, `get_deezer_client`, `_is_valid_deezer_url`,
+  `DeezerTrack`, `DeezerPlaylist`, `get_deezer_client`, `is_valid_deezer_url`,
   `DeezerAuthenticationError`). Constants (`DEEZER_TRACK_URL_PATTERN`, `DEEZER_URL_PREFIX`)
-  defined at module scope. Functions modelled on existing SpotifyMatcher/SpotifyTrack —
+  defined at module scope in `tracks/deezer_track.py` (their natural home — URL utilities
+  belong with the entity they describe). Functions modelled on existing SpotifyMatcher/SpotifyTrack —
   all under ~30 lines. Guard clauses used to keep nesting ≤ 3.
 - [x] **Principle II (SOLID)**: `DeezerMatcher` extends `Matcher` (SRP: resolves tracks only);
   `DeezerPlaylist` extends `Playlist + SyncTarget` (SRP: manages one Deezer playlist);
@@ -43,9 +44,11 @@ mirroring the existing `spotify` group. Track resolution follows a four-step ord
   instantiated inside business logic. `DeezerMatcher.get_instance()` overrides the base
   class singleton to call `get_deezer_client()` instead of `get_spotify_client()`.
 - [x] **Principle III (DRY)**: `LocalTrack.embed_match()` and `_get_custom_tag()` already
-  generic — no Deezer-specific tag logic duplicated. `_match_constraints()` and
-  `_is_valid_isrc()` patterns defined once per module. URL-validation regex defined once in
-  `deezer_matcher.py`.
+  generic — no Deezer-specific tag logic duplicated. `_match_constraints()` defined once in
+  `Matcher` base class as an instance method (allowing subclass override). URL-validation
+  regex and helper functions (`is_valid_deezer_url`, `normalise_deezer_url`,
+  `extract_deezer_track_id`) defined once in `tracks/deezer_track.py` and imported where
+  needed — not in `deezer_matcher.py` as originally planned.
 - [x] **Principle IV (Readability First)**: No premature optimization. Generators used for
   iterating large playlists (consistent with existing tqdm pattern). No speculative caching.
 - [x] **Principle V (Unit Tests)**: Every new concrete class will have tests:
@@ -107,11 +110,11 @@ src/
 │   ├── __init__.py                # Add deezer_arl property to Config
 │   └── config_template.ini        # Add [DEEZER] ARL= section
 ├── matchers/
-│   ├── __init__.py                # Add _match_constraints() static method (moved from SpotifyMatcher)
-│   └── spotify_matcher.py         # Remove _match_constraints(); call Matcher._match_constraints()
+│   ├── __init__.py                # Add _match_constraints() instance method (moved from SpotifyMatcher; instance not static — allows subclass override)
+│   └── spotify_matcher.py         # Remove _match_constraints(); call self._match_constraints()
 ├── playlists/
-│   ├── __init__.py                # Add CompareResult dataclass
-│   └── compare.py                 # Return CompareResult instead of bare tuple
+│   ├── __init__.py                # Add CompareResult[S, T] generic dataclass (Generic[_S, _T] where S, T bound to Track)
+│   └── compare.py                 # Return CompareResult[LocalTrack, SpotifyTrack] instead of bare tuple
 └── pyproject.toml                 # Add deezer-py==1.3.7 dependency
 ```
 
