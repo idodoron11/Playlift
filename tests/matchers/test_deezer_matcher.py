@@ -211,6 +211,26 @@ class TestMatchByFuzzySearch:
         assert result is not None
         assert isinstance(result, DeezerTrack)
 
+    def test_result_below_threshold_returns_none(self) -> None:
+        # A candidate whose title/artist differs significantly fails _match_constraints
+        # and therefore does not survive filtering, so the method returns None.
+        dz = MagicMock()
+        poor_candidate: dict[str, Any] = {
+            "SNG_ID": "11111",
+            "SNG_TITLE": "Completely Different Song",
+            "ART_NAME": "Another Artist",
+            "ALB_TITLE": "Other Album",
+            "DURATION": "999",
+            "TRACK_NUMBER": "1",
+        }
+        dz.gw.search.return_value = {"TRACK": {"data": [poor_candidate]}}
+        matcher = _make_matcher(dz)
+        track = _make_track()  # title="Time", artist="Pink Floyd"
+
+        result = matcher._match_by_fuzzy_search(track)
+
+        assert result is None
+
     def test_no_results_logs_warning_and_returns_none(self, caplog: Any) -> None:
         import logging
 
