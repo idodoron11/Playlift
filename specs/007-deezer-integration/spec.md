@@ -9,7 +9,7 @@
 
 ### Session 2026-04-24
 
-- Q: What format should be stored in the `TXXX:DEEZER` tag? → A: Full URL, e.g., `https://www.deezer.com/track/12345`
+- Q: What format should be stored in the `TXXX:DEEZER` tag? → A: Always write the canonical form `https://www.deezer.com/track/<id>` (with `www.`, no locale, no query string). On read, accept any Deezer track URL variant — `www.` optional, locale segment optional, query string optional (e.g., `https://deezer.com/en/track/12345?utm_source=sharing`) — extract the numeric ID, and normalise to the canonical form before use.
 - Q: How should transient network errors be handled during matching or playlist operations? → A: Log a warning for the failed track/operation and continue with the rest
 - Q: Should the ARL cookie value appear in log output or error messages? → A: Never — the ARL must not be included in any log, error message, or terminal output
 - Q: When `deezer import` is run for a playlist whose name already exists on Deezer, what should happen? → A: Always create a new playlist; `import` never overwrites an existing one (use `sync` to update)
@@ -170,7 +170,7 @@ A user's local audio files lack ISRC metadata, or the ISRC produced no result. T
 - **FR-005**: The `deezer match` command MUST always write resolved Deezer track identifiers to local audio files as `TXXX:DEEZER` ID3 tags (embedding is unconditional for this command); it MUST NOT create or modify any Deezer playlist.
 - **FR-006**: The `deezer compare` command MUST print a human-readable diff between a local `.m3u` playlist and a Deezer playlist, using `TXXX:DEEZER` to identify tracks.
 - **FR-007**: The `deezer duplicates` command MUST report all tracks in a local `.m3u` file that share the same `TXXX:DEEZER` value.
-- **FR-008**: Track matching MUST follow this resolution order: (1) if the local track has a `TXXX:DEEZER` tag containing a well-formed `https://www.deezer.com/track/<numeric-id>` URL, use it directly and skip all lookups; (2) if the tag value is `"SKIP"`, exclude the track; (3) if the tag is absent or malformed, attempt ISRC-based lookup if an ISRC is available in local metadata; (4) if ISRC lookup yields no result, fall back to fuzzy title/artist search.
+- **FR-008**: Track matching MUST follow this resolution order: (1) if the local track has a `TXXX:DEEZER` tag containing a well-formed Deezer track URL (with or without `www.`, an optional locale segment, and/or an optional query string, e.g., `https://www.deezer.com/en/track/12345?utm_source=sharing`), extract the numeric track ID, normalise to the canonical form `https://www.deezer.com/track/<id>`, and use it directly, skipping all lookups; (2) if the tag value is `"SKIP"`, exclude the track; (3) if the tag is absent or malformed, attempt ISRC-based lookup if an ISRC is available in local metadata; (4) if ISRC lookup yields no result, fall back to fuzzy title/artist search.
 - **FR-009**: A `TXXX:DEEZER` tag value of `"SKIP"` MUST cause the track to be excluded from Deezer playlist operations without error or prompt.
 - **FR-010**: The `--autopilot` flag MUST auto-accept matches that meet or exceed a configurable confidence threshold, bypassing interactive prompts.
 - **FR-011**: The `--embed-matches` flag, supported by `deezer import` and `deezer sync`, MUST write the resolved Deezer track identifier back to the local audio file's `TXXX:DEEZER` tag when a match is found. When the flag is absent on these commands, no local tags are written.
@@ -188,7 +188,7 @@ A user's local audio files lack ISRC metadata, or the ISRC produced no result. T
 - **DeezerTrack**: Represents a Deezer catalog track; key attributes include Deezer track ID, title, artist name, album name, ISRC, and the Deezer URL used as the persistent reference.
 - **DeezerPlaylist**: Represents a Deezer playlist; key attributes include playlist ID, name, visibility (public/private), and an ordered list of `DeezerTrack` references.
 - **DeezerMatcher**: Encapsulates the four-step track resolution strategy — existing `TXXX:DEEZER` tag → `SKIP` check → ISRC lookup → fuzzy search fallback — and returns a match result with a confidence score.
-- **DeezerRef** (`TXXX:DEEZER` tag): A string stored in local audio file metadata. Valid values are a full Deezer track URL of the form `https://www.deezer.com/track/<numeric-id>`, the literal value `"SKIP"` (intentionally excluded), or absent (unmatched). Any other value is treated as invalid and triggers re-resolution.
+- **DeezerRef** (`TXXX:DEEZER` tag): A string stored in local audio file metadata. Valid values are a Deezer track URL matching `https://[www.]deezer.com[/<locale>]/track/<numeric-id>[?<query>]` (`www.`, locale, and query string all optional), the literal value `"SKIP"` (intentionally excluded), or absent (unmatched). All valid variants are normalised to the canonical form (`https://www.deezer.com/track/<id>`) — locale and query string stripped — when read or written. Any other value is treated as invalid and triggers re-resolution.
 - **DeezerAPI**: A singleton client that wraps the `deezer-py` `GW` class, authenticated via ARL cookie, providing playlist CRUD and track search operations.
 
 ## Success Criteria *(mandatory)*
@@ -211,7 +211,7 @@ A user's local audio files lack ISRC metadata, or the ISRC produced no result. T
 - The ARL cookie does not expire during a single tool invocation; sessions lasting longer than one ARL lifetime are out of scope.
 - Deezer playlist visibility options are limited to public and private; collaborative or secret playlist types are out of scope.
 - Path remapping (`--from-path`/`--to-path`) follows the same one-directional semantics as the existing `PathMapper` used in the Spotify flow.
-- The `TXXX:DEEZER` tag is independent of `TXXX:SPOTIFY_REF`; a track may have both, either, or neither without conflict. The stored value is always a full URL (`https://www.deezer.com/track/<id>`), consistent with how `TXXX:SPOTIFY_REF` stores a full Spotify URL.
+- The `TXXX:DEEZER` tag is independent of `TXXX:SPOTIFY_REF`; a track may have both, either, or neither without conflict. **Write**: always store the canonical form `https://www.deezer.com/track/<id>` (with `www.`, no locale, no query string). **Read**: accept any valid Deezer track URL variant (`www.` optional, locale optional, query string optional), extract the numeric ID, and normalise to canonical before use.
 - Mobile-app-specific Deezer features (offline sync, HiFi quality selection) are out of scope.
 - The initial implementation targets audio formats that already support `TXXX` tags (MP3); extended format support (FLAC, AAC, ALAC) is treated as a best-effort enhancement.
 - The `deezer` CLI group is added to the existing `main.py` entry point alongside the `spotify` group, with no separate binary produced.
