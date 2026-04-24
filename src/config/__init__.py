@@ -27,5 +27,9 @@ class Config:
     def spotify_redirect_url(self) -> str:
         return self.config.get("SPOTIFY", "REDIRECT_URL")
 
+    @property
+    def deezer_arl(self) -> str:
+        return self.config.get("DEEZER", "ARL")
+
 
 CONFIG = Config()

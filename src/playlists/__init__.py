@@ -2,9 +2,27 @@
 
 from abc import ABC, abstractmethod
 from collections.abc import Iterable
+from dataclasses import dataclass, field
+from typing import Generic, TypeVar
 
 from matchers import Matcher
 from tracks import Track
+
+_S = TypeVar("_S", bound=Track)
+_T = TypeVar("_T", bound=Track)
+
+
+@dataclass
+class CompareResult(Generic[_S, _T]):
+    """Result of comparing two playlists.
+
+    Attributes:
+        source_only: Tracks present in the source/first playlist but absent from the target.
+        target_only: Tracks present in the target/second playlist but absent from the source.
+    """
+
+    source_only: list[_S] = field(default_factory=list)
+    target_only: list[_T] = field(default_factory=list)
 
 
 class TrackCollection(ABC):

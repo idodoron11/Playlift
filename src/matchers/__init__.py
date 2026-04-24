@@ -8,6 +8,10 @@ from tabulate import tabulate
 from api.spotify import get_spotify_client
 from tracks import Track
 
+MATCH_AVG_THRESHOLD: float = 0.6
+MATCH_DURATION_TOLERANCE_SECONDS: float = 3.0
+MATCH_LOOSE_DURATION_TOLERANCE_SECONDS: float = 5.0
+
 
 class Matcher(ABC):
     __instance: "Matcher | None" = None
@@ -62,4 +66,40 @@ class Matcher(ABC):
         print(results_tbl_visual)
         return int(
             click.prompt("Enter best match index (#):", default=0, type=click.IntRange(-1, len(suggestions) - 1))
+        )
+
+    def _match_constraints(self, source_track: Track, suggestion: Track) -> bool:
+        """Return True when *suggestion* is close enough to *source_track* to be a valid match.
+
+        Applies SequenceMatcher ratios for title, artist, and album plus a
+        duration delta guard. Non-Latin artist names bypass the artist similarity
+        check (streaming services may not carry the original-language name).
+        """
+        title_d, artist_d, album_d, duration_d = Matcher.track_distance(source_track, suggestion)
+        title_d = 1 - title_d
+        artist_d = 1 - artist_d
+        album_d = 1 - album_d
+
+        def is_latin(text: str) -> bool:
+            return all(not char.isalpha() or ord("a") <= ord(char.lower()) <= ord("z") for char in text)
+
+        if not is_latin(source_track.display_artist):
+            artist_d = 1  # service may not list the artist in the original language
+
+        avg_d = (title_d + artist_d + album_d) / 3
+        if avg_d > MATCH_AVG_THRESHOLD and duration_d < MATCH_DURATION_TOLERANCE_SECONDS:
+            return True
+        if (
+            artist_d >= 0.75
+            and album_d >= 0.75
+            and source_track.track_number == suggestion.track_number
+            and duration_d <= MATCH_DURATION_TOLERANCE_SECONDS
+        ):
+            return True
+
+        return (
+            title_d >= 0.5
+            and artist_d >= 0.5
+            and album_d >= 0.5
+            and duration_d <= MATCH_LOOSE_DURATION_TOLERANCE_SECONDS
         )

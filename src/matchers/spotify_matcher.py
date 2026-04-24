@@ -119,41 +119,13 @@ class SpotifyMatcher(Matcher):
                 return results[0]
         return None
 
-    @staticmethod
-    def _match_constraints(source_track: Track, suggestion: SpotifyTrack) -> bool:
-        title_d, artist_d, album_d, duration_d = SpotifyMatcher.track_distance(source_track, suggestion)
-        title_d = 1 - title_d
-        artist_d = 1 - artist_d
-        album_d = 1 - album_d
-
-        def is_latin(text: str) -> bool:
-            return all(not char.isalpha() or ord("a") <= ord(char.lower()) <= ord("z") for char in text)
-
-        if not is_latin(source_track.display_artist):
-            artist_d = 1  # Spotify may not list the artist in the original language
-
-        avg_d = (title_d + artist_d + album_d) / 3
-        if avg_d > 0.6 and duration_d < 3:
-            return True
-        if (
-            artist_d >= 0.75
-            and album_d >= 0.75
-            and source_track.track_number == suggestion.track_number
-            and duration_d <= 3
-        ):
-            return True
-
-        return title_d >= 0.5 and artist_d >= 0.5 and album_d >= 0.5 and duration_d <= 5
-
     def suggest_match(self, track: Track) -> list[SpotifyTrack]:
         results_set: set[SpotifyTrack] = set()
         for artist in track.artists:
             search_string = f"{artist} {track.title}"
             results_set.update(self._search(search_string))
 
-        results: list[SpotifyTrack] = list(
-            filter(lambda result: SpotifyMatcher._match_constraints(track, result), results_set)
-        )
+        results: list[SpotifyTrack] = list(filter(lambda result: self._match_constraints(track, result), results_set))
         results.sort(key=lambda result: SpotifyMatcher.track_distance(track, result))
 
         for result in results:
