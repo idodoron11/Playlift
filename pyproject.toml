@@ -77,7 +77,7 @@ quote-style = "double"
 pythonpath = ["src"]
 addopts = "-m 'not integration'"
 markers = [
-    "integration: marks tests that require a live Spotify API connection (deselect with '-m not integration')",
+    "integration: marks tests that require a live API connection (Spotify or Deezer) — deselect with '-m not integration'",
 ]
 
 [tool.bumpversion]
