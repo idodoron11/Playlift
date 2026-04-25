@@ -6,11 +6,14 @@ track_matcher) and T017 (remove_track, sync_tracks, sort-tracks).
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import MagicMock, patch
 
 from playlists.deezer_playlist import DeezerPlaylist
 from tracks.deezer_track import DeezerTrack
+
+if TYPE_CHECKING:
+    from tracks import Track
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -151,6 +154,21 @@ class TestDeezerPlaylistAddTracks:
         # cache cleared — next access should re-fetch from the API
         _ = playlist.tracks
         assert dz.gw.get_playlist_tracks.call_count == 2
+
+    def test_add_tracks_splits_large_batch_into_chunks(self) -> None:
+        from playlists.deezer_playlist import _ADD_TRACKS_CHUNK_SIZE
+
+        dz = _make_dz()
+        playlist = DeezerPlaylist("123", deezer=dz)
+        tracks = cast("list[Track]", [DeezerTrack(_gw_track(str(i))) for i in range(_ADD_TRACKS_CHUNK_SIZE + 1)])
+
+        playlist.add_tracks(tracks)
+
+        assert dz.gw.add_songs_to_playlist.call_count == 2
+        first_batch = dz.gw.add_songs_to_playlist.call_args_list[0][0][1]
+        second_batch = dz.gw.add_songs_to_playlist.call_args_list[1][0][1]
+        assert len(first_batch) == _ADD_TRACKS_CHUNK_SIZE
+        assert len(second_batch) == 1
 
 
 # ---------------------------------------------------------------------------

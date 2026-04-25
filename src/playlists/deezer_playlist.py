@@ -8,6 +8,8 @@ from matchers.deezer_matcher import DeezerMatcher
 from playlists import Playlist, SyncTarget, TrackCollection
 from tracks.deezer_track import DeezerTrack
 
+_ADD_TRACKS_CHUNK_SIZE: int = 100
+
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
@@ -57,7 +59,8 @@ class DeezerPlaylist(Playlist, SyncTarget):
         if not new_tracks:
             return
         ids = [t.track_id for t in new_tracks]
-        self._deezer.gw.add_songs_to_playlist(self._playlist_id, ids)
+        for i in range(0, len(ids), _ADD_TRACKS_CHUNK_SIZE):
+            self._deezer.gw.add_songs_to_playlist(self._playlist_id, ids[i : i + _ADD_TRACKS_CHUNK_SIZE])
         self._tracks = None  # invalidate cache
 
     def remove_track(self, tracks: list[Track]) -> None:
