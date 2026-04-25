@@ -48,14 +48,23 @@ class DeezerPlaylist(Playlist, SyncTarget):
     # ------------------------------------------------------------------
 
     def add_tracks(self, tracks: list[Track]) -> None:  # type: ignore[override]  # narrowed arg type is safe at runtime
-        ids = [t.track_id for t in tracks]
+        seen: set[str] = {t.track_id for t in self.tracks}  # pre-populate with existing
+        new_tracks: list[Track] = []
+        for t in tracks:
+            if t.track_id not in seen:
+                new_tracks.append(t)
+                seen.add(t.track_id)
+        if not new_tracks:
+            return
+        ids = [t.track_id for t in new_tracks]
         self._deezer.gw.add_songs_to_playlist(self._playlist_id, ids)
         self._tracks = None  # invalidate cache
 
     def remove_track(self, tracks: list[Track]) -> None:
-        ids = [t.track_id for t in tracks]
-        self._deezer.gw.remove_songs_from_playlist(self._playlist_id, ids)
-        self._tracks = None  # invalidate cache
+        ids_to_remove: set[str] = {t.track_id for t in tracks}
+        self._deezer.gw.remove_songs_from_playlist(self._playlist_id, list(ids_to_remove))
+        if self._tracks is not None:
+            self._tracks = [t for t in self._tracks if t.track_id not in ids_to_remove]
 
     def sync_tracks(
         self,

@@ -138,15 +138,15 @@ class TestDeezerPlaylistRemoveTrack:
 
         dz.gw.remove_songs_from_playlist.assert_called_once_with("123", ["1"])
 
-    def test_remove_track_invalidates_cache(self) -> None:
-        dz = _make_dz([_gw_track("1")])
+    def test_remove_track_updates_cache_without_refetch(self) -> None:
+        dz = _make_dz([_gw_track("1"), _gw_track("2")])
         playlist = DeezerPlaylist("123", deezer=dz)
         _ = playlist.tracks  # populate cache
 
         playlist.remove_track([DeezerTrack(_gw_track("1"))])
 
-        _ = playlist.tracks
-        assert dz.gw.get_playlist_tracks.call_count == 2
+        assert [t.track_id for t in playlist.tracks] == ["2"]
+        assert dz.gw.get_playlist_tracks.call_count == 1  # no re-fetch
 
 
 # ---------------------------------------------------------------------------
