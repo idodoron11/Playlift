@@ -182,6 +182,7 @@ A user's local audio files lack ISRC metadata, or the ISRC produced no result. T
 - **FR-017**: When a transient network error occurs while resolving an individual track or performing a single playlist mutation, the system MUST log a warning and continue processing the remaining tracks; it MUST NOT abort the entire command.
 - **FR-018**: The ARL cookie value MUST NOT appear in any log output, error message, or terminal output under any circumstances; error messages relating to authentication MUST describe the failure without echoing the credential.
 - **FR-019**: The `deezer import` command MUST always create a new Deezer playlist regardless of whether a playlist with the same name already exists; it MUST NOT modify or overwrite any existing Deezer playlist.
+- **FR-020**: The feature MUST provide an integration test suite in `tests/integration/` covering: ARL authentication, ISRC-based track lookup, fuzzy search, and playlist lifecycle (create, add tracks, remove tracks, delete). Integration tests MUST skip gracefully (not fail) when no valid ARL is present in `config.ini`, and MUST be excluded from the default `pytest` run via `pytest.mark.integration`.
 
 ### Key Entities
 
@@ -202,6 +203,7 @@ A user's local audio files lack ISRC metadata, or the ISRC produced no result. T
 - **SC-005**: Running `deezer sync` on a playlist that is already up to date completes without modifying the Deezer playlist and exits with a success status.
 - **SC-006**: A `TXXX:DEEZER` tag written by `deezer match`, `deezer import --embed-matches`, or `deezer sync --embed-matches` is correctly read back on any subsequent matching operation, causing the matcher to use the cached reference directly and avoiding any redundant network lookup.
 - **SC-007**: Non-Latin (Cyrillic, CJK) track names do not cause the tool to crash or exit silently; they result in either a matched track or a logged warning.
+- **SC-008**: The integration test suite (`tests/integration/`) passes in full against a live Deezer account: authentication, ISRC lookup, fuzzy search, and the full playlist lifecycle (create → add → remove → delete) all succeed. When a valid ARL is absent from `config.ini`, all integration tests skip gracefully with a clear message.
 
 ## Assumptions
 

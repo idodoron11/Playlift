@@ -53,15 +53,17 @@ mirroring the existing `spotify` group. Track resolution follows a four-step ord
   iterating large playlists (consistent with existing tqdm pattern). No speculative caching.
 - [x] **Principle V (Unit Tests)**: Every new concrete class will have tests:
   `test_deezer_track.py` (all properties, both GW and API data shapes),
-  `test_deezer_matcher.py` (all four resolution steps, SKIP, non-Latin, transient error),
+  `test_deezer_matcher.py` (all four resolution steps, SKIP, non-Latin, transient error, T020 embedding scenarios),
   `test_deezer_playlist.py` (create, load, add, remove, sync no-op),
   `tests/api/test_deezer.py` (singleton, authentication failure, ARL not echoed in error message). Isolation via fakes/mocks —
-  no filesystem or network access in tests.
+  no filesystem or network access in tests. Additionally, an integration test suite in
+  `tests/integration/test_deezer_integration.py` covers live Deezer API paths
+  (authentication, ISRC lookup, fuzzy search, playlist lifecycle) and skips gracefully when
+  no valid ARL is configured (marked `pytest.mark.integration`, excluded from default run).
 - [x] **Principle VI (Type Safety)**: All public APIs carry complete type hints. `deezer-py`
   ships no type stubs → `# type: ignore[no-untyped-call]` where needed (same pattern as
   spotipy). Custom exceptions: `DeezerAuthenticationError`. Code will pass `mypy` strict.
-- [x] **Quality Gates**: All gates (`ruff format .`, `ruff check .`, `mypy .`, `pytest tests/`)
-  must pass before the feature is considered done.
+- [x] **Quality Gates**: All gates (`ruff format .`, `ruff check .`, `mypy .`, `pytest tests/`) must pass before the feature is considered done. Integration tests (`pytest tests/integration/ -m integration`) must pass against a live Deezer account; they skip gracefully when no ARL is present.
 
 ## Project Structure
 
@@ -93,12 +95,19 @@ src/
     └── deezer_matcher.py          # DeezerMatcher(Matcher)
 
 tests/
+├── api/
+│   └── test_deezer.py
 ├── matchers/
 │   └── test_deezer_matcher.py
 ├── tracks/
 │   └── test_deezer_track.py
-└── playlists/
-    └── test_deezer_playlist.py
+├── playlists/
+│   ├── test_deezer_playlist.py
+│   ├── test_deezer_compare.py
+│   └── test_deezer_duplicates.py
+└── integration/
+    ├── conftest.py                # session-scoped deezer_client fixture; skips when ARL absent
+    └── test_deezer_integration.py # live Deezer API: auth, ISRC, fuzzy, playlist lifecycle
 ```
 
 ### Source Code (modified files)

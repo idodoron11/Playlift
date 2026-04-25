@@ -160,6 +160,15 @@
 
 ---
 
+## Phase 12: Integration Tests (FR-020)
+
+**Purpose**: End-to-end validation against a live Deezer account. All tests are excluded from the default pytest run and must be opted into explicitly (`pytest tests/integration/ -m integration`). When no valid ARL is configured, every test skips gracefully.
+
+- [X] T034 [P] Create `tests/integration/conftest.py` with a session-scoped `deezer_client` fixture that calls `get_deezer_client()` and calls `pytest.skip()` when the ARL is absent, empty, or returns `DeezerAuthenticationError`; clear the `@functools.cache` after the session to avoid state leakage
+- [X] T035 [P] Create `tests/integration/test_deezer_integration.py` covering: (a) `TestDeezerAuthentication` — client has `gw` and `api` attributes; (b) `TestDeezerISRCLookup` — known ISRC returns correct title/artist, missing ISRC returns `None`; (c) `TestDeezerTrackFromLiveData` — `track_id` is numeric, `permalink` is canonical, `duration > 0`; (d) `TestDeezerFuzzySearch` — well-known song returned and has matching title/artist; (e) `TestDeezerPlaylistLifecycle` — create playlist, verify empty, add track, remove track, delete playlist; fixture is module-scoped and skips on `QUOTA_ERROR`
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies
