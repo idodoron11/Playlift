@@ -67,6 +67,72 @@
                 "--source", "${input:compareSource}",
                 "--destination", "${input:compareDestination}"
             ]
+        },
+        {
+            "name": "Deezer: Import",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/main.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "args": [
+                "deezer", "import",
+                "--source", "${input:deezerImportSource}",
+                "--destination", "${input:deezerImportDestination}",
+                "--embed-matches"
+            ]
+        },
+        {
+            "name": "Deezer: Sync",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/main.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "args": [
+                "deezer", "sync",
+                "--source", "${input:deezerSyncSource}",
+                "--destination", "${input:deezerSyncDestination}",
+                "--embed-matches",
+                "--sort-tracks"
+            ]
+        },
+        {
+            "name": "Deezer: Duplicates",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/main.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "args": [
+                "deezer", "duplicates",
+                "--source", "${input:deezerDuplicatesSource}"
+            ]
+        },
+        {
+            "name": "Deezer: Match",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/main.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "args": [
+                "deezer", "match",
+                "--source", "${input:deezerMatchSource}"
+            ]
+        },
+        {
+            "name": "Deezer: Compare",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/main.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "args": [
+                "deezer", "compare",
+                "--source", "${input:deezerCompareSource}",
+                "--destination", "${input:deezerCompareDestination}"
+            ]
         }
     ],
     "inputs": [
@@ -109,6 +175,46 @@
             "id": "compareDestination",
             "type": "promptString",
             "description": "Destination Spotify playlist ID or URL"
+        },
+        {
+            "id": "deezerImportSource",
+            "type": "promptString",
+            "description": "Source playlist path (m3u file or directory)"
+        },
+        {
+            "id": "deezerImportDestination",
+            "type": "promptString",
+            "description": "Destination Deezer playlist name"
+        },
+        {
+            "id": "deezerSyncSource",
+            "type": "promptString",
+            "description": "Source playlist path (m3u file or directory)"
+        },
+        {
+            "id": "deezerSyncDestination",
+            "type": "promptString",
+            "description": "Destination Deezer playlist ID"
+        },
+        {
+            "id": "deezerDuplicatesSource",
+            "type": "promptString",
+            "description": "Source playlist path (m3u file)"
+        },
+        {
+            "id": "deezerMatchSource",
+            "type": "promptString",
+            "description": "Source playlist path (m3u file or directory)"
+        },
+        {
+            "id": "deezerCompareSource",
+            "type": "promptString",
+            "description": "Source local playlist path (m3u file)"
+        },
+        {
+            "id": "deezerCompareDestination",
+            "type": "promptString",
+            "description": "Destination Deezer playlist ID or URL"
         }
     ]
 }

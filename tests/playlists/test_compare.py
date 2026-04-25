@@ -68,7 +68,9 @@ def test_compare_simple(monkeypatch: Any) -> None:
     monkeypatch.setattr(compare_module, "SpotifyPlaylist", FakeSpotifyPlaylist)
     monkeypatch.setattr(compare_module, "get_spotify_client", lambda: None)
 
-    local_only, spotify_only = compare_module.compare_playlists("dummy.m3u", "spotify:playlist:pid")
+    result = compare_module.compare_playlists("dummy.m3u", "spotify:playlist:pid")
+    local_only = result.source_only
+    spotify_only = result.target_only
 
     # local_only should contain the SKIP track
     assert len(local_only) == 1
@@ -76,4 +78,4 @@ def test_compare_simple(monkeypatch: Any) -> None:
 
     # spotify_only should contain S2
     assert len(spotify_only) == 1
-    assert spotify_only[0].track_id == "S2"
+    assert spotify_only[0].track_id == "S2"  # FakeSpotifyTrack has track_id; Track base defines it
