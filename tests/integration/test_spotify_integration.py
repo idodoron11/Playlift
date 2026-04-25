@@ -5,6 +5,7 @@ All tests skip gracefully when credentials are not configured (see conftest.py).
 
 from __future__ import annotations
 
+import contextlib
 from typing import TYPE_CHECKING, Any, ClassVar
 
 import pytest
@@ -17,6 +18,8 @@ from tests.tracks.track_mock import TrackMock
 from tracks.spotify_track import SpotifyTrack
 
 if TYPE_CHECKING:
+    from collections.abc import Generator
+
     from tracks import Track
 
 # ---------------------------------------------------------------------------
@@ -55,6 +58,20 @@ SOURCE_PLAYLIST_NAME = "playlist name"
 E2E_PLAYLIST_NAME = "Test Playlist"
 E2E_TRACK_IDS = ["4OSBTYWVwsQhGLF9NHvIbR", "5mFMb5OHI3cN0UjITVztCj", "1CRtJS94Hq3PbBZT9LuF90"]
 E2E_TRACKS_AFTER_REMOVE = 2
+
+
+# ---------------------------------------------------------------------------
+# Fixtures
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def e2e_playlist(spotify_client: Any) -> Generator[SpotifyPlaylist, None, None]:
+    """Create a test playlist and delete it after the test completes (or fails)."""
+    playlist = SpotifyPlaylist.create(E2E_PLAYLIST_NAME, client=spotify_client)
+    yield playlist
+    with contextlib.suppress(Exception):
+        spotify_client.current_user_unfollow_playlist(playlist.playlist_id)
 
 
 # ---------------------------------------------------------------------------
@@ -145,16 +162,15 @@ class TestSpotifyPlaylistIntegration:
         actual_songs_names = [track.title for track in playlist.tracks]
         assert actual_songs_names == ENDPOINTS_PLAYLIST_TRACK_TITLES
 
-    def test_e2e_spotify_playlist(self, spotify_client: Any) -> None:
-        playlist = SpotifyPlaylist.create(E2E_PLAYLIST_NAME, client=spotify_client)
-        assert len(playlist.tracks) == 0
+    def test_e2e_spotify_playlist(self, e2e_playlist: SpotifyPlaylist, spotify_client: Any) -> None:
+        assert len(e2e_playlist.tracks) == 0
         tracks = [SpotifyTrack(tid, client=spotify_client) for tid in E2E_TRACK_IDS]
-        playlist.add_tracks(tracks)
-        assert playlist.tracks == tracks
-        playlist.remove_track([playlist.tracks[0]])
-        assert len(playlist.tracks) == E2E_TRACKS_AFTER_REMOVE
-        playlist.clear()
-        assert len(playlist.tracks) == 0
+        e2e_playlist.add_tracks(tracks)
+        assert e2e_playlist.tracks == tracks
+        e2e_playlist.remove_track([e2e_playlist.tracks[0]])
+        assert len(e2e_playlist.tracks) == E2E_TRACKS_AFTER_REMOVE
+        e2e_playlist.clear()
+        assert len(e2e_playlist.tracks) == 0
 
 
 # ---------------------------------------------------------------------------
