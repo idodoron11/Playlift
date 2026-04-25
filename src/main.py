@@ -13,6 +13,7 @@ from playlists.local_library import LocalLibrary
 from playlists.local_playlist import LocalPlaylist
 from playlists.path_mapper import PathMapper
 from playlists.spotify_playlist import SpotifyPlaylist
+from tracks.deezer_track import is_valid_deezer_url, normalise_deezer_url
 from tracks.local_track import LocalTrack
 
 
@@ -330,7 +331,6 @@ def cli_deezer_compare(
 @click.option("--source", "-s", required=True, help="Path to local .m3u file")
 def cli_deezer_duplicates(source: str) -> None:
     source_playlist = get_playlist(source)
-    from tracks.deezer_track import is_valid_deezer_url, normalise_deezer_url
 
     tracks_map: dict[str, list[LocalTrack]] = {}
     for track in source_playlist.tracks:

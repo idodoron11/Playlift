@@ -16,6 +16,7 @@ import pytest
 
 from exceptions import SkipTrackError
 from matchers.deezer_matcher import DeezerMatcher
+from tracks import EmbeddableTrack
 from tracks.deezer_track import DeezerTrack, is_valid_deezer_url, normalise_deezer_url
 
 # ---------------------------------------------------------------------------
@@ -271,6 +272,55 @@ class TestMatchByFuzzySearch:
             result = matcher._match_by_fuzzy_search(track)
 
         assert result is None
+
+
+# ---------------------------------------------------------------------------
+# T020 — US3: deezer match CLI embedding behaviour
+# ---------------------------------------------------------------------------
+
+
+class TestDeezerMatchEmbedding:
+    """Verify embedding semantics for the `deezer match` command (FR-005)."""
+
+    def test_existing_valid_tag_preserved_without_re_lookup(self) -> None:
+        """When a track already has a valid TXXX:DEEZER tag, match() uses the cached
+        ref and makes no ISRC or fuzzy-search network call."""
+        dz = MagicMock()
+        matcher = _make_matcher(dz)
+        track = _make_track(service_ref="https://www.deezer.com/track/99999")
+
+        result = matcher.match(track)
+
+        assert result is not None
+        assert result.track_id == "99999"
+        dz.api.get_track_by_ISRC.assert_not_called()
+        dz.gw.search.assert_not_called()
+
+    def test_resolved_track_always_written_regardless_of_embed_flag(self) -> None:
+        """match_list with embed_matches=True calls embed_match on each resolved track."""
+        dz = MagicMock()
+        dz.api.get_track_by_ISRC.return_value = _gw_data()
+        matcher = _make_matcher(dz)
+        # Register as a virtual subclass of EmbeddableTrack so isinstance() passes
+        track = _make_track(isrc="GBAYE7300007")
+        EmbeddableTrack.register(type(track))
+
+        matcher.match_list([track], autopilot=True, embed_matches=True)
+
+        track.embed_match.assert_called_once()
+
+    def test_unresolvable_track_writes_no_tag(self) -> None:
+        """When neither ISRC nor fuzzy search resolves a track, embed_match is never called."""
+        dz = MagicMock()
+        dz.api.get_track_by_ISRC.side_effect = Exception("not found")
+        dz.gw.search.return_value = {"TRACK": {"data": []}}
+        matcher = _make_matcher(dz)
+        track = _make_track(isrc="GBAYE7300007")
+        track.embed_match = MagicMock()
+
+        matcher.match_list([track], autopilot=True, embed_matches=True)
+
+        track.embed_match.assert_not_called()
 
 
 # ---------------------------------------------------------------------------
