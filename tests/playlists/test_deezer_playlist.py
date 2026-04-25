@@ -111,6 +111,36 @@ class TestDeezerPlaylistAddTracks:
 
         dz.gw.add_songs_to_playlist.assert_called_once_with("123", ["1", "2"])
 
+    def test_add_tracks_skips_tracks_already_in_playlist(self) -> None:
+        # Regression: Deezer GW rejects the entire batch with ERROR_DATA_EXISTS
+        # if any submitted track_id already exists in the playlist.
+        dz = _make_dz([_gw_track("1")])
+        playlist = DeezerPlaylist("123", deezer=dz)
+
+        playlist.add_tracks([DeezerTrack(_gw_track("1")), DeezerTrack(_gw_track("2"))])
+
+        dz.gw.add_songs_to_playlist.assert_called_once_with("123", ["2"])
+
+    def test_add_tracks_skips_intra_batch_duplicates(self) -> None:
+        # Regression: duplicate track_ids within the submitted list also trigger
+        # ERROR_DATA_EXISTS on the Deezer GW API.
+        dz = _make_dz()
+        playlist = DeezerPlaylist("123", deezer=dz)
+
+        playlist.add_tracks([DeezerTrack(_gw_track("1")), DeezerTrack(_gw_track("1"))])
+
+        dz.gw.add_songs_to_playlist.assert_called_once_with("123", ["1"])
+
+    def test_add_tracks_does_nothing_when_all_already_present(self) -> None:
+        # Regression: if every track is already in the playlist, no API call
+        # should be made (previously would call with an empty list or raise).
+        dz = _make_dz([_gw_track("1")])
+        playlist = DeezerPlaylist("123", deezer=dz)
+
+        playlist.add_tracks([DeezerTrack(_gw_track("1"))])
+
+        dz.gw.add_songs_to_playlist.assert_not_called()
+
     def test_add_tracks_invalidates_cache(self) -> None:
         dz = _make_dz([_gw_track("1")])
         playlist = DeezerPlaylist("123", deezer=dz)
@@ -118,7 +148,7 @@ class TestDeezerPlaylistAddTracks:
 
         playlist.add_tracks([DeezerTrack(_gw_track("2"))])
 
-        # cache cleared — next access should call gw again
+        # cache cleared — next access should re-fetch from the API
         _ = playlist.tracks
         assert dz.gw.get_playlist_tracks.call_count == 2
 
