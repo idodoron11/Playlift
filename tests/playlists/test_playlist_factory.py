@@ -90,6 +90,16 @@ class TestResolveUnrecognised:
         with pytest.raises(UnrecognisedSourceError):
             factory.resolve("/does/not/exist/playlist.m3u")
 
+    def test_raises_unrecognised_source_error_when_deezer_client_is_none(self) -> None:
+        factory_no_deezer = PlaylistFactory(spotify_client=MagicMock(), deezer_client=None)
+        with pytest.raises(UnrecognisedSourceError, match="no authenticated Deezer client"):
+            factory_no_deezer.resolve("https://www.deezer.com/en/playlist/123")
+
+    def test_raises_unrecognised_source_error_when_spotify_client_is_none(self) -> None:
+        factory_no_spotify = PlaylistFactory(spotify_client=None, deezer_client=MagicMock())
+        with pytest.raises(UnrecognisedSourceError, match="no authenticated Spotify client"):
+            factory_no_spotify.resolve("spotify:playlist:abc123")
+
 
 # ---------------------------------------------------------------------------
 # T017 — All six source x destination dispatch paths

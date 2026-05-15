@@ -74,11 +74,15 @@ class PlaylistFactory:
     corresponding ``TrackCollection`` subclass.
 
     Args:
-        spotify_client: An authenticated ``spotipy.Spotify`` instance.
-        deezer_client: An authenticated ``Deezer`` instance.
+        spotify_client: An authenticated ``spotipy.Spotify`` instance, or ``None`` when
+            Spotify credentials are unavailable. Resolving a Spotify source with
+            a ``None`` client raises ``UnrecognisedSourceError``.
+        deezer_client: An authenticated ``Deezer`` instance, or ``None`` when
+            Deezer credentials are unavailable. Resolving a Deezer source with
+            a ``None`` client raises ``UnrecognisedSourceError``.
     """
 
-    def __init__(self, spotify_client: spotipy.Spotify, deezer_client: Deezer) -> None:  # type: ignore[no-any-unimported]
+    def __init__(self, spotify_client: spotipy.Spotify | None, deezer_client: Deezer | None) -> None:  # type: ignore[no-any-unimported]
         self._spotify_client = spotify_client
         self._deezer_client = deezer_client
 
@@ -105,9 +109,19 @@ class PlaylistFactory:
             raise InvalidPathMappingError(f"--from-path/--to-path cannot be used with a service URL source: {source!r}")
 
         if _is_spotify_source(source):
+            if self._spotify_client is None:
+                raise UnrecognisedSourceError(
+                    "Spotify source requested but no authenticated Spotify client is available. "
+                    "Check your Spotify credentials in the config file."
+                )
             return SpotifyPlaylist(source, client=self._spotify_client)
 
         if _is_deezer_source(source):
+            if self._deezer_client is None:
+                raise UnrecognisedSourceError(
+                    "Deezer source requested but no authenticated Deezer client is available. "
+                    "Check your Deezer credentials in the config file."
+                )
             playlist_id = _extract_deezer_playlist_id(source)
             return DeezerPlaylist(playlist_id, deezer=self._deezer_client)
 
