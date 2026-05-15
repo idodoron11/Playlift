@@ -97,7 +97,7 @@ uv run pytest tests/
 
 4. **Non-Latin artist names**: SpotifyMatcher has special handling for Cyrillic/CJK characters, but fails silently with a log warning. Test non-Latin searches manually.
 
-5. **Config must exist at initialization**: `config/config_template.ini` is the template; actual config loaded from `~/.playlist_sync/config.ini` (set in imports). Missing config causes immediate failure on module load.
+5. **Config must exist at initialization**: `config/config_template.ini` is the template; actual config loaded from `~/.playlift/config.ini` (set in imports). Missing config causes immediate failure on module load.
 
 ### Match Embedding
 

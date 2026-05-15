@@ -56,13 +56,13 @@ When running from the cloned directory, prefix all commands with `uv run` (e.g. 
 
 ## Configuration
 
-Create `~/.playlist_sync/config.ini` and fill in your credentials:
+Create `~/.playlift/config.ini` and fill in your credentials:
 
 ```bash
-mkdir -p ~/.playlist_sync
+mkdir -p ~/.playlift
 ```
 
-Then create `~/.playlist_sync/config.ini` with the following content:
+Then create `~/.playlift/config.ini` with the following content:
 
 ```ini
 [SPOTIFY]

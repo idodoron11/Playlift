@@ -5,7 +5,7 @@ from pathlib import Path
 _HERE = Path(__file__).parent
 CONFIG_TEMPLATE_PATH = _HERE / "config_template.ini"
 
-CONFIG_DIR = Path.home() / ".playlist_sync"
+CONFIG_DIR = Path.home() / ".playlift"
 CONFIG_PATH = CONFIG_DIR / "config.ini"
 
 if not CONFIG_PATH.exists():
