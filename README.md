@@ -32,24 +32,37 @@ Playlift is a command-line tool that syncs music between your local library, Spo
 
 ## Installation
 
+### As a tool (end-user)
+
+Install Playlift as a globally available command using [uv](https://github.com/astral-sh/uv):
+
+```bash
+uv tool install git+https://github.com/idodoron11/playlist-sync.git
+```
+
+The `playlift` and `playlift-batch` commands are then available system-wide — no `uv run` prefix needed.
+
+### For development
+
 ```bash
 git clone https://github.com/idodoron11/playlist-sync.git
 cd playlist-sync
 uv sync
 ```
 
+When running from the cloned directory, prefix all commands with `uv run` (e.g. `uv run playlift ...`).
+
 ---
 
 ## Configuration
 
-Copy the template and fill in your credentials:
+Create `~/.playlist_sync/config.ini` and fill in your credentials:
 
 ```bash
 mkdir -p ~/.playlist_sync
-cp config/config_template.ini ~/.playlist_sync/config.ini
 ```
 
-Edit `~/.playlist_sync/config.ini`:
+Then create `~/.playlist_sync/config.ini` with the following content:
 
 ```ini
 [SPOTIFY]
@@ -70,6 +83,8 @@ ARL=<your_deezer_arl_cookie>
 ## Usage
 
 Commands are grouped by service: `spotify` and `deezer`. Both groups expose the same five sub-commands: `import`, `sync`, `match`, `compare`, and `duplicates`.
+
+> **Note:** Examples below use `uv run playlift` (development install). If you installed with `uv tool install`, drop the `uv run` prefix and call `playlift` directly.
 
 ### Spotify
 
