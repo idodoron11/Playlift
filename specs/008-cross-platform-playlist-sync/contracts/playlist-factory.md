@@ -53,7 +53,7 @@ def resolve(
 
 | Exception | Condition |
 |-----------|-----------|
-| `ValueError` | `source` is a service URL/URI **and** `path_mapper is not None` |
+| `InvalidPathMappingError` | `source` is a service URL/URI **and** `path_mapper is not None` |
 | `UnrecognisedSourceError` | `source` does not match any known format and is not a valid local path |
 
 **Does not raise**:

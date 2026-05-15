@@ -26,7 +26,7 @@ resolve(source: str, path_mapper: PathMapper | None = None) -> TrackCollection
 ```
 
 **Behaviour**:
-1. If `source` is a service URL/URI **and** `path_mapper` is not `None` → raise `ValueError`
+1. If `source` is a service URL/URI **and** `path_mapper` is not `None` → raise `InvalidPathMappingError`
 2. If `_is_spotify_source(source)` → return `SpotifyPlaylist(source, client=self._spotify_client)`
 3. If `_is_deezer_source(source)` → return `DeezerPlaylist(_extract_deezer_playlist_id(source), deezer=self._deezer_client)`
 4. If `os.path.isdir(source)` → return `LocalLibrary(source)`
@@ -107,7 +107,7 @@ SyncTarget (abstract)
 | Spotify HTTPS URL | Must contain `open.spotify.com/playlist/` |
 | Deezer HTTPS URL | Must match `deezer\.com(/[a-z]{2})?/playlist/(\d+)` |
 | Local path | Must be an existing file or directory at resolution time |
-| `path_mapper` + service source | Invalid combination → `ValueError` |
+| `path_mapper` + service source | Invalid combination → `InvalidPathMappingError` |
 | Unknown source | → `UnrecognisedSourceError` |
 
 ## State Transitions

@@ -47,14 +47,16 @@
 
 > **Write these tests FIRST — they must fail before the implementation exists.**
 
-- [ ] T004 [P] [US1] Create `tests/playlists/test_playlist_factory.py` with unit tests for `PlaylistFactory.resolve()` covering: Spotify URI → `SpotifyPlaylist`, Spotify HTTPS URL → `SpotifyPlaylist`, Deezer HTTPS URL → `DeezerPlaylist` (correct numeric ID extracted), `path_mapper` + service source → `ValueError`, unrecognised source string → `UnrecognisedSourceError`
+- [ ] T004 [P] [US1] Create `tests/playlists/test_playlist_factory.py` with unit tests for `PlaylistFactory.resolve()` covering: Spotify URI → `SpotifyPlaylist`, Spotify HTTPS URL → `SpotifyPlaylist`, Deezer HTTPS URL → `DeezerPlaylist` (correct numeric ID extracted), `path_mapper` + service source → `InvalidPathMappingError`, unrecognised source string → `UnrecognisedSourceError`
+- [ ] T017 [US1] Add parametrised tests to `tests/playlists/test_playlist_factory.py` covering all six source×destination dispatch paths confirming `resolve()` returns the correct `TrackCollection` subtype for each source format: local file, local directory, Spotify URI, Spotify URL, Deezer URL — covering FR-007 and SC-002 (Depends on T004 — file creation)
 
 ### Implementation for User Story 1
 
 - [ ] T005 [US1] Create `src/playlists/playlist_factory.py` with module-level constants (`SPOTIFY_URI_PREFIX`, `SPOTIFY_URL_FRAGMENT`, `DEEZER_PLAYLIST_URL_PATTERN`) and private module-level helpers (`_is_spotify_source`, `_is_deezer_source`, `_extract_deezer_playlist_id`)
 - [ ] T006 [US1] Implement `PlaylistFactory.__init__(spotify_client, deezer_client)` and `PlaylistFactory.resolve(source, path_mapper)` with full dispatch logic and guards in `src/playlists/playlist_factory.py`
-- [ ] T007 [US1] Add `_build_playlist_factory()` (constructs `PlaylistFactory` from authenticated clients) and `resolve_source()` (calls `factory.resolve()` and converts `UnrecognisedSourceError` to `click.UsageError`) to `src/main.py`
+- [ ] T007 [US1] Add `_build_playlist_factory()` (constructs `PlaylistFactory` from authenticated clients; existing `_build_path_mapper()` is retained and called by each command before `resolve_source()`) and `resolve_source()` (calls `factory.resolve()`, catches both `UnrecognisedSourceError` **and** `InvalidPathMappingError`, converts each to `click.UsageError` with a user-readable message) to `src/main.py`
 - [ ] T008 [US1] Update `cli_spotify_import` and `cli_deezer_import` in `src/main.py` to replace `get_playlist()` calls with `resolve_source()`, silently ignore `--embed-matches` when source is a service URL, and raise `click.UsageError` when `--from-path`/`--to-path` is combined with a service source
+- [ ] T018 [US1] Add try/except around `.tracks` iteration in `cli_spotify_import`, `cli_spotify_sync`, `cli_deezer_import`, and `cli_deezer_sync` in `src/main.py` to catch platform API errors (e.g. `spotipy.SpotifyException`, Deezer API errors) and re-raise as `click.ClickException` with a clear error message — ensures source playlist fetch failure exits immediately without modifying the destination playlist (FR-011)
 
 **Checkpoint**: `spotify import` and `deezer import` now accept service playlist sources; existing local `.m3u` import still works.
 
@@ -68,7 +70,7 @@
 
 ### Tests for User Story 2 (REQUIRED — Constitution Principle V)
 
-- [ ] T009 [P] [US2] Extend `tests/playlists/test_playlist_factory.py` with tests confirming sync-command source resolution: verify `resolve_source()` correctly surfaces a `SpotifyPlaylist` / `DeezerPlaylist` when a service URL is passed to a sync command's source argument
+- [ ] T009 [US2] Extend `tests/playlists/test_playlist_factory.py` with unit tests for `PlaylistFactory.resolve()` — symmetric to T004 — confirming the same Spotify URI, Spotify URL, and Deezer URL dispatch cases apply to sync-command inputs (Depends on T004 — file creation)
 
 ### Implementation for User Story 2
 
@@ -80,13 +82,15 @@
 
 ## Phase 5: User Story 3 — Existing Local-to-Service Workflows Are Unchanged (Priority: P1)
 
+> **Note**: US3 carries Priority P1 but is sequenced after US2 (P2) because regression validation logically depends on both US1 and US2 being complete. This is a dependency constraint, not a priority downgrade.
+
 **Goal**: Confirm zero regressions — all local `.m3u` and directory sync/import workflows behave identically to before this feature.
 
 **Independent Test**: Run existing `spotify import --source <m3u-file>` and `deezer sync --source <m3u-file>` commands; verify identical behavior to before this feature.
 
 ### Tests for User Story 3 (REQUIRED — Constitution Principle V)
 
-- [ ] T011 [P] [US3] Add regression tests to `tests/playlists/test_playlist_factory.py` covering: local `.m3u` file → `LocalPlaylist` (with and without `path_mapper`), local directory → `LocalLibrary`, `path_mapper` correctly forwarded for local sources
+- [ ] T011 [US3] Add regression tests to `tests/playlists/test_playlist_factory.py` covering: local `.m3u` file → `LocalPlaylist` (with and without `path_mapper`), local directory → `LocalLibrary`, `path_mapper` correctly forwarded for local sources (Depends on T004 — file creation)
 
 ### Validation for User Story 3
 
@@ -102,8 +106,9 @@
 
 - [ ] T013 [P] Run `uv run ruff format . && uv run ruff check .` and fix any style or lint violations in modified files (`src/exceptions.py`, `src/playlists/__init__.py`, `src/playlists/playlist_factory.py`, `src/main.py`)
 - [ ] T014 [P] Run `uv run mypy .` and resolve any type errors in modified and new files
-- [ ] T015 Remove the now-superseded `get_playlist()` function from `src/main.py` (replaced by `resolve_source()`) or update its signature/return type to `TrackCollection` if still referenced elsewhere
+- [ ] T015 Migrate ALL remaining `get_playlist()` call sites in `src/main.py` — including `match`, `compare`, and `duplicates` commands — to `resolve_source()`, then delete `get_playlist()` entirely. Consistent source resolution throughout the module is required (Constitution Principle III — DRY).
 - [ ] T016 Validate the quickstart.md smoke-test scenarios end-to-end (cross-platform import and sync) against the implemented CLI
+- [ ] T019 Add Google-style docstrings to `PlaylistFactory`, `PlaylistFactory.resolve()`, `_build_playlist_factory()`, `resolve_source()`, and `UnrecognisedSourceError` in `src/playlists/playlist_factory.py`, `src/main.py`, and `src/exceptions.py` per Constitution Principle VI
 
 ---
 
@@ -128,10 +133,11 @@
 
 ### Within Each User Story
 
-- Tests (T004, T009, T011) MUST be written and **fail** before implementation begins for that story
+- T004 and T017 (Phase 3) MUST be written and **fail** before US1 implementation begins
+- T009 and T011 depend on T004 (file creation) — they MUST NOT start until T004 is complete
 - Module constants and helpers (T005) before `resolve()` implementation (T006)
 - `PlaylistFactory` complete (T006) before `main.py` integration (T007, T008)
-- `resolve_source()` helper (T007) before command updates (T008, T010)
+- `resolve_source()` helper (T007) before command updates (T008, T010, T018)
 
 ---
 
@@ -140,14 +146,14 @@
 ### User Story 1 (single developer, sequential)
 
 ```
-Phase 1 → Phase 2 (T002, T003) → T004 (tests, fail) → T005 → T006 → T007 → T008 → verify tests pass
+Phase 1 → Phase 2 (T002, T003) → T004, T017 (tests, fail) → T005 → T006 → T007 → T008 → T018 → verify tests pass
 ```
 
 ### User Story 1 + User Story 2 (two developers in parallel after Phase 2)
 
 ```
-Developer A: T004 → T005 → T006 → T007 → T008   (US1 — import commands)
-Developer B: T009 → T010                          (US2 — sync commands, different code paths)
+Developer A: T004 → T017 → T005 → T006 → T007 → T008 → T018   (US1 — import commands + API error handling)
+Developer B: [after T004] T009 → T010                            (US2 — sync commands)
 Both merge → Phase 5 (T011, T012) → Phase 6
 ```
 
@@ -166,6 +172,6 @@ Both merge → Phase 5 (T011, T012) → Phase 6
 - `src/exceptions.py` — add `UnrecognisedSourceError` (T002)
 - `src/playlists/__init__.py` — add `import_tracks` abstractmethod to `SyncTarget` (T003)
 - `src/playlists/playlist_factory.py` — new file (T005, T006)
-- `src/main.py` — add helpers, update 4 commands (T007, T008, T010, T015)
+- `src/main.py` — add helpers, update all commands including `match`, `compare`, `duplicates` (T007, T008, T010, T015, T018)
 - `tests/playlists/__init__.py` — new file (T001)
-- `tests/playlists/test_playlist_factory.py` — new file (T004, T009, T011)
+- `tests/playlists/test_playlist_factory.py` — new file (T004, T009, T011, T017)
