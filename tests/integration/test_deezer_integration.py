@@ -29,7 +29,7 @@ from tracks.deezer_track import DeezerTrack
 if TYPE_CHECKING:
     from collections.abc import Generator
 
-    from deezer import Deezer  # type: ignore[import-untyped]
+    from deezer import Deezer
 
 pytestmark = pytest.mark.integration
 

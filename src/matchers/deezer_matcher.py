@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
-    from deezer import Deezer  # type: ignore[import-untyped]
+    from deezer import Deezer
 
 from tqdm import tqdm
 

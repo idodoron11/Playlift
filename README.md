@@ -2,14 +2,15 @@
 
 >  One tool to keep your music in sync everywhere: Spotify, Deezer, and your local library.
 
-Playlift is a command-line tool that matches local audio files to streaming service tracks using fuzzy title/artist matching and ISRC lookup, then creates or syncs playlists on the target platform. Matched references are optionally embedded directly into your audio file's ID3/FLAC/M4A tags so every subsequent sync is instant.
+Playlift is a command-line tool that syncs music between your local library, Spotify, and Deezer. It matches tracks using fuzzy title/artist matching and ISRC lookup, then creates or syncs playlists on any supported platform. Matched references are optionally embedded directly into your audio file's ID3/FLAC/M4A tags so every subsequent sync is instant.
 
 ---
 
 ## Features
 
-- **Import** a local `.m3u` playlist to a new Spotify or Deezer playlist
-- **Sync** a local playlist to an existing Spotify or Deezer playlist (full replace)
+- **Import** a local `.m3u` playlist or a streaming service playlist to a new Spotify or Deezer playlist
+- **Sync** a local or service playlist into an existing Spotify or Deezer playlist (full replace)
+- **Cross-platform sync** — pass a Spotify URI/URL or Deezer URL as `--source`; the platform is auto-detected
 - **Match** tracks in place — embed service references into your local files without creating a playlist
 - **Compare** a local playlist with a Spotify or Deezer playlist and print the diff
 - **Find duplicates** in a local playlist by service reference
@@ -72,32 +73,58 @@ Commands are grouped by service: `spotify` and `deezer`. Both groups expose the 
 
 ### Spotify
 
-##### Import a local playlist to Spotify
+##### Import a playlist to Spotify
 
-Creates a new Spotify playlist from a local `.m3u` file.
+Creates a new Spotify playlist from a local `.m3u` file, a local directory, or a streaming service playlist.
+
+`--source` accepts any of:
+- A local `.m3u` file path
+- A local directory path (imports the whole library)
+- A Spotify URI: `spotify:playlist:<id>`
+- A Spotify URL: `https://open.spotify.com/playlist/<id>`
+- A Deezer URL: `https://www.deezer.com/en/playlist/<id>`
 
 ```bash
+# From a local file
 uv run playlift spotify import \
   --source  "path/to/playlist.m3u" \
+  --destination "My New Playlist"
+
+# From a Deezer playlist
+uv run playlift spotify import \
+  --source  "https://www.deezer.com/en/playlist/1313621735" \
   --destination "My New Playlist"
 ```
 
 | Flag | Description |
 |------|-------------|
 | `--autopilot` | Auto-select the best fuzzy match without prompting |
-| `--embed-matches` | Write Spotify references back into local file tags |
+| `--embed-matches` | Write Spotify references back into local file tags (silently ignored for service sources) |
 | `--public` | Create a public playlist (default: private) |
-| `--from-path` / `--to-path` | Remap a path prefix (e.g. different drive letter on another machine) |
+| `--from-path` / `--to-path` | Remap a path prefix — local sources only; incompatible with service sources |
 
-Multiple `--source` / `--destination` pairs can be passed in one invocation.
-
-#### Sync a local playlist to an existing Spotify playlist
-
-Replaces all tracks in an existing Spotify playlist.
+Multiple `--source` / `--destination` pairs can be passed in one invocation to import several playlists at once. Each `--source` is paired with the `--destination` at the same position — the counts must match.
 
 ```bash
+uv run playlift spotify import \
+  --source "rock.m3u"    --destination "Rock Hits" \
+  --source "jazz.m3u"    --destination "Jazz Classics" \
+  --source "pop.m3u"     --destination "Pop Favourites"
+```
+
+#### Sync a playlist to an existing Spotify playlist
+
+Replaces all tracks in an existing Spotify playlist. `--source` accepts the same formats as `import` (local `.m3u` or directory, Spotify URI/URL, or Deezer URL).
+
+```bash
+# From a local file
 uv run playlift spotify sync \
   --source      "path/to/playlist.m3u" \
+  --destination "spotify:playlist:<id>"
+
+# From a Deezer playlist
+uv run playlift spotify sync \
+  --source      "https://www.deezer.com/en/playlist/1313621735" \
   --destination "spotify:playlist:<id>"
 ```
 
@@ -134,23 +161,37 @@ uv run playlift spotify duplicates \
 
 ### Deezer
 
-#### Import a local playlist to Deezer
+#### Import a playlist to Deezer
 
-Creates a new Deezer playlist from a local `.m3u` file.
+Creates a new Deezer playlist from a local `.m3u` file, a local directory, or a streaming service playlist. `--source` accepts the same formats as `spotify import` (local `.m3u` or directory, Spotify URI/URL, or Deezer URL).
 
 ```bash
+# From a local file
 uv run playlift deezer import \
   --source      "path/to/playlist.m3u" \
+  --destination "My New Playlist"
+
+# From a Spotify playlist
+uv run playlift deezer import \
+  --source      "spotify:playlist:37i9dQZF1DXcBWIGoYBM5M" \
   --destination "My New Playlist"
 ```
 
 Supports the same flags as `spotify import` (`--autopilot`, `--embed-matches`, `--public`, `--from-path` / `--to-path`).
 
-#### Sync a local playlist to an existing Deezer playlist
+#### Sync a playlist to an existing Deezer playlist
+
+`--source` accepts the same formats as `spotify sync` (local `.m3u` or directory, Spotify URI/URL, or Deezer URL).
 
 ```bash
+# From a local file
 uv run playlift deezer sync \
   --source      "path/to/playlist.m3u" \
+  --destination "<deezer_playlist_id>"
+
+# From a Spotify playlist
+uv run playlift deezer sync \
+  --source      "spotify:playlist:37i9dQZF1DXcBWIGoYBM5M" \
   --destination "<deezer_playlist_id>"
 ```
 

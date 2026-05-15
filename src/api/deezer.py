@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import functools
 
-from deezer import Deezer  # type: ignore[import-untyped]
+from deezer import Deezer
 
 from config import CONFIG
 

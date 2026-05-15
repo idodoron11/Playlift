@@ -107,5 +107,5 @@ warn_unused_ignores = true
 show_error_codes = true
 
 [[tool.mypy.overrides]]
-module = ["spotipy", "spotipy.*", "music_tag"]
+module = ["spotipy", "spotipy.*", "music_tag", "deezer"]
 ignore_missing_imports = true

@@ -13,7 +13,7 @@ _ADD_TRACKS_CHUNK_SIZE: int = 100
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
-    from deezer import Deezer  # type: ignore[import-untyped]
+    from deezer import Deezer
 
     from tracks import Track
 

@@ -20,7 +20,7 @@ from config import CONFIG
 if TYPE_CHECKING:
     from collections.abc import Generator
 
-    from deezer import Deezer  # type: ignore[import-untyped]
+    from deezer import Deezer
 
 
 @pytest.fixture(scope="session")
