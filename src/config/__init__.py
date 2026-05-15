@@ -1,19 +1,22 @@
 import configparser
-import os
 import shutil
+from pathlib import Path
 
-HERE = os.path.abspath(os.path.dirname(__file__))
-CONFIG_PATH = os.path.join(HERE, "config.ini")
-CONFIG_TEMPLATE_PATH = os.path.join(HERE, "config_template.ini")
+_HERE = Path(__file__).parent
+CONFIG_TEMPLATE_PATH = _HERE / "config_template.ini"
 
-if not os.path.exists(CONFIG_PATH):
+CONFIG_DIR = Path.home() / ".playlist_sync"
+CONFIG_PATH = CONFIG_DIR / "config.ini"
+
+if not CONFIG_PATH.exists():
+    CONFIG_DIR.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(CONFIG_TEMPLATE_PATH, CONFIG_PATH)
 
 
 class Config:
     def __init__(self) -> None:
         self.config = configparser.ConfigParser()
-        self.config.read(CONFIG_PATH)
+        self.config.read(CONFIG_PATH)  # Path objects accepted since Python 3.4
 
     @property
     def spotify_client_id(self) -> str:
