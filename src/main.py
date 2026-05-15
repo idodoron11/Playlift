@@ -1,20 +1,27 @@
 from __future__ import annotations
 
-import os
+import contextlib
+from typing import TYPE_CHECKING
 
 import click
+import spotipy
 
 from api.deezer import DeezerAuthenticationError, get_deezer_client
 from api.spotify import get_spotify_client
+from exceptions import InvalidPathMappingError, UnrecognisedSourceError
 from playlists.compare import compare_playlists
 from playlists.deezer_compare import compare_deezer_playlists
 from playlists.deezer_playlist import DeezerPlaylist
 from playlists.local_library import LocalLibrary
 from playlists.local_playlist import LocalPlaylist
 from playlists.path_mapper import PathMapper
+from playlists.playlist_factory import PlaylistFactory
 from playlists.spotify_playlist import SpotifyPlaylist
 from tracks.deezer_track import is_valid_deezer_url, normalise_deezer_url
 from tracks.local_track import LocalTrack
+
+if TYPE_CHECKING:
+    from playlists import TrackCollection
 
 
 @click.group()
@@ -47,19 +54,23 @@ def cli_spotify_import(
     if len(source) != len(destination):
         raise click.BadParameter("Number of sources must match the number of destinations")
 
-    # Create path mapper if both from_path and to_path are provided
-    path_mapper = None
-    if from_path and to_path:
-        path_mapper = PathMapper(from_path, to_path)
-    elif from_path or to_path:
-        raise click.BadParameter("Both --from-path and --to-path must be provided together")
+    path_mapper = _build_path_mapper(from_path, to_path)
+    factory = _build_playlist_factory()
 
     inputs = zip(source, destination, strict=True)
     for src, dst in inputs:
-        playlist = get_playlist(src, path_mapper=path_mapper)
-        SpotifyPlaylist.create_from_another_playlist(
-            dst, playlist, autopilot=autopilot, embed_matches=embed_matches, public=public, client=get_spotify_client()
-        )
+        source_playlist = resolve_source(factory, src, path_mapper)
+        try:
+            SpotifyPlaylist.create_from_another_playlist(
+                dst,
+                source_playlist,
+                autopilot=autopilot,
+                embed_matches=embed_matches,
+                public=public,
+                client=get_spotify_client(),
+            )
+        except spotipy.SpotifyException as exc:
+            raise click.ClickException(f"Spotify API error: {exc}") from exc
 
 
 @cli_spotify.command("sync")
@@ -79,27 +90,28 @@ def cli_spotify_sync(
     from_path: str | None = None,
     to_path: str | None = None,
 ) -> None:
-    # Create path mapper if both from_path and to_path are provided
-    path_mapper = None
-    if from_path and to_path:
-        path_mapper = PathMapper(from_path, to_path)
-    elif from_path or to_path:
-        raise click.BadParameter("Both --from-path and --to-path must be provided together")
-
-    source_playlist = get_playlist(source, path_mapper=path_mapper)
-    destination_playlist = SpotifyPlaylist(destination, client=get_spotify_client())
-    destination_playlist.clear()
-    if sort_tracks:
-        sorted_tracks = sorted(source_playlist.tracks, key=lambda track: track.track_id)
-        destination_playlist.import_tracks(sorted_tracks, autopilot=autopilot, embed_matches=embed_matches)
-    else:
-        destination_playlist.import_tracks(source_playlist.tracks, autopilot=autopilot, embed_matches=embed_matches)
+    path_mapper = _build_path_mapper(from_path, to_path)
+    factory = _build_playlist_factory()
+    source_playlist = resolve_source(factory, source, path_mapper)
+    try:
+        destination_playlist = SpotifyPlaylist(destination, client=get_spotify_client())
+        destination_playlist.clear()
+        if sort_tracks:
+            sorted_tracks = sorted(source_playlist.tracks, key=lambda track: track.track_id)
+            destination_playlist.import_tracks(sorted_tracks, autopilot=autopilot, embed_matches=embed_matches)
+        else:
+            destination_playlist.import_tracks(
+                source_playlist.tracks, autopilot=autopilot, embed_matches=embed_matches
+            )
+    except spotipy.SpotifyException as exc:
+        raise click.ClickException(f"Spotify API error: {exc}") from exc
 
 
 @cli_spotify.command("duplicates")
 @click.option("--source", "-s", required=True, help="Source playlist path")
 def cli_spotify_duplicates(source: str) -> None:
-    source_playlist = get_playlist(source)
+    factory = _build_playlist_factory()
+    source_playlist = resolve_source(factory, source)
     tracks_map: dict[str | None, list[LocalTrack]] = {}
     for track in source_playlist.tracks:
         if not isinstance(track, LocalTrack):
@@ -127,15 +139,11 @@ def cli_spotify_match(
     from_path: str | None = None,
     to_path: str | None = None,
 ) -> None:
-    # Create path mapper if both from_path and to_path are provided
-    path_mapper = None
-    if from_path and to_path:
-        path_mapper = PathMapper(from_path, to_path)
-    elif from_path or to_path:
-        raise click.BadParameter("Both --from-path and --to-path must be provided together")
+    path_mapper = _build_path_mapper(from_path, to_path)
+    factory = _build_playlist_factory()
 
     for src in source:
-        playlist = get_playlist(src, path_mapper=path_mapper)
+        playlist = resolve_source(factory, src, path_mapper=path_mapper)
         SpotifyPlaylist.track_matcher().match_list(playlist.tracks, autopilot=autopilot, embed_matches=True)
 
 
@@ -151,12 +159,7 @@ def cli_spotify_compare(
     to_path: str | None = None,
 ) -> None:
     """Compare a local m3u playlist with a Spotify playlist and print differences."""
-    # Create path mapper if both from_path and to_path are provided
-    path_mapper = None
-    if from_path and to_path:
-        path_mapper = PathMapper(from_path, to_path)
-    elif from_path or to_path:
-        raise click.BadParameter("Both --from-path and --to-path must be provided together")
+    path_mapper = _build_path_mapper(from_path, to_path)
 
     result = compare_playlists(source, destination, path_mapper=path_mapper)
 
@@ -175,20 +178,61 @@ def cli_spotify_compare(
             print(f"{idx}. {spotify_track.track_url}  | {title} — {artists}")
 
 
-def get_playlist(source: str, path_mapper: PathMapper | None = None) -> LocalPlaylist | LocalLibrary:
-    if os.path.isdir(source):
-        return LocalLibrary(source)
-    if os.path.isfile(source):
-        return LocalPlaylist(source, path_mapper=path_mapper)
-    raise ValueError("Invalid source path")
-
-
 def _build_path_mapper(from_path: str | None, to_path: str | None) -> PathMapper | None:
     if from_path and to_path:
         return PathMapper(from_path, to_path)
     if from_path or to_path:
         raise click.BadParameter("Both --from-path and --to-path must be provided together")
     return None
+
+
+def _build_playlist_factory(deezer_client: object | None = None) -> PlaylistFactory:
+    """Construct a PlaylistFactory from authenticated API clients.
+
+    Args:
+        deezer_client: An already-authenticated Deezer client, or ``None`` to
+            fetch one via ``get_deezer_client()`` (failures are silently ignored
+            so that Spotify-only workflows still work).
+    """
+    if deezer_client is None:
+        with contextlib.suppress(DeezerAuthenticationError):
+            deezer_client = get_deezer_client()
+    return PlaylistFactory(spotify_client=get_spotify_client(), deezer_client=deezer_client)
+
+
+def resolve_source(
+    factory: PlaylistFactory,
+    source: str,
+    path_mapper: PathMapper | None = None,
+) -> TrackCollection:
+    """Resolve *source* to a TrackCollection via *factory*.
+
+    Converts domain exceptions to ``click.UsageError`` so the CLI can display
+    a readable error message and exit cleanly.
+
+    Args:
+        factory: The ``PlaylistFactory`` to use for resolution.
+        source: The source string (local path, Spotify URI/URL, Deezer URL).
+        path_mapper: Optional path mapper for local file paths.
+
+    Returns:
+        The resolved ``TrackCollection``.
+
+    Raises:
+        click.UsageError: If the source is unrecognised or path-mapper is
+            combined with a service URL.
+    """
+    try:
+        return factory.resolve(source, path_mapper=path_mapper)
+    except InvalidPathMappingError as exc:
+        raise click.UsageError(
+            f"--from-path/--to-path cannot be combined with a service URL source: {source!r}"
+        ) from exc
+    except UnrecognisedSourceError as exc:
+        raise click.UsageError(
+            f"Unrecognised source {source!r}. Provide a local .m3u path, directory, "
+            "Spotify URI/URL, or Deezer playlist URL."
+        ) from exc
 
 
 # ---------------------------------------------------------------------------
@@ -227,11 +271,20 @@ def cli_deezer_import(
     except DeezerAuthenticationError as exc:
         raise click.ClickException(str(exc)) from exc
 
+    factory = _build_playlist_factory(deezer_client=dz)
     for src, dst in zip(source, destination, strict=True):
-        playlist = get_playlist(src, path_mapper=path_mapper)
-        DeezerPlaylist.create_from_another_playlist(
-            dst, playlist, public=public, deezer=dz, autopilot=autopilot, embed_matches=embed_matches
-        )
+        source_playlist = resolve_source(factory, src, path_mapper)
+        try:
+            DeezerPlaylist.create_from_another_playlist(
+                dst,
+                source_playlist,
+                public=public,
+                deezer=dz,
+                autopilot=autopilot,
+                embed_matches=embed_matches,
+            )
+        except Exception as exc:
+            raise click.ClickException(f"Deezer API error: {exc}") from exc
 
 
 @cli_deezer.command("sync")
@@ -258,11 +311,18 @@ def cli_deezer_sync(
     except DeezerAuthenticationError as exc:
         raise click.ClickException(str(exc)) from exc
 
-    source_playlist = get_playlist(source, path_mapper=path_mapper)
-    destination_playlist = DeezerPlaylist(destination, deezer=dz)
-    destination_playlist.sync_tracks(
-        source_playlist.tracks, autopilot=autopilot, embed_matches=embed_matches, sort_tracks=sort_tracks
-    )
+    factory = _build_playlist_factory(deezer_client=dz)
+    source_playlist = resolve_source(factory, source, path_mapper)
+    try:
+        destination_playlist = DeezerPlaylist(destination, deezer=dz)
+        destination_playlist.sync_tracks(
+            source_playlist.tracks,
+            autopilot=autopilot,
+            embed_matches=embed_matches,
+            sort_tracks=sort_tracks,
+        )
+    except Exception as exc:
+        raise click.ClickException(f"Deezer API error: {exc}") from exc
 
 
 @cli_deezer.command("match")
@@ -279,12 +339,13 @@ def cli_deezer_match(
     path_mapper = _build_path_mapper(from_path, to_path)
 
     try:
-        get_deezer_client()
+        dz = get_deezer_client()
     except DeezerAuthenticationError as exc:
         raise click.ClickException(str(exc)) from exc
 
+    factory = _build_playlist_factory(deezer_client=dz)
     for src in source:
-        playlist = get_playlist(src, path_mapper=path_mapper)
+        playlist = resolve_source(factory, src, path_mapper=path_mapper)
         DeezerPlaylist.track_matcher().match_list(playlist.tracks, autopilot=autopilot, embed_matches=True)
 
 
@@ -306,7 +367,11 @@ def cli_deezer_compare(
     except DeezerAuthenticationError as exc:
         raise click.ClickException(str(exc)) from exc
 
-    local_playlist = get_playlist(source, path_mapper=path_mapper)
+    factory = _build_playlist_factory(deezer_client=dz)
+    resolved = resolve_source(factory, source, path_mapper=path_mapper)
+    if not isinstance(resolved, (LocalPlaylist, LocalLibrary)):
+        raise click.UsageError("deezer compare requires a local .m3u file or directory as --source")
+    local_playlist = resolved
     deezer_playlist = DeezerPlaylist(destination, deezer=dz)
     result = compare_deezer_playlists(local_playlist, deezer_playlist)
 
@@ -330,7 +395,8 @@ def cli_deezer_compare(
 @cli_deezer.command("duplicates")
 @click.option("--source", "-s", required=True, help="Path to local .m3u file")
 def cli_deezer_duplicates(source: str) -> None:
-    source_playlist = get_playlist(source)
+    factory = _build_playlist_factory()
+    source_playlist = resolve_source(factory, source)
 
     tracks_map: dict[str, list[LocalTrack]] = {}
     for track in source_playlist.tracks:
