@@ -47,7 +47,7 @@ The `playlift` and `playlift-batch` commands are then available system-wide — 
 ```bash
 git clone https://github.com/idodoron11/playlist-sync.git
 cd playlist-sync
-uv sync
+uv sync --dev
 ```
 
 When running from the cloned directory, prefix all commands with `uv run` (e.g. `uv run playlift ...`).
