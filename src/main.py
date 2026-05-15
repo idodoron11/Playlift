@@ -100,9 +100,7 @@ def cli_spotify_sync(
             sorted_tracks = sorted(source_playlist.tracks, key=lambda track: track.track_id)
             destination_playlist.import_tracks(sorted_tracks, autopilot=autopilot, embed_matches=embed_matches)
         else:
-            destination_playlist.import_tracks(
-                source_playlist.tracks, autopilot=autopilot, embed_matches=embed_matches
-            )
+            destination_playlist.import_tracks(source_playlist.tracks, autopilot=autopilot, embed_matches=embed_matches)
     except spotipy.SpotifyException as exc:
         raise click.ClickException(f"Spotify API error: {exc}") from exc
 

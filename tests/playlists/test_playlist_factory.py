@@ -222,6 +222,3 @@ class TestResolveLocalRegressions:
             factory.resolve(str(m3u_file), path_mapper=path_mapper)
         _, kwargs = mock_local.call_args
         assert kwargs["path_mapper"] is path_mapper
-
-
-
