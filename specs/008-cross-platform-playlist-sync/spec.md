@@ -5,6 +5,12 @@
 **Status**: Draft  
 **Input**: User description: "Cross-platform playlist sync: sync any TrackCollection (local, Spotify, Deezer) into any SyncTarget (Spotify, Deezer) via a new PlaylistFactory class for source detection and construction"
 
+## Clarifications
+
+### Session 2026-05-15
+
+- Q: When using a service playlist as a source, which playlists should the tool be able to read? → A: Any playlist the user's configured credentials can access — their own (private or public) and any public playlist on the platform.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Import a Service Playlist into Another Platform (Priority: P1)
@@ -90,6 +96,7 @@ A user who currently uses the tool to sync local `.m3u` files to Spotify or Deez
 ## Assumptions
 
 - Both source and destination platform accounts are authenticated before the command runs; credential setup is out of scope for this feature.
+- The tool can read any playlist the user's configured credentials can access — their own playlists (private or public) and any public playlist on the source platform. Access control is delegated entirely to the platform's API; the tool applies no additional restriction.
 - The track-matching quality for service→service flows is the same as for local→service flows, since the same matcher logic is reused. No special cross-platform match tuning is in scope.
 - Tracks present on the source platform but absent from the destination platform's catalog are silently skipped — this is the existing matcher behavior and is not changed by this feature.
 - The `--autopilot` flag behaves identically for service sources as it does for local sources.
