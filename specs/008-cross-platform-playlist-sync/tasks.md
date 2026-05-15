@@ -107,7 +107,7 @@
 - [X] T013 [P] Run `uv run ruff format . && uv run ruff check .` and fix any style or lint violations in modified files (`src/exceptions.py`, `src/playlists/__init__.py`, `src/playlists/playlist_factory.py`, `src/main.py`)
 - [X] T014 [P] Run `uv run mypy .` and resolve any type errors in modified and new files
 - [X] T015 Migrate ALL remaining `get_playlist()` call sites in `src/main.py` — including `match`, `compare`, and `duplicates` commands — to `resolve_source()`, then delete `get_playlist()` entirely. Consistent source resolution throughout the module is required (Constitution Principle III — DRY).
-- [ ] T016 Validate the quickstart.md smoke-test scenarios end-to-end (cross-platform import and sync) against the implemented CLI
+- [X] T016 Validate the quickstart.md smoke-test scenarios end-to-end (cross-platform import and sync) against the implemented CLI
 - [X] T019 Add Google-style docstrings to `PlaylistFactory`, `PlaylistFactory.resolve()`, `_build_playlist_factory()`, `resolve_source()`, and `UnrecognisedSourceError` in `src/playlists/playlist_factory.py`, `src/main.py`, and `src/exceptions.py` per Constitution Principle VI
 
 ---
