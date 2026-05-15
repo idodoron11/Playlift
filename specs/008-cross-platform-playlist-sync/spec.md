@@ -10,6 +10,7 @@
 ### Session 2026-05-15
 
 - Q: When using a service playlist as a source, which playlists should the tool be able to read? → A: Any playlist the user's configured credentials can access — their own (private or public) and any public playlist on the platform.
+- Q: Should raw numeric strings be a required input format for Deezer playlist IDs? → A: No — only the `deezer.com/*/playlist/<id>` URL format is required; raw numeric IDs are out of scope.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -75,7 +76,7 @@ A user who currently uses the tool to sync local `.m3u` files to Spotify or Deez
 - **FR-001**: The `import` and `sync` commands for both platforms MUST accept a streaming service playlist URL or URI as the `--source` argument, in addition to existing local file/directory paths.
 - **FR-002**: The tool MUST auto-detect the source platform (Spotify, Deezer, or local) from the format of the `--source` argument, without requiring an explicit platform flag.
 - **FR-003**: A Spotify playlist MUST be identifiable by either the `spotify:playlist:<id>` URI format or the `https://open.spotify.com/playlist/<id>` URL format.
-- **FR-004**: A Deezer playlist MUST be identifiable by a `deezer.com/*/playlist/<id>` URL format. A raw numeric string MAY also be accepted as a Deezer playlist ID.
+- **FR-004**: A Deezer playlist MUST be identifiable by a `deezer.com/*/playlist/<id>` URL format. Raw numeric playlist IDs are not a supported input format.
 - **FR-005**: When `--from-path` or `--to-path` is provided alongside a service playlist source, the tool MUST reject the command with a clear error before any network calls are made.
 - **FR-006**: When `--embed-matches` is provided alongside a service playlist source, the tool MUST silently ignore the flag and proceed normally — no error, no warning.
 - **FR-007**: All six supported source-to-destination combinations MUST work: local→Spotify, local→Deezer, Spotify→Spotify, Spotify→Deezer, Deezer→Spotify, Deezer→Deezer.
