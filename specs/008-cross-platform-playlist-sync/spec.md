@@ -11,6 +11,7 @@
 
 - Q: When using a service playlist as a source, which playlists should the tool be able to read? → A: Any playlist the user's configured credentials can access — their own (private or public) and any public playlist on the platform.
 - Q: Should raw numeric strings be a required input format for Deezer playlist IDs? → A: No — only the `deezer.com/*/playlist/<id>` URL format is required; raw numeric IDs are out of scope.
+- Q: What should happen if fetching the source service playlist fails before matching begins? → A: Fail immediately with a clear error message and exit — no destination playlist is created or modified.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -66,7 +67,7 @@ A user who currently uses the tool to sync local `.m3u` files to Spotify or Deez
 - **`--embed-matches` with a service playlist source**: The flag is silently ignored. No error is raised, no warning is printed. The import or sync proceeds normally.
 - **`--from-path`/`--to-path` combined with a service playlist source**: The tool immediately reports an error. Path remapping is only meaningful for local file sources and has no defined behavior for remote playlists.
 - **Unrecognised source string**: A source string that is not a local file path, a local directory path, a Spotify URI/URL, or a Deezer URL produces a clear error before any network calls are made.
-- **Source platform authentication failure**: If the source platform's credentials are missing or invalid, the tool reports an authentication error before attempting any matching.
+- **Source platform authentication failure or inaccessible playlist**: If the source platform's credentials are missing or invalid, or the source playlist cannot be fetched (e.g. playlist not found, access denied, API error), the tool reports a clear error and exits immediately. No destination playlist is created or modified as a side effect.
 - **Tracks on source platform not available on destination catalog**: Unmatched tracks are skipped (existing matcher behavior). The playlist is created/updated with only successfully matched tracks.
 
 ## Requirements *(mandatory)*
@@ -83,6 +84,7 @@ A user who currently uses the tool to sync local `.m3u` files to Spotify or Deez
 - **FR-008**: Syncing to a local playlist from any service (e.g. Spotify→local) is NOT supported and is out of scope.
 - **FR-009**: The `compare` and `match` commands are NOT required to support service playlist sources and remain local-only.
 - **FR-010**: All existing local-to-service workflows MUST continue to work without any change to user-facing behavior.
+- **FR-011**: If the source service playlist cannot be fetched (playlist not found, access denied, or any platform API error), the tool MUST report a clear error and exit immediately without creating or modifying the destination playlist.
 
 ## Success Criteria *(mandatory)*
 
