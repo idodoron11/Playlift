@@ -35,11 +35,12 @@ class TestDeezerDuplicatesCli:
         track_b = _make_local_track("/music/b.mp3", "https://www.deezer.com/track/99")
 
         with (
-            patch("main.get_playlist") as mock_gp,
+            patch("main.resolve_source") as mock_rs,
+            patch("main._build_playlist_factory"),
         ):
             mock_playlist = MagicMock()
             mock_playlist.tracks = [track_a, track_b]
-            mock_gp.return_value = mock_playlist
+            mock_rs.return_value = mock_playlist
 
             result = runner.invoke(cli, ["deezer", "duplicates", "--source", "fake.m3u"])
 
@@ -62,10 +63,10 @@ class TestDeezerDuplicatesCli:
         track_a = _make_local_track("/music/a.mp3", "https://www.deezer.com/track/1")
         track_b = _make_local_track("/music/b.mp3", "https://www.deezer.com/track/2")
 
-        with patch("main.get_playlist") as mock_gp:
+        with patch("main.resolve_source") as mock_rs, patch("main._build_playlist_factory"):
             mock_playlist = MagicMock()
             mock_playlist.tracks = [track_a, track_b]
-            mock_gp.return_value = mock_playlist
+            mock_rs.return_value = mock_playlist
 
             result = runner.invoke(cli, ["deezer", "duplicates", "--source", "fake.m3u"])
 
