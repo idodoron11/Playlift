@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 import spotipy
@@ -121,14 +121,8 @@ class TestSpotifyPlaylistUnit:
 
         mock_track = MagicMock()
         mock_track.track_id = TRACK_ID_1
-        source_playlist = MagicMock()
-        source_playlist.tracks = [mock_track]
 
-        mock_matcher = MagicMock()
-        mock_matcher.match_list.return_value = [mock_track]
-
-        with patch.object(SpotifyPlaylist, "track_matcher", return_value=mock_matcher):
-            playlist = SpotifyPlaylist.create_from_another_playlist(PLAYLIST_NAME, source_playlist, client=mock_client)
+        playlist = SpotifyPlaylist.create_from_another_playlist(PLAYLIST_NAME, [mock_track], client=mock_client)
 
         mock_client.current_user.assert_called_once()
         mock_client.playlist_add_items.assert_called_once()

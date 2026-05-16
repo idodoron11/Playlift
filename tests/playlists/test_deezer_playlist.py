@@ -211,31 +211,25 @@ class TestDeezerPlaylistSyncTracks:
     def test_sync_adds_missing_tracks(self) -> None:
         playlist, dz = self._make_playlist_with_tracks(["1"])
         new_track = DeezerTrack(_gw_track("2"))
+        matched = [DeezerTrack(_gw_track("1")), new_track]
 
-        with patch.object(DeezerPlaylist, "track_matcher") as mock_matcher:
-            mock_matcher.return_value.match_list.return_value = [DeezerTrack(_gw_track("1")), new_track]
-            playlist.sync_tracks([], autopilot=True)
+        playlist.sync_tracks(matched)
 
         dz.gw.add_songs_to_playlist.assert_called_once()
 
     def test_sync_removes_extra_tracks(self) -> None:
         playlist, dz = self._make_playlist_with_tracks(["1", "2"])
+        matched = [DeezerTrack(_gw_track("1"))]
 
-        with patch.object(DeezerPlaylist, "track_matcher") as mock_matcher:
-            mock_matcher.return_value.match_list.return_value = [DeezerTrack(_gw_track("1"))]
-            playlist.sync_tracks([], autopilot=True)
+        playlist.sync_tracks(matched)
 
         dz.gw.remove_songs_from_playlist.assert_called_once()
 
     def test_sync_already_up_to_date_makes_no_add_remove_calls(self) -> None:
         playlist, dz = self._make_playlist_with_tracks(["1", "2"])
+        matched = [DeezerTrack(_gw_track("1")), DeezerTrack(_gw_track("2"))]
 
-        with patch.object(DeezerPlaylist, "track_matcher") as mock_matcher:
-            mock_matcher.return_value.match_list.return_value = [
-                DeezerTrack(_gw_track("1")),
-                DeezerTrack(_gw_track("2")),
-            ]
-            playlist.sync_tracks([], autopilot=True)
+        playlist.sync_tracks(matched)
 
         dz.gw.add_songs_to_playlist.assert_not_called()
         dz.gw.remove_songs_from_playlist.assert_not_called()
@@ -247,9 +241,7 @@ class TestDeezerPlaylistSyncTracks:
         playlist = DeezerPlaylist("123", deezer=dz)
         resolved = [DeezerTrack(_gw_track("3")), DeezerTrack(_gw_track("1")), DeezerTrack(_gw_track("2"))]
 
-        with patch.object(DeezerPlaylist, "track_matcher") as mock_matcher:
-            mock_matcher.return_value.match_list.return_value = resolved
-            playlist.sync_tracks([], sort_tracks=True)
+        playlist.sync_tracks(resolved, sort_tracks=True)
 
         add_ids = dz.gw.add_songs_to_playlist.call_args[0][1]
         assert add_ids == ["1", "2", "3"]
@@ -261,14 +253,12 @@ class TestDeezerPlaylistSyncTracks:
 
 
 class TestDeezerPlaylistImportTracks:
-    def test_import_tracks_resolves_and_adds(self) -> None:
+    def test_import_tracks_adds_pre_matched_tracks(self) -> None:
         dz = _make_dz()
         playlist = DeezerPlaylist("123", deezer=dz)
         matched_track = DeezerTrack(_gw_track("42"))
 
-        with patch.object(DeezerPlaylist, "track_matcher") as mock_matcher:
-            mock_matcher.return_value.match_list.return_value = [matched_track]
-            playlist.import_tracks([MagicMock()])
+        playlist.import_tracks([matched_track])
 
         dz.gw.add_songs_to_playlist.assert_called_once_with("123", ["42"])
 
@@ -282,13 +272,9 @@ class TestDeezerPlaylistCreateFromAnother:
     def test_creates_new_playlist_and_populates_it(self) -> None:
         dz = _make_dz()
         dz.gw.create_playlist.return_value = 777
-        source = MagicMock()
-        source.tracks = [MagicMock()]
         matched_track = DeezerTrack(_gw_track("42"))
 
-        with patch.object(DeezerPlaylist, "track_matcher") as mock_matcher:
-            mock_matcher.return_value.match_list.return_value = [matched_track]
-            result = DeezerPlaylist.create_from_another_playlist("New", source, deezer=dz)
+        result = DeezerPlaylist.create_from_another_playlist("New", [matched_track], deezer=dz)
 
         assert isinstance(result, DeezerPlaylist)
         assert result.playlist_id == "777"

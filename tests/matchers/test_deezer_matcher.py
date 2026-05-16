@@ -297,15 +297,15 @@ class TestDeezerMatchEmbedding:
         dz.gw.search.assert_not_called()
 
     def test_resolved_track_always_written_regardless_of_embed_flag(self) -> None:
-        """match_list with embed_matches=True calls embed_match on each resolved track."""
+        """embed_matches() calls embed_match on each EmbeddableTrack source."""
         dz = MagicMock()
         dz.api.get_track_by_ISRC.return_value = _gw_data()
         matcher = _make_matcher(dz)
-        # Register as a virtual subclass of EmbeddableTrack so isinstance() passes
         track = _make_track(isrc="GBAYE7300007")
         EmbeddableTrack.register(type(track))
+        deezer_track = DeezerTrack(_gw_data())
 
-        matcher.match_list([track], autopilot=True, embed_matches=True)
+        matcher.embed_matches([(track, deezer_track)])
 
         track.embed_match.assert_called_once()
 
@@ -318,7 +318,8 @@ class TestDeezerMatchEmbedding:
         track = _make_track(isrc="GBAYE7300007")
         track.embed_match = MagicMock()
 
-        matcher.match_list([track], autopilot=True, embed_matches=True)
+        # No matched pair to embed — embed_matches should do nothing
+        matcher.embed_matches([])
 
         track.embed_match.assert_not_called()
 
