@@ -10,7 +10,7 @@ Covers:
 from __future__ import annotations
 
 from typing import Any
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, Mock
 
 import pytest
 
@@ -170,7 +170,7 @@ class TestMatchByIsrc:
         assert result is None
         dz.api.get_track_by_ISRC.assert_not_called()
 
-    def test_network_error_logs_warning_and_returns_none(self, caplog: Any) -> None:
+    def test_network_error_logs_warning_and_returns_none(self, caplog: pytest.LogCaptureFixture) -> None:
         import logging
 
         dz = MagicMock()
@@ -232,7 +232,7 @@ class TestMatchByFuzzySearch:
 
         assert result is None
 
-    def test_no_results_logs_warning_and_returns_none(self, caplog: Any) -> None:
+    def test_no_results_logs_warning_and_returns_none(self, caplog: pytest.LogCaptureFixture) -> None:
         import logging
 
         dz = MagicMock()
@@ -260,7 +260,7 @@ class TestMatchByFuzzySearch:
         assert artist in called_query
         assert title in called_query
 
-    def test_network_error_logs_warning_and_returns_none(self, caplog: Any) -> None:
+    def test_network_error_logs_warning_and_returns_none(self, caplog: pytest.LogCaptureFixture) -> None:
         import logging
 
         dz = MagicMock()
@@ -298,11 +298,8 @@ class TestDeezerMatchEmbedding:
 
     def test_resolved_track_always_written_regardless_of_embed_flag(self) -> None:
         """embed_matches() calls embed_match on each EmbeddableTrack source."""
-        dz = MagicMock()
-        dz.api.get_track_by_ISRC.return_value = _gw_data()
-        matcher = _make_matcher(dz)
-        track = _make_track(isrc="GBAYE7300007")
-        EmbeddableTrack.register(type(track))
+        matcher = _make_matcher()
+        track = Mock(spec=EmbeddableTrack)
         deezer_track = DeezerTrack(_gw_data())
 
         matcher.embed_matches([(track, deezer_track)])
@@ -310,15 +307,10 @@ class TestDeezerMatchEmbedding:
         track.embed_match.assert_called_once()
 
     def test_unresolvable_track_writes_no_tag(self) -> None:
-        """When neither ISRC nor fuzzy search resolves a track, embed_match is never called."""
-        dz = MagicMock()
-        dz.api.get_track_by_ISRC.side_effect = Exception("not found")
-        dz.gw.search.return_value = {"TRACK": {"data": []}}
-        matcher = _make_matcher(dz)
-        track = _make_track(isrc="GBAYE7300007")
-        track.embed_match = MagicMock()
+        """When no matched pairs are provided, embed_match is never called."""
+        matcher = _make_matcher()
+        track = Mock(spec=EmbeddableTrack)
 
-        # No matched pair to embed — embed_matches should do nothing
         matcher.embed_matches([])
 
         track.embed_match.assert_not_called()

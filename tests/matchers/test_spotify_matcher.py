@@ -1,4 +1,5 @@
 import logging
+from typing import Any
 from unittest import TestCase
 from unittest.mock import MagicMock, Mock, patch
 
@@ -10,9 +11,9 @@ from tests.tracks.track_mock import TrackMock
 from tracks.spotify_track import SpotifyTrack
 
 
-def _make_spotify_track_data(track_id: str = "abc123", isrc: str | None = "USRC17607839") -> dict:  # type: ignore[type-arg]
+def _make_spotify_track_data(track_id: str = "abc123", isrc: str | None = "USRC17607839") -> dict[str, Any]:
     """Build a minimal Spotify track data dict for testing."""
-    data: dict = {  # type: ignore[type-arg]
+    data: dict[str, Any] = {
         "id": track_id,
         "name": "Test Track",
         "artists": [{"name": "Test Artist"}],
@@ -183,15 +184,6 @@ class TestPrefetchIsrcData:
 # ---------------------------------------------------------------------------
 # T009, T010, T012: Tests for embed_matches (US1 + US2)
 # ---------------------------------------------------------------------------
-
-
-def _make_local_track_mock(title: str = "Track") -> MagicMock:
-    """Build a minimal LocalTrack-like mock for embed tests."""
-    track = MagicMock()
-    track.title = title
-    track.spotify_ref = None
-    track.isrc = None
-    return track
 
 
 class TestEmbedMatches:
@@ -447,30 +439,8 @@ class TestEmbedIsrc:
 
         source.embed_match.assert_called_once_with(matched)
 
-    def test_embed_isrc_delegates_to_embed_match(self, matcher: SpotifyMatcher) -> None:
-        """T022: source is EmbeddableTrack → embed_match delegated; idempotency is LocalTrack's responsibility."""
-        from tracks import EmbeddableTrack
-
-        matched = _make_spotify_track("abc123", "USRC17607839")
-        source = Mock(spec=EmbeddableTrack)
-
-        matcher._update_spotify_match_in_source_track(source, matched)
-
-        source.embed_match.assert_called_once_with(matched)
-
-    def test_embed_isrc_updates_when_spotify_isrc_differs(self, matcher: SpotifyMatcher) -> None:
-        """T022b: source is EmbeddableTrack → embed_match delegated."""
-        from tracks import EmbeddableTrack
-
-        matched = _make_spotify_track("abc123", "USRC17607839")
-        source = Mock(spec=EmbeddableTrack)
-
-        matcher._update_spotify_match_in_source_track(source, matched)
-
-        source.embed_match.assert_called_once_with(matched)
-
-    def test_embed_isrc_skipped_when_embed_matches_false(self, matcher: SpotifyMatcher) -> None:
-        """T023: match_list() never calls embed_match — embedding is the Presenter's responsibility."""
+    def test_match_list_never_calls_embed_match(self, matcher: SpotifyMatcher) -> None:
+        """match_list() never calls embed_match — embedding is the Presenter's responsibility."""
         from tracks.local_track import LocalTrack
 
         matched = _make_spotify_track("abc123", "USRC17607839")
@@ -488,8 +458,8 @@ class TestEmbedIsrc:
 
             mock_local.embed_match.assert_not_called()
 
-    def test_embed_isrc_skipped_when_spotify_track_has_no_isrc(self, matcher: SpotifyMatcher) -> None:
-        """T024: source is EmbeddableTrack → embed_match delegated regardless of match ISRC."""
+    def test_embed_match_called_regardless_of_match_isrc(self, matcher: SpotifyMatcher) -> None:
+        """Source is EmbeddableTrack → embed_match delegated regardless of match ISRC."""
         from tracks import EmbeddableTrack
 
         matched = _make_spotify_track("abc123", None)
@@ -506,18 +476,8 @@ class TestEmbedIsrc:
         # TrackMock is not an EmbeddableTrack, so the isinstance guard skips embedding
         matcher._update_spotify_match_in_source_track(track, matched)
 
-    def test_embed_isrc_skipped_for_non_local_track(self, matcher: SpotifyMatcher) -> None:
-        """T027 sub-test: EmbeddableTrack source → embed_match called."""
-        from tracks import EmbeddableTrack
-
-        matched = _make_spotify_track("abc123", "USRC17607839")
-        source = Mock(spec=EmbeddableTrack)
-        matcher._update_spotify_match_in_source_track(source, matched)
-
-        source.embed_match.assert_called_once_with(matched)
-
-    def test_update_match_skips_isrc_write_when_normalized_values_match(self, matcher: SpotifyMatcher) -> None:
-        """T006/Bug3: matcher delegates to embed_match; normalization logic is in LocalTrack.embed_match."""
+    def test_update_match_delegates_to_embed_match(self, matcher: SpotifyMatcher) -> None:
+        """Matcher delegates to embed_match; normalization logic is in LocalTrack.embed_match."""
         from tracks import EmbeddableTrack
 
         matched = _make_spotify_track("abc123", "USSM1-9604431")
