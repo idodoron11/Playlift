@@ -10,6 +10,7 @@ from matchers.spotify_matcher import SpotifyMatcher
 from playlists.local_playlist import LocalPlaylist
 from tracks.local_track import LocalTrack
 from tracks.spotify_track import SpotifyTrack
+from views.cli_playlist_load_view import CliPlaylistLoadView
 
 
 def rematch(track: LocalTrack) -> None:
@@ -45,7 +46,13 @@ def rematch(track: LocalTrack) -> None:
 playlist_path = click.prompt("Enter playlist path")
 matcher: SpotifyMatcher = SpotifyMatcher.get_instance()  # type: ignore[assignment]
 
-playlist = LocalPlaylist(playlist_path)
+_load_view = CliPlaylistLoadView()
+playlist = LocalPlaylist(
+    playlist_path,
+    on_loading_started=_load_view.begin_loading,
+    on_track_loaded=_load_view.on_track_loaded,
+)
+_load_view.end_loading()
 for _index, track in enumerate(tqdm(playlist.tracks)):
     spotify_ref = track.spotify_ref
     if not spotify_ref or spotify_ref == "SKIP":
