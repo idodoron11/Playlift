@@ -228,3 +228,27 @@ class TestResolveLocalRegressions:
             factory.resolve(str(m3u_file), path_mapper=path_mapper)
         _, kwargs = mock_local.call_args
         assert kwargs["path_mapper"] is path_mapper
+
+    def test_callbacks_forwarded_to_local_playlist(
+        self, factory: PlaylistFactory, tmp_path: pytest.TempPathFactory
+    ) -> None:
+        m3u_file = tmp_path / "cb.m3u"  # type: ignore[operator]
+        m3u_file.write_text("#EXTM3U\n")
+        on_start = MagicMock()
+        on_loaded = MagicMock()
+        with patch("playlists.playlist_factory.LocalPlaylist") as mock_local:
+            factory.resolve(str(m3u_file), on_loading_started=on_start, on_track_loaded=on_loaded)
+        _, kwargs = mock_local.call_args
+        assert kwargs["on_loading_started"] is on_start
+        assert kwargs["on_track_loaded"] is on_loaded
+
+    def test_callbacks_forwarded_to_local_library(
+        self, factory: PlaylistFactory, tmp_path: pytest.TempPathFactory
+    ) -> None:
+        on_start = MagicMock()
+        on_loaded = MagicMock()
+        with patch("playlists.playlist_factory.LocalLibrary") as mock_lib:
+            factory.resolve(str(tmp_path), on_loading_started=on_start, on_track_loaded=on_loaded)
+        _, kwargs = mock_lib.call_args
+        assert kwargs["on_loading_started"] is on_start
+        assert kwargs["on_track_loaded"] is on_loaded
