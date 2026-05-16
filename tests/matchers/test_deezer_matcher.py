@@ -296,7 +296,7 @@ class TestDeezerMatchEmbedding:
         dz.api.get_track_by_ISRC.assert_not_called()
         dz.gw.search.assert_not_called()
 
-    def test_resolved_track_always_written_regardless_of_embed_flag(self) -> None:
+    def test_embed_matches_calls_embed_match_on_embeddable_source(self) -> None:
         """embed_matches() calls embed_match on each EmbeddableTrack source."""
         matcher = _make_matcher()
         track = Mock(spec=EmbeddableTrack)
