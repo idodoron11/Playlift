@@ -4,7 +4,7 @@ from typing import Any
 import spotipy
 
 from matchers.spotify_matcher import SpotifyMatcher
-from playlists import Playlist, SyncTarget, TrackCollection
+from playlists import Playlist, SyncTarget
 from tracks import Track
 from tracks.spotify_track import SpotifyTrack
 
@@ -54,27 +54,19 @@ class SpotifyPlaylist(Playlist, SyncTarget):
     def create_from_another_playlist(  # type: ignore[no-any-unimported]  # spotipy ships no type stubs
         cls,
         playlist_name: str,
-        source_playlist: TrackCollection,
+        matched_tracks: list[Track],
         public: bool = False,
-        autopilot: bool = False,
-        embed_matches: bool = False,
         *,
         client: spotipy.Spotify,
     ) -> "SpotifyPlaylist":
         if client is None:
             raise ValueError("client must be provided")
-        sp_tracks: list[Track] = SpotifyPlaylist.track_matcher().match_list(
-            source_playlist.tracks, autopilot=autopilot, embed_matches=embed_matches
-        )
         new_playlist = cls.create(playlist_name, public=public, client=client)
-        new_playlist.add_tracks(sp_tracks)  # type: ignore[arg-type]  # list[Track] contains SpotifyTrack instances at runtime
+        new_playlist.add_tracks(matched_tracks)  # type: ignore[arg-type]  # list[Track] contains SpotifyTrack instances at runtime
         return new_playlist
 
-    def import_tracks(self, tracks: Iterable[Track], autopilot: bool = False, embed_matches: bool = False) -> None:
-        sp_tracks: list[Track] = SpotifyPlaylist.track_matcher().match_list(
-            tracks, autopilot=autopilot, embed_matches=embed_matches
-        )
-        self.add_tracks(sp_tracks)  # type: ignore[arg-type]  # list[Track] contains SpotifyTrack instances at runtime
+    def import_tracks(self, tracks: Iterable[Track]) -> None:
+        self.add_tracks(list(tracks))  # type: ignore[arg-type]  # list[Track] contains SpotifyTrack instances at runtime
 
     @property
     def tracks(self) -> list[SpotifyTrack]:

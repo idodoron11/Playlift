@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 from matchers.deezer_matcher import DeezerMatcher
-from playlists import Playlist, SyncTarget, TrackCollection
+from playlists import Playlist, SyncTarget
 from tracks.deezer_track import DeezerTrack
 
 _ADD_TRACKS_CHUNK_SIZE: int = 100
@@ -71,17 +71,19 @@ class DeezerPlaylist(Playlist, SyncTarget):
 
     def sync_tracks(
         self,
-        source_tracks: Iterable[Track],
-        autopilot: bool = False,
-        embed_matches: bool = False,
+        matched_tracks: Iterable[Track],
         sort_tracks: bool = False,
     ) -> None:
-        """Sync the Deezer playlist to match *source_tracks*.
+        """Sync the Deezer playlist to match *matched_tracks*.
 
         Adds tracks that are missing on Deezer and removes tracks that are no
         longer in the source.  Optionally reorders to match source order.
+
+        Args:
+            matched_tracks: Already-matched Deezer tracks to sync.
+            sort_tracks: When True, sort tracks alphabetically by track ID.
         """
-        resolved = self.track_matcher().match_list(source_tracks, autopilot=autopilot, embed_matches=embed_matches)
+        resolved = list(matched_tracks)
         resolved_ids: set[str] = {t.track_id for t in resolved}
 
         current = list(self.tracks)
@@ -100,10 +102,9 @@ class DeezerPlaylist(Playlist, SyncTarget):
             self.remove_track(list(self.tracks))
             self.add_tracks(sorted_resolved)
 
-    def import_tracks(self, tracks: Iterable[Track], autopilot: bool = False, embed_matches: bool = False) -> None:
-        """Resolve *tracks* via DeezerMatcher and add them to this playlist."""
-        deezer_tracks = self.track_matcher().match_list(tracks, autopilot=autopilot, embed_matches=embed_matches)
-        self.add_tracks(deezer_tracks)
+    def import_tracks(self, tracks: Iterable[Track]) -> None:
+        """Add pre-matched *tracks* to this playlist."""
+        self.add_tracks(list(tracks))
 
     # ------------------------------------------------------------------
     # Factory methods
@@ -120,20 +121,24 @@ class DeezerPlaylist(Playlist, SyncTarget):
     def create_from_another_playlist(  # type: ignore[no-any-unimported]
         cls,
         name: str,
-        source: TrackCollection,
+        matched_tracks: list[Track],
         public: bool = False,
         *,
         deezer: Deezer,
-        autopilot: bool = False,
-        embed_matches: bool = False,
     ) -> DeezerPlaylist:
-        """Create a new Deezer playlist and populate it from *source*.
+        """Create a new Deezer playlist and populate it from pre-matched *matched_tracks*.
 
-        This is the highest-level import facade called by the ``deezer import``
-        CLI command.
+        Args:
+            name: Display name for the new playlist.
+            matched_tracks: Already-matched Deezer tracks to add.
+            public: When True, make the playlist publicly visible.
+            deezer: Authenticated Deezer client.
+
+        Returns:
+            The newly created and populated :class:`DeezerPlaylist`.
         """
         new_playlist = cls.create(name, public=public, deezer=deezer)
-        new_playlist.import_tracks(source.tracks, autopilot=autopilot, embed_matches=embed_matches)
+        new_playlist.import_tracks(matched_tracks)
         return new_playlist
 
     # ------------------------------------------------------------------

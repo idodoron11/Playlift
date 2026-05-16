@@ -13,6 +13,8 @@ from playlists.local_playlist import LocalPlaylist
 from playlists.spotify_playlist import SpotifyPlaylist
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     import spotipy
     from deezer import Deezer
 
@@ -86,7 +88,13 @@ class PlaylistFactory:
         self._spotify_client = spotify_client
         self._deezer_client = deezer_client
 
-    def resolve(self, source: str, path_mapper: PathMapper | None = None) -> TrackCollection:
+    def resolve(
+        self,
+        source: str,
+        path_mapper: PathMapper | None = None,
+        on_loading_started: Callable[[int], None] | None = None,
+        on_track_loaded: Callable[[], None] | None = None,
+    ) -> TrackCollection:
         """Resolve *source* to a TrackCollection.
 
         Args:
@@ -126,10 +134,12 @@ class PlaylistFactory:
             return DeezerPlaylist(playlist_id, deezer=self._deezer_client)
 
         if os.path.isdir(source):
-            return LocalLibrary(source)
+            return LocalLibrary(source, on_loading_started=on_loading_started, on_track_loaded=on_track_loaded)
 
         if os.path.isfile(source):
-            return LocalPlaylist(source, path_mapper=path_mapper)
+            return LocalPlaylist(
+                source, path_mapper=path_mapper, on_loading_started=on_loading_started, on_track_loaded=on_track_loaded
+            )
 
         raise UnrecognisedSourceError(
             f"Source {source!r} is not a recognised Spotify URI/URL, Deezer URL, or valid local path."
