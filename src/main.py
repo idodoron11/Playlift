@@ -17,8 +17,12 @@ from playlists.local_playlist import LocalPlaylist
 from playlists.path_mapper import PathMapper
 from playlists.playlist_factory import PlaylistFactory
 from playlists.spotify_playlist import SpotifyPlaylist
+from presenters import loading
+from presenters.matching import resolve_matches
 from tracks.deezer_track import is_valid_deezer_url, normalise_deezer_url
 from tracks.local_track import LocalTrack
+from views.cli_match_view import CliMatchView
+from views.cli_playlist_load_view import CliPlaylistLoadView
 
 if TYPE_CHECKING:
     from playlists import TrackCollection
@@ -60,12 +64,19 @@ def cli_spotify_import(
     inputs = zip(source, destination, strict=True)
     for src, dst in inputs:
         source_playlist = resolve_source(factory, src, path_mapper)
+        view = CliMatchView()
+        matcher = SpotifyPlaylist.track_matcher()
+        matched = resolve_matches(
+            list(source_playlist.tracks),
+            matcher,
+            view,
+            autopilot=autopilot,
+            embed_matches=embed_matches,
+        )
         try:
             SpotifyPlaylist.create_from_another_playlist(
                 dst,
-                source_playlist,
-                autopilot=autopilot,
-                embed_matches=embed_matches,
+                matched,
                 public=public,
                 client=get_spotify_client(),
             )
@@ -96,11 +107,13 @@ def cli_spotify_sync(
     try:
         destination_playlist = SpotifyPlaylist(destination, client=get_spotify_client())
         destination_playlist.clear()
+        source_tracks = list(source_playlist.tracks)
         if sort_tracks:
-            sorted_tracks = sorted(source_playlist.tracks, key=lambda track: track.track_id)
-            destination_playlist.import_tracks(sorted_tracks, autopilot=autopilot, embed_matches=embed_matches)
-        else:
-            destination_playlist.import_tracks(source_playlist.tracks, autopilot=autopilot, embed_matches=embed_matches)
+            source_tracks = sorted(source_tracks, key=lambda track: track.track_id)
+        view = CliMatchView()
+        matcher = SpotifyPlaylist.track_matcher()
+        matched = resolve_matches(source_tracks, matcher, view, autopilot=autopilot, embed_matches=embed_matches)
+        destination_playlist.import_tracks(matched)
     except spotipy.SpotifyException as exc:
         raise click.ClickException(f"Spotify API error: {exc}") from exc
 
@@ -142,7 +155,9 @@ def cli_spotify_match(
 
     for src in source:
         playlist = resolve_source(factory, src, path_mapper=path_mapper)
-        SpotifyPlaylist.track_matcher().match_list(playlist.tracks, autopilot=autopilot, embed_matches=True)
+        view = CliMatchView()
+        matcher = SpotifyPlaylist.track_matcher()
+        resolve_matches(list(playlist.tracks), matcher, view, autopilot=autopilot, embed_matches=True)
 
 
 @cli_spotify.command("compare")
@@ -220,8 +235,9 @@ def resolve_source(
         click.UsageError: If the source is unrecognised or path-mapper is
             combined with a service URL.
     """
+    view = CliPlaylistLoadView()
     try:
-        return factory.resolve(source, path_mapper=path_mapper)
+        return loading.resolve_source(factory, view, source, path_mapper)
     except InvalidPathMappingError as exc:
         raise click.UsageError(
             f"--from-path/--to-path cannot be combined with a service URL source: {source!r}"
@@ -272,14 +288,21 @@ def cli_deezer_import(
     factory = _build_playlist_factory(deezer_client=dz)
     for src, dst in zip(source, destination, strict=True):
         source_playlist = resolve_source(factory, src, path_mapper)
+        view = CliMatchView()
+        matcher = DeezerPlaylist.track_matcher()
+        matched = resolve_matches(
+            list(source_playlist.tracks),
+            matcher,
+            view,
+            autopilot=autopilot,
+            embed_matches=embed_matches,
+        )
         try:
             DeezerPlaylist.create_from_another_playlist(
                 dst,
-                source_playlist,
+                matched,
                 public=public,
                 deezer=dz,
-                autopilot=autopilot,
-                embed_matches=embed_matches,
             )
         except Exception as exc:
             raise click.ClickException(f"Deezer API error: {exc}") from exc
@@ -313,12 +336,16 @@ def cli_deezer_sync(
     source_playlist = resolve_source(factory, source, path_mapper)
     try:
         destination_playlist = DeezerPlaylist(destination, deezer=dz)
-        destination_playlist.sync_tracks(
-            source_playlist.tracks,
+        view = CliMatchView()
+        matcher = DeezerPlaylist.track_matcher()
+        matched = resolve_matches(
+            list(source_playlist.tracks),
+            matcher,
+            view,
             autopilot=autopilot,
             embed_matches=embed_matches,
-            sort_tracks=sort_tracks,
         )
+        destination_playlist.sync_tracks(matched, sort_tracks=sort_tracks)
     except Exception as exc:
         raise click.ClickException(f"Deezer API error: {exc}") from exc
 
@@ -344,7 +371,9 @@ def cli_deezer_match(
     factory = _build_playlist_factory(deezer_client=dz)
     for src in source:
         playlist = resolve_source(factory, src, path_mapper=path_mapper)
-        DeezerPlaylist.track_matcher().match_list(playlist.tracks, autopilot=autopilot, embed_matches=True)
+        view = CliMatchView()
+        matcher = DeezerPlaylist.track_matcher()
+        resolve_matches(list(playlist.tracks), matcher, view, autopilot=autopilot, embed_matches=True)
 
 
 @cli_deezer.command("compare")
