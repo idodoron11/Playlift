@@ -1,12 +1,11 @@
 import logging
 import re
-from collections.abc import Iterable
+from collections.abc import Iterable, Iterator
 
 import spotipy
-from tqdm import tqdm
 
 from exceptions import SkipTrackError
-from matchers import Matcher
+from matchers import Matcher, MatchOutcome, MatchStatus
 from tracks import EmbeddableTrack, Track
 from tracks.spotify_track import SpotifyTrack
 
@@ -144,50 +143,29 @@ class SpotifyMatcher(Matcher):
             return []
         return [SpotifyTrack(track["id"], data=track, client=self._client) for track in response["tracks"]["items"]]
 
-    def _match_list(self, tracks: Iterable[Track]) -> list[list[SpotifyTrack]]:
-        tracks = list(tracks)
-        sp_tracks: list[list[SpotifyTrack]] = []
-        print("Matching source tracks to Spotify tracks")
-        for _index, track in enumerate(tqdm(tracks)):
+    def match_list(self, tracks: Iterable[Track]) -> Iterator[MatchOutcome]:
+        """Yield a :class:`MatchOutcome` for each track.
+
+        Pure batch matching — no progress bars, no user interaction.
+        """
+        for track in tracks:
             try:
-                match = self.match(track)
-                if match:
-                    sp_tracks.append([match])
+                matched = self.match(track)
+                if matched is not None:
+                    yield MatchOutcome(source_track=track, status=MatchStatus.MATCHED, match=matched)
                     continue
                 suggestions = self.suggest_match(track)
-                sp_tracks.append(suggestions)
                 if not suggestions:
-                    print(f"Could not match\n{track}")
-                    continue
+                    yield MatchOutcome(source_track=track, status=MatchStatus.UNMATCHED)
+                else:
+                    yield MatchOutcome(source_track=track, status=MatchStatus.AMBIGUOUS, suggestions=list(suggestions))
             except SkipTrackError:
-                print(f"Skip track\n{track}")
-                sp_tracks.append([])
-                continue
-        return sp_tracks
+                yield MatchOutcome(source_track=track, status=MatchStatus.SKIPPED)
 
-    def match_list(self, tracks: Iterable[Track], autopilot: bool = False, embed_matches: bool = False) -> list[Track]:
-        track_list = list(tracks)
-        suggestions_list: list[list[SpotifyTrack]] = self._match_list(track_list)
-        processed: list[list[SpotifyTrack]] = list(map(list, suggestions_list))
-        sp_tracks: list[Track] = []
-        pairs_to_embed: list[tuple[Track, SpotifyTrack]] = []
-
-        print("Reviewing matches")
-        for _index, (track, suggestions) in tqdm(list(enumerate(zip(track_list, processed, strict=True)))):
-            if len(suggestions) == 0:
-                continue
-            choice = 0
-            if len(suggestions) > 1 and not autopilot:
-                choice = Matcher.choose_suggestion(track, suggestions)
-            if choice >= 0:
-                sp_tracks.append(suggestions[choice])
-                if embed_matches:
-                    pairs_to_embed.append((track, suggestions[choice]))
-
-        if pairs_to_embed:
-            chosen_matches = [match for _, match in pairs_to_embed]
-            self._prefetch_isrc_data(chosen_matches)
-            for source_track, match in pairs_to_embed:
-                self._update_spotify_match_in_source_track(source_track, match)
-
-        return sp_tracks
+    def embed_matches(self, pairs: list[tuple[Track, Track]]) -> None:
+        """Write Spotify refs into *source* tracks, batch-prefetching ISRC data first."""
+        sp_pairs = [(src, match) for src, match in pairs if isinstance(match, SpotifyTrack)]
+        chosen_matches = [match for _, match in sp_pairs]
+        self._prefetch_isrc_data(chosen_matches)
+        for source_track, match in sp_pairs:
+            self._update_spotify_match_in_source_track(source_track, match)

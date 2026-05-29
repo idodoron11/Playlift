@@ -1,4 +1,5 @@
 import logging
+from typing import Any
 from unittest import TestCase
 from unittest.mock import MagicMock, Mock, patch
 
@@ -10,9 +11,9 @@ from tests.tracks.track_mock import TrackMock
 from tracks.spotify_track import SpotifyTrack
 
 
-def _make_spotify_track_data(track_id: str = "abc123", isrc: str | None = "USRC17607839") -> dict:  # type: ignore[type-arg]
+def _make_spotify_track_data(track_id: str = "abc123", isrc: str | None = "USRC17607839") -> dict[str, Any]:
     """Build a minimal Spotify track data dict for testing."""
-    data: dict = {  # type: ignore[type-arg]
+    data: dict[str, Any] = {
         "id": track_id,
         "name": "Test Track",
         "artists": [{"name": "Test Artist"}],
@@ -181,35 +182,20 @@ class TestPrefetchIsrcData:
 
 
 # ---------------------------------------------------------------------------
-# T009, T010, T012: Tests for match_list (US1 + US2 — write first, must FAIL before T011)
+# T009, T010, T012: Tests for embed_matches (US1 + US2)
 # ---------------------------------------------------------------------------
 
 
-def _make_local_track_mock(title: str = "Track") -> MagicMock:
-    """Build a minimal LocalTrack-like mock for embed tests."""
-    track = MagicMock()
-    track.title = title
-    track.spotify_ref = None
-    track.isrc = None
-    return track
-
-
-def _build_matcher_with_suggestions(mock_client: MagicMock, sp_tracks: list[SpotifyTrack]) -> SpotifyMatcher:
-    """Construct a SpotifyMatcher whose _match_list returns pre-set tracks."""
-    matcher = SpotifyMatcher(client=mock_client)
-    matcher._match_list = MagicMock(return_value=[[t] for t in sp_tracks])  # type: ignore[method-assign]
-    return matcher
-
-
-class TestMatchListBatchPrefetch:
-    """Tests for the two-pass match_list design (US1 + US2)."""
+class TestEmbedMatches:
+    """Tests for SpotifyMatcher.embed_matches() — ISRC batch prefetch and tag writing."""
 
     # T009
-    def test_match_list_with_embed_matches_calls_prefetch_once_per_batch(self, mock_client: MagicMock) -> None:
-        """embed_matches=True, N tracks all needing ISRC → client.tracks() called ⌈N/50⌉ times."""
+    def test_embed_matches_calls_prefetch_once_per_batch(self, mock_client: MagicMock) -> None:
+        """N pairs all needing ISRC → client.tracks() called ⌈N/50⌉ times."""
         n = 55  # two batches
         sp_tracks = [_make_spotify_track_no_data(f"id{i}") for i in range(n)]
         source_tracks = [TrackMock(str(i), ["Artist"], "Album", f"Track {i}", 200, i) for i in range(n)]
+        pairs: list[tuple[TrackMock, SpotifyTrack]] = list(zip(source_tracks, sp_tracks, strict=True))
 
         batch_items_1 = [_make_spotify_track_data(f"id{i}") for i in range(50)]
         batch_items_2 = [_make_spotify_track_data(f"id{i}") for i in range(50, n)]
@@ -218,35 +204,37 @@ class TestMatchListBatchPrefetch:
             {"tracks": batch_items_2},
         ]
 
-        matcher = _build_matcher_with_suggestions(mock_client, sp_tracks)
+        matcher = SpotifyMatcher(client=mock_client)
         with patch.object(matcher, "_update_spotify_match_in_source_track"):
-            matcher.match_list(source_tracks, autopilot=True, embed_matches=True)
+            matcher.embed_matches(pairs)  # type: ignore[arg-type]
 
         assert mock_client.tracks.call_count == 2
 
     # T010
-    def test_match_list_with_embed_matches_skips_prefetch_when_isrc_cached(self, mock_client: MagicMock) -> None:
-        """embed_matches=True, all matches already have ISRC → client.tracks() never called."""
+    def test_embed_matches_skips_prefetch_when_isrc_cached(self, mock_client: MagicMock) -> None:
+        """All matches already have ISRC → client.tracks() never called."""
         sp_tracks = [_make_spotify_track(f"id{i}", isrc="USRC17607839") for i in range(5)]
         source_tracks = [TrackMock(str(i), ["Artist"], "Album", f"Track {i}", 200, i) for i in range(5)]
+        pairs: list[tuple[TrackMock, SpotifyTrack]] = list(zip(source_tracks, sp_tracks, strict=True))
 
-        matcher = _build_matcher_with_suggestions(mock_client, sp_tracks)
+        matcher = SpotifyMatcher(client=mock_client)
         with patch.object(matcher, "_update_spotify_match_in_source_track"):
-            matcher.match_list(source_tracks, autopilot=True, embed_matches=True)
+            matcher.embed_matches(pairs)  # type: ignore[arg-type]
 
         mock_client.tracks.assert_not_called()
 
     # T012
-    def test_match_list_without_embed_matches_never_calls_batch_endpoint(self, mock_client: MagicMock) -> None:
-        """embed_matches=False, any playlist → client.tracks() never called."""
-        sp_tracks = [_make_spotify_track_no_data(f"id{i}") for i in range(10)]
-        source_tracks = [TrackMock(str(i), ["Artist"], "Album", f"Track {i}", 200, i) for i in range(10)]
+    def test_match_list_never_calls_batch_endpoint(self, mock_client: MagicMock) -> None:
+        """match_list() does no embedding → client.tracks() never called."""
+        track_id = "sp1"
+        mock_client._get_id.return_value = track_id
+        mock_client.search.return_value = {"tracks": {"items": [_make_spotify_track_data(track_id)]}}
+        source_tracks = [TrackMock(str(i), ["Artist"], "Album", f"Track {i}", 200, i) for i in range(3)]
+        matcher = SpotifyMatcher(client=mock_client)
 
-        matcher = _build_matcher_with_suggestions(mock_client, sp_tracks)
-        result = matcher.match_list(source_tracks, autopilot=True, embed_matches=False)
+        list(matcher.match_list(source_tracks))
 
         mock_client.tracks.assert_not_called()
-        assert len(result) == len(sp_tracks)
 
     def test_empty_string_returns_false(self) -> None:
         assert _is_valid_isrc("") is False
@@ -451,31 +439,8 @@ class TestEmbedIsrc:
 
         source.embed_match.assert_called_once_with(matched)
 
-    def test_embed_isrc_delegates_to_embed_match(self, matcher: SpotifyMatcher) -> None:
-        """T022: source is EmbeddableTrack → embed_match delegated; idempotency is LocalTrack's responsibility."""
-        from tracks import EmbeddableTrack
-
-        matched = _make_spotify_track("abc123", "USRC17607839")
-        source = Mock(spec=EmbeddableTrack)
-
-        matcher._update_spotify_match_in_source_track(source, matched)
-
-        source.embed_match.assert_called_once_with(matched)
-
-    def test_embed_isrc_updates_when_spotify_isrc_differs(self, matcher: SpotifyMatcher) -> None:
-        """T022b: source is EmbeddableTrack → embed_match delegated."""
-        from tracks import EmbeddableTrack
-
-        matched = _make_spotify_track("abc123", "USRC17607839")
-        source = Mock(spec=EmbeddableTrack)
-
-        matcher._update_spotify_match_in_source_track(source, matched)
-
-        source.embed_match.assert_called_once_with(matched)
-
-    def test_embed_isrc_skipped_when_embed_matches_false(self, matcher: SpotifyMatcher) -> None:
-        """T023: embed_matches=False → embed_match never called during match_list."""
-        from tracks import EmbeddableTrack  # noqa: F401  # imported for documentation
+    def test_match_list_never_calls_embed_match(self, matcher: SpotifyMatcher) -> None:
+        """match_list() never calls embed_match — embedding is the Presenter's responsibility."""
         from tracks.local_track import LocalTrack
 
         matched = _make_spotify_track("abc123", "USRC17607839")
@@ -489,12 +454,12 @@ class TestEmbedIsrc:
             mock_local.album = "Album"
             mock_local.isrc = None
 
-            matcher.match_list([mock_local], autopilot=True, embed_matches=False)
+            list(matcher.match_list([mock_local]))
 
             mock_local.embed_match.assert_not_called()
 
-    def test_embed_isrc_skipped_when_spotify_track_has_no_isrc(self, matcher: SpotifyMatcher) -> None:
-        """T024: source is EmbeddableTrack → embed_match delegated regardless of match ISRC."""
+    def test_embed_match_called_regardless_of_match_isrc(self, matcher: SpotifyMatcher) -> None:
+        """Source is EmbeddableTrack → embed_match delegated regardless of match ISRC."""
         from tracks import EmbeddableTrack
 
         matched = _make_spotify_track("abc123", None)
@@ -511,18 +476,8 @@ class TestEmbedIsrc:
         # TrackMock is not an EmbeddableTrack, so the isinstance guard skips embedding
         matcher._update_spotify_match_in_source_track(track, matched)
 
-    def test_embed_isrc_skipped_for_non_local_track(self, matcher: SpotifyMatcher) -> None:
-        """T027 sub-test: EmbeddableTrack source → embed_match called."""
-        from tracks import EmbeddableTrack
-
-        matched = _make_spotify_track("abc123", "USRC17607839")
-        source = Mock(spec=EmbeddableTrack)
-        matcher._update_spotify_match_in_source_track(source, matched)
-
-        source.embed_match.assert_called_once_with(matched)
-
-    def test_update_match_skips_isrc_write_when_normalized_values_match(self, matcher: SpotifyMatcher) -> None:
-        """T006/Bug3: matcher delegates to embed_match; normalization logic is in LocalTrack.embed_match."""
+    def test_update_match_delegates_to_embed_match(self, matcher: SpotifyMatcher) -> None:
+        """Matcher delegates to embed_match; normalization logic is in LocalTrack.embed_match."""
         from tracks import EmbeddableTrack
 
         matched = _make_spotify_track("abc123", "USSM1-9604431")

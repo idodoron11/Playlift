@@ -46,19 +46,11 @@ class SyncTarget(ABC):
         """Return the Matcher instance for this sync-target platform."""
 
     @abstractmethod
-    def import_tracks(
-        self,
-        tracks: Iterable[Track],
-        autopilot: bool = False,
-        embed_matches: bool = False,
-    ) -> None:
-        """Match and import tracks into this sync target.
+    def import_tracks(self, tracks: Iterable[Track]) -> None:
+        """Add pre-matched *tracks* into this sync target.
 
         Args:
-            tracks: The source tracks to match and add.
-            autopilot: When True, auto-select the first match without prompting.
-            embed_matches: When True, write the matched platform ref back to the
-                source track if it is an ``EmbeddableTrack`` instance.
+            tracks: Already-matched destination tracks to add.
         """
 
 

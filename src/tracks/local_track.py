@@ -130,7 +130,7 @@ class LocalTrack(Track, EmbeddableTrack):
         try:
             self._mutagen_file.save()
         except (mutagen.MutagenError, OSError, AttributeError) as e:  # type: ignore[attr-defined]  # mutagen stubs don't export MutagenError top-level
-            print(f"Could not save tags for {self.track_id} due to {e}")
+            logger.warning("Could not save tags for %s due to %s", self.track_id, e)
         self.reload_metadata()
 
     @property

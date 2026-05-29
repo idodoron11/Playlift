@@ -6,16 +6,14 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
+    from collections.abc import Iterable, Iterator
 
     from deezer import Deezer
 
-from tqdm import tqdm
-
 from api.deezer import get_deezer_client
 from exceptions import SkipTrackError
-from matchers import Matcher
-from tracks import EmbeddableTrack, Track
+from matchers import Matcher, MatchOutcome, MatchStatus
+from tracks import EmbeddableTrack, ServiceTrack, Track
 from tracks.deezer_track import (
     DeezerTrack,
     extract_deezer_track_id,
@@ -151,37 +149,28 @@ class DeezerMatcher(Matcher):
         matches.sort(key=lambda m: Matcher.track_distance(track, m))
         return matches
 
-    def match_list(self, tracks: Iterable[Track], autopilot: bool = False, embed_matches: bool = False) -> list[Track]:
-        """Resolve each track and optionally embed ``TXXX:DEEZER`` tags.
+    def match_list(self, tracks: Iterable[Track]) -> Iterator[MatchOutcome]:
+        """Yield a :class:`MatchOutcome` for each track.
 
-        Iterates with a tqdm progress bar.  Unresolvable tracks are skipped
-        with a warning; SkipTrackError silently excludes a track.
+        Pure batch matching — no progress bars, no user interaction.
         """
-        track_list = list(tracks)
-        resolved: list[Track] = []
-
-        print("Matching source tracks to Deezer tracks")
-        for track in tqdm(track_list):
+        for track in tracks:
             try:
-                match = self.match(track)
+                matched = self.match(track)
             except SkipTrackError:
-                print(f"Skip track\n{track}")
+                yield MatchOutcome(source_track=track, status=MatchStatus.SKIPPED)
                 continue
-            if match is None:
-                suggestions = self.suggest_match(track)
-                if not suggestions:
-                    print(f"Could not match\n{track}")
-                    continue
-                if autopilot:
-                    match = suggestions[0]
-                else:
-                    choice = Matcher.choose_suggestion(track, suggestions)
-                    if choice < 0:
-                        continue
-                    match = suggestions[choice]
+            if matched is not None:
+                yield MatchOutcome(source_track=track, status=MatchStatus.MATCHED, match=matched)
+                continue
+            suggestions = self.suggest_match(track)
+            if not suggestions:
+                yield MatchOutcome(source_track=track, status=MatchStatus.UNMATCHED)
+            else:
+                yield MatchOutcome(source_track=track, status=MatchStatus.AMBIGUOUS, suggestions=list(suggestions))
 
-            resolved.append(match)
-            if embed_matches and isinstance(track, EmbeddableTrack):
-                track.embed_match(match)
-
-        return resolved
+    def embed_matches(self, pairs: list[tuple[Track, Track]]) -> None:
+        """Write Deezer refs into source tracks for all *pairs*."""
+        for source_track, match in pairs:
+            if isinstance(source_track, EmbeddableTrack) and isinstance(match, ServiceTrack):
+                source_track.embed_match(match)

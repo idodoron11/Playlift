@@ -12,10 +12,11 @@ import pytest
 
 from matchers.spotify_matcher import SpotifyMatcher
 from playlists.spotify_playlist import SpotifyPlaylist
-from tests.playlists.playlist_mock import PlaylistMock
+from presenters.matching import resolve_matches
 from tests.playlists.spotify_playlist_spy import SpotifyPlaylistSpy
 from tests.tracks.track_mock import TrackMock
 from tracks.spotify_track import SpotifyTrack
+from views.match_view import IMatchView
 
 if TYPE_CHECKING:
     from collections.abc import Generator
@@ -58,6 +59,33 @@ SOURCE_PLAYLIST_NAME = "playlist name"
 E2E_PLAYLIST_NAME = "Test Playlist"
 E2E_TRACK_IDS = ["4OSBTYWVwsQhGLF9NHvIbR", "5mFMb5OHI3cN0UjITVztCj", "1CRtJS94Hq3PbBZT9LuF90"]
 E2E_TRACKS_AFTER_REMOVE = 2
+
+
+# ---------------------------------------------------------------------------
+# Silent view for integration tests
+# ---------------------------------------------------------------------------
+
+
+class _SilentMatchView(IMatchView):
+    """No-op IMatchView for integration tests — discards all output, no prompts."""
+
+    def begin_matching(self, total: int) -> None:
+        pass
+
+    def on_track_processed(self) -> None:
+        pass
+
+    def end_matching(self) -> None:
+        pass
+
+    def show_unmatched(self, track: Track) -> None:
+        pass
+
+    def show_skipped(self, track: Track) -> None:
+        pass
+
+    def choose_suggestion(self, track: Track, suggestions: list[Track]) -> int:
+        return 0
 
 
 # ---------------------------------------------------------------------------
@@ -148,14 +176,15 @@ class TestSpotifyPlaylistIntegration:
                 SOURCE_TRACK_NUMBER,
             )
         ]
-        source_playlist = PlaylistMock(source_tracks)
+        matcher = SpotifyMatcher(client=spotify_client)
+        matched = resolve_matches(source_tracks, matcher, _SilentMatchView(), autopilot=True)
         target_playlist = SpotifyPlaylistSpy.create_from_another_playlist(
-            SOURCE_PLAYLIST_NAME, source_playlist, client=spotify_client
+            SOURCE_PLAYLIST_NAME, matched, client=spotify_client
         )
         assert len(target_playlist.tracks) == 1
-        assert target_playlist.tracks[0].title == source_playlist.tracks[0].title
-        assert target_playlist.tracks[0].display_artist == source_playlist.tracks[0].display_artist
-        assert target_playlist.tracks[0].album == source_playlist.tracks[0].album
+        assert target_playlist.tracks[0].title == source_tracks[0].title
+        assert target_playlist.tracks[0].display_artist == source_tracks[0].display_artist
+        assert target_playlist.tracks[0].album == source_tracks[0].album
 
     def test_init(self, spotify_client: Any) -> None:
         playlist = SpotifyPlaylist(ENDPOINTS_PLAYLIST_URL, client=spotify_client)

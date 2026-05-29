@@ -1,9 +1,8 @@
 from abc import ABC, abstractmethod
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Iterator
+from dataclasses import dataclass, field
 from difflib import SequenceMatcher
-
-import click
-from tabulate import tabulate
+from enum import Enum
 
 from api.spotify import get_spotify_client
 from tracks import Track
@@ -11,6 +10,25 @@ from tracks import Track
 MATCH_AVG_THRESHOLD: float = 0.6
 MATCH_DURATION_TOLERANCE_SECONDS: float = 3.0
 MATCH_LOOSE_DURATION_TOLERANCE_SECONDS: float = 5.0
+
+
+class MatchStatus(Enum):
+    """Outcome category for a single track matching attempt."""
+
+    MATCHED = "matched"
+    AMBIGUOUS = "ambiguous"
+    UNMATCHED = "unmatched"
+    SKIPPED = "skipped"
+
+
+@dataclass
+class MatchOutcome:
+    """Result of attempting to match one source track."""
+
+    source_track: Track
+    status: MatchStatus
+    match: Track | None = None
+    suggestions: list[Track] = field(default_factory=list)
 
 
 class Matcher(ABC):
@@ -50,23 +68,21 @@ class Matcher(ABC):
         return (1 - title_d, 1 - artist_d, 1 - album_d, abs(track1.duration - track2.duration))
 
     @abstractmethod
-    def match_list(self, tracks: Iterable[Track], autopilot: bool = False, embed_matches: bool = False) -> list[Track]:
+    def match_list(self, tracks: Iterable[Track]) -> Iterator[MatchOutcome]:
+        """Yield a :class:`MatchOutcome` for each track in *tracks*.
+
+        Pure batch matching — no user interaction, no progress display.
+        """
         pass
 
-    @staticmethod
-    def choose_suggestion(track: Track, suggestions: Sequence[Track]) -> int:
-        print(f"Please choose the best match for\n{track}")
-        print("If none match, type -1")
-        headers = ["#", "Artist", "Track Title", "Album", "Track Position", "Duration"]
-        data = [
-            (pos, track.display_artist, track.title, track.album, track.track_number, track.duration)
-            for pos, track in enumerate(suggestions)
-        ]
-        results_tbl_visual = tabulate(data, headers=headers)
-        print(results_tbl_visual)
-        return int(
-            click.prompt("Enter best match index (#):", default=0, type=click.IntRange(-1, len(suggestions) - 1))
-        )
+    @abstractmethod
+    def embed_matches(self, pairs: list[tuple[Track, Track]]) -> None:
+        """Persist matched service refs back into source tracks.
+
+        Args:
+            pairs: Each element is ``(source_track, matched_track)``.
+        """
+        pass
 
     def _match_constraints(self, source_track: Track, suggestion: Track) -> bool:
         """Return True when *suggestion* is close enough to *source_track* to be a valid match.
