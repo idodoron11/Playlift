@@ -1,3 +1,4 @@
+import logging
 from collections.abc import Iterable
 from typing import Any
 
@@ -7,6 +8,8 @@ from matchers.spotify_matcher import SpotifyMatcher
 from playlists import Playlist, SyncTarget
 from tracks import Track
 from tracks.spotify_track import SpotifyTrack
+
+logger = logging.getLogger(__name__)
 
 
 class SpotifyPlaylist(Playlist, SyncTarget):
@@ -32,9 +35,11 @@ class SpotifyPlaylist(Playlist, SyncTarget):
         api_tracks = self._data["tracks"]
         while api_tracks:
             for api_track in api_tracks["items"]:
-                self._tracks.append(
-                    SpotifyTrack(api_track["track"]["id"], data=api_track["track"], client=self._client)
-                )
+                track_data = api_track.get("track")
+                if not track_data or not track_data.get("id"):
+                    logger.warning("Skipping unavailable track in playlist %s", self.playlist_id)
+                    continue
+                self._tracks.append(SpotifyTrack(track_data["id"], data=track_data, client=self._client))
             if not api_tracks.get("next"):
                 break
             api_tracks = self._client.next(api_tracks)
